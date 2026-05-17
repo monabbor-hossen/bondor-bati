@@ -58,7 +58,7 @@
                     <?= htmlspecialchars($login_error) ?>
                 </div>
             <?php endif; ?>
-            <form method="POST" action="/bondor-bati/public/login" class="space-y-4">
+            <form method="POST" action="/bondor-bati/login" class="space-y-4">
                 <div>
                     <label for="username"
                         class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">Username</label>

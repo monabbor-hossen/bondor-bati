@@ -37,7 +37,7 @@ $auth = new AuthController();
 // Strip the base path (/bondor-bati) and query string to get a clean route
 $request_uri = $_SERVER['REQUEST_URI'];
 // To match your actual folder name:
-$base_path = '/bondor-bati/public'; // or just '/bondor_bati_pos' depending on your XAMPP/server setup
+$$base_path = '/bondor-bati'; // or just '/bondor_bati_pos' depending on your XAMPP/server setup
 $path = parse_url($request_uri, PHP_URL_PATH);
 $route = '/' . trim(str_replace($base_path, '', $path), '/');
 $method = $_SERVER['REQUEST_METHOD'];

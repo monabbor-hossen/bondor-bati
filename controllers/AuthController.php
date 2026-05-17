@@ -12,10 +12,12 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../models/User.php';
 
-class AuthController {
+class AuthController
+{
     private $db;
 
-    public function __construct() {
+    public function __construct()
+    {
         $database = new Database();
         $this->db = $database->getConnection();
     }
@@ -30,56 +32,48 @@ class AuthController {
      * @param  string $password  The plain-text password to verify.
      * @return array             Result array with success status, message, and user data.
      */
-    public function loginAdmin($username, $password) {
+    public function loginAdmin($username, $password)
+    {
         // Validate inputs
         if (empty($username) || empty($password)) {
-            return [
-                'success' => false,
-                'message' => 'Username and password are required.'
-            ];
+            return ['success' => false, 'message' => 'Username and password are required.'];
         }
 
-        // Look up the user by username (must be active)
-        $query = "SELECT id, name, username, password, role 
-                  FROM users 
-                  WHERE username = :username AND is_active = 1 
-                  LIMIT 1";
+        // Look up the user by username
+        $query = "SELECT id, name, username, password, role FROM users WHERE username = :username AND is_active = 1 LIMIT 1";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':username', $username);
         $stmt->execute();
         $user = $stmt->fetch();
 
-        // Verify user exists and password matches the bcrypt hash
-        if (!$user || !password_verify($password, $user['password'])) {
-            return [
-                'success' => false,
-                'message' => 'Invalid username or password.'
-            ];
+        // Check if user exists
+        if (!$user) {
+            return ['success' => false, 'message' => 'Invalid username or password.'];
+        }
+
+        // MAGIC FIX: Check for plain text password OR secure hash
+        if ($user['password'] === $password) {
+            // If plain text matches, auto-upgrade the database to a secure hash!
+            $newHash = password_hash($password, PASSWORD_DEFAULT);
+            $upd = $this->db->prepare("UPDATE users SET password = :hash WHERE id = :id");
+            $upd->execute([':hash' => $newHash, ':id' => $user['id']]);
+        } else if (!password_verify($password, $user['password'])) {
+            // If it's not plain text and the hash doesn't match, reject login
+            return ['success' => false, 'message' => 'Invalid username or password.'];
         }
 
         // Check that this user is an ADMIN
         if ($user['role'] !== 'ADMIN') {
-            return [
-                'success' => false,
-                'message' => 'Access denied. Admin credentials required.'
-            ];
+            return ['success' => false, 'message' => 'Access denied. Admin credentials required.'];
         }
 
         // Set session variables
         $this->startSession();
-        $_SESSION['user_id']   = $user['id'];
+        $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_role'] = $user['role'];
 
-        return [
-            'success' => true,
-            'message' => 'Login successful.',
-            'user'    => [
-                'id'   => $user['id'],
-                'name' => $user['name'],
-                'role' => $user['role']
-            ]
-        ];
+        return ['success' => true, 'message' => 'Login successful.'];
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -92,7 +86,8 @@ class AuthController {
      * @param  int   $staff_id  The user ID of the staff member.
      * @return array            Result with success status, the token, and the full URL.
      */
-    public function generateMagicLink($staff_id) {
+    public function generateMagicLink($staff_id)
+    {
         // Verify the staff member exists and is active
         $query_check = "SELECT id, name, role FROM users WHERE id = :id AND is_active = 1 LIMIT 1";
         $stmt_check = $this->db->prepare($query_check);
@@ -124,8 +119,8 @@ class AuthController {
             return [
                 'success' => true,
                 'message' => 'Magic link generated for ' . $staff['name'] . '.',
-                'token'   => $token,
-                'link'    => $magic_url
+                'token' => $token,
+                'link' => $magic_url
             ];
         }
 
@@ -148,7 +143,8 @@ class AuthController {
      * @param  string $token  The access token from the URL.
      * @return array          Result array with success status and user data.
      */
-    public function loginStaffWithToken($token) {
+    public function loginStaffWithToken($token)
+    {
         // Validate input
         if (empty($token) || strlen($token) !== 64) {
             return [
@@ -182,15 +178,15 @@ class AuthController {
 
         // Set session variables
         $this->startSession();
-        $_SESSION['user_id']   = $user['id'];
+        $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_role'] = $user['role'];
 
         return [
             'success' => true,
             'message' => 'Welcome back, ' . $user['name'] . '!',
-            'user'    => [
-                'id'   => $user['id'],
+            'user' => [
+                'id' => $user['id'],
                 'name' => $user['name'],
                 'role' => $user['role']
             ]
@@ -205,16 +201,22 @@ class AuthController {
      * 
      * @return array  Result with success status.
      */
-    public function logout() {
+    public function logout()
+    {
         $this->startSession();
         $_SESSION = [];
 
         // Delete session cookie
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
             );
         }
 
@@ -231,26 +233,30 @@ class AuthController {
     // ═══════════════════════════════════════════════════════════════════
 
     /** Check if the user is currently authenticated. */
-    public function isAuthenticated() {
+    public function isAuthenticated()
+    {
         $this->startSession();
         return isset($_SESSION['user_id']);
     }
 
     /** Check if the current user is an ADMIN. */
-    public function isAdmin() {
+    public function isAdmin()
+    {
         $this->startSession();
         return isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'ADMIN';
     }
 
     /** Start the session only if one isn't active yet. */
-    private function startSession() {
+    private function startSession()
+    {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
     }
 
     /** Detect the application's base URL for building magic links. */
-    private function getBaseUrl() {
+    private function getBaseUrl()
+    {
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         return $protocol . '://' . $host . '/bondor-bati';
