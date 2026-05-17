@@ -1,0 +1,36 @@
+[2026-05-16 22:05:29] Starting end-of-day job...
+[FAIL] Failed to generate daily summary.
+[OK] Backup saved: backup_2026-05-16.sql (12.9 KB)
+[OK] 0 spread expense(s) deducted for today.
+
+[2026-05-16 22:05:29] End-of-day job complete.
+[2026-05-16 22:06:12] Starting end-of-day job...
+[OK] Daily summary generated.
+
+━━━━━━━━━━━━━━━━━━━━
+🍽️ *Bondor Bati — Daily Summary*
+📅 16 May 2026 (Saturday)
+━━━━━━━━━━━━━━━━━━━━
+
+💰 *REVENUE*
+  Cash Sales:    ৳0.00
+  Due Sales:     ৳0.00
+  *Total:        ৳0.00*
+
+📤 *EXPENSES*
+  Bazaar:        ৳0.00
+  Fixed/Other:   ৳0.00
+  Gas (daily):   ৳0.00
+  Salaries:      ৳0.00
+  Wastage:       ৳0.00
+  Complimentary: ৳0.00
+  *Total:        ৳0.00*
+
+━━━━━━━━━━━━━━━━━━━━
+📈 *NET PROFIT: ৳0.00*
+━━━━━━━━━━━━━━━━━━━━
+
+[OK] Backup saved: backup_2026-05-16.sql (12.9 KB)
+[OK] 0 spread expense(s) deducted for today.
+
+[2026-05-16 22:06:13] End-of-day job complete.

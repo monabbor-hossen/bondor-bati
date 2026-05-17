@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Base path for the application within the webroot
+RewriteBase /bondor-bati/
+
+# Block direct access to source code and configuration directories
+RewriteRule ^(config|controllers|models|middleware)(/.*)?$ - [F,L]
+
+# If the requested file or directory exists, serve it directly
+# (allows CSS, JS, images, and other static assets to load normally)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Route everything else through public/index.php
+RewriteRule ^(.*)$ public/index.php [QSA,L]
