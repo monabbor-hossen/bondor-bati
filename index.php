@@ -2,12 +2,30 @@
 /**
  * Front Controller (index.php)
  * Phase 4 Update: Added session_start() and global auth guard.
+ * Phase 9 Update: Added global exception handler for error logging.
  */
 
 // Start session at the very top — must be before any output
 session_start();
 
 define('ROOT_PATH', __DIR__);
+define('LOG_PATH', ROOT_PATH . '/logs');
+
+// Global exception handler - catches all uncaught errors
+set_exception_handler(function($exception) {
+    $date = date('Y-m-d');
+    $logFile = LOG_PATH . "/error_{$date}.log";
+    $message = date('Y-m-d H:i:s') . " | " . $exception->getMessage() . " | File: " . $exception->getFile() . " Line: " . $exception->getLine() . "\n";
+
+    if (!is_dir(LOG_PATH)) {
+        mkdir(LOG_PATH, 0755, true);
+    }
+    file_put_contents($logFile, $message, FILE_APPEND);
+
+    http_response_code(500);
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Error</title></head><body style="background:#0f0f1a;color:#eaeaea;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;padding:2rem;"><h2 style="color:#e94560;">Whoops!</h2><p>Something went wrong. Please try that again.</p><a href="?url=home" style="color:#e94560;">← Back to Home</a></div></body></html>';
+    exit;
+});
 
 // Autoloader for App\ and Config\ namespaces
 spl_autoload_register(function ($class) {

@@ -340,17 +340,25 @@
 
         <!-- Bottom Navigation Bar -->
         <nav class="bottom-nav">
+            <a href="?url=pos" class="<?= ($activeNav ?? '') === 'pos' ? 'active' : '' ?>">
+                <span class="nav-icon">💰</span>POS
+            </a>
             <a href="?url=home" class="<?= ($activeNav ?? '') === 'home' ? 'active' : '' ?>">
                 <span class="nav-icon">🏠</span>Home
-            </a>
-            <a href="?url=bazaar/index" class="<?= ($activeNav ?? '') === 'bazaar' ? 'active' : '' ?>">
-                <span class="nav-icon">🛒</span>Bazaar
             </a>
             <a href="?url=inventory/dailyPrep" class="<?= ($activeNav ?? '') === 'stock' ? 'active' : '' ?>">
                 <span class="nav-icon">📦</span>Stock
             </a>
+            <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+            <a href="?url=analytics/analytics" class="<?= ($activeNav ?? '') === 'analytics' ? 'active' : '' ?>">
+                <span class="nav-icon">📈</span>Analytics
+            </a>
+            <a href="?url=hr/hrPayroll" class="<?= ($activeNav ?? '') === 'hr' ? 'active' : '' ?>">
+                <span class="nav-icon">💼</span>Payroll
+            </a>
+            <?php endif; ?>
             <a href="?url=inventory/closeDayView" class="<?= ($activeNav ?? '') === 'close' ? 'active' : '' ?>">
-                <span class="nav-icon">🌙</span>Close Day
+                <span class="nav-icon">🌙</span>Close
             </a>
         </nav>
 

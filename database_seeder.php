@@ -33,6 +33,18 @@ foreach ($users as $user) {
     echo "  - Created user: {$user['username']} ({$user['role']})<br>";
 }
 
+// 1b. STAFF SALARIES
+echo "<br>1b. Inserting staff salaries...<br>";
+$salaries = [
+    ['user_id' => 1, 'monthly_salary' => 35000.00, 'daily_rate' => 1166.67],
+    ['user_id' => 2, 'monthly_salary' => 18000.00, 'daily_rate' => 600.00],
+];
+$stmt = $pdo->prepare("INSERT INTO staff_salaries (user_id, monthly_salary, daily_rate, start_date) VALUES (:user_id, :monthly_salary, :daily_rate, CURDATE())");
+foreach ($salaries as $sal) {
+    $stmt->execute($sal);
+    echo "  - Salary set for user_id {$sal['user_id']}<br>";
+}
+
 // 2. SUPPLIERS
 echo "<br>2. Inserting suppliers...<br>";
 $suppliers = [

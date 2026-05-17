@@ -171,3 +171,21 @@
         <div style="font-size:0.72rem; color:rgba(255,255,255,0.7); font-weight:400;">Finalize today's accounts</div>
     </div>
 </a>
+
+<?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+<p class="section-title" style="margin-top:1.25rem;">🛡️ System & Security</p>
+<a href="?url=backup/downloadSQLBackup" class="btn btn-secondary" style="justify-content:flex-start; gap:1rem; border-color: var(--accent);">
+    <span style="font-size:1.4rem;">💾</span>
+    <div>
+        <div style="font-size:0.9rem; font-weight:700;">Download Database Backup</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Full .sql file (all tables)</div>
+    </div>
+</a>
+<a href="?url=backup/exportMonthlySalesCSV" class="btn btn-secondary" style="justify-content:flex-start; gap:1rem;">
+    <span style="font-size:1.4rem;">📊</span>
+    <div>
+        <div style="font-size:0.9rem; font-weight:700;">Export Monthly Sales</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); font-weight:400;">Current month .csv file</div>
+    </div>
+</a>
+<?php endif; ?>
