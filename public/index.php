@@ -200,28 +200,11 @@ switch (true) {
     // ═════════════════════════════════════════════════════════════════
     //  404 — No matching route
     // ═════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════
+    //  404 — No matching route
+    // ═════════════════════════════════════════════════════════════════
     default:
-        http_response_code(404);
-        echo '<!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>404 Not Found | Bondor Bati</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-        </head>
-        <body class="bg-slate-100 font-[Inter] min-h-screen flex items-center justify-center p-4">
-            <div class="text-center max-w-sm">
-                <div class="text-7xl font-extrabold text-slate-200 mb-4">404</div>
-                <h1 class="text-xl font-bold text-slate-800 mb-2">Page Not Found</h1>
-                <p class="text-slate-500 text-sm mb-6">The page you\'re looking for doesn\'t exist or has been moved.</p>
-                <a href="' . $base_path . '/" class="inline-block px-6 py-3 bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 transition-colors">
-                    ← Go Home
-                </a>
-            </div>
-        </body>
-        </html>';
+        require __DIR__ . '/../views/shared/404.php';
         break;
 }
 ?>
