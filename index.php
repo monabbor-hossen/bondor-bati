@@ -1,75 +1,188 @@
 <?php
 /**
- * Front Controller (index.php)
- * Phase 4 Update: Added session_start() and global auth guard.
- * Phase 9 Update: Added global exception handler for error logging.
+ * Bondor Bati POS — Main Router
+ * Routes to the correct page and loads required data.
  */
-
-// Start session at the very top — must be before any output
 session_start();
 
-define('ROOT_PATH', __DIR__);
-define('LOG_PATH', ROOT_PATH . '/logs');
+require_once __DIR__ . '/config/Database.php';
+require_once __DIR__ . '/core/Auth.php';
+require_once __DIR__ . '/models/DashboardModel.php';
+require_once __DIR__ . '/models/ForecastingModel.php';
+require_once __DIR__ . '/models/InventoryModel.php';
 
-// Global exception handler - catches all uncaught errors
-set_exception_handler(function($exception) {
-    $date = date('Y-m-d');
-    $logFile = LOG_PATH . "/error_{$date}.log";
-    $message = date('Y-m-d H:i:s') . " | " . $exception->getMessage() . " | File: " . $exception->getFile() . " Line: " . $exception->getLine() . "\n";
+$db = Database::getInstance()->getConnection();
 
-    if (!is_dir(LOG_PATH)) {
-        mkdir(LOG_PATH, 0755, true);
-    }
-    file_put_contents($logFile, $message, FILE_APPEND);
-
-    http_response_code(500);
-    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Error</title></head><body style="background:#0f0f1a;color:#eaeaea;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="text-align:center;padding:2rem;"><h2 style="color:#e94560;">Whoops!</h2><p>Something went wrong. Please try that again.</p><a href="?url=home" style="color:#e94560;">← Back to Home</a></div></body></html>';
-    exit;
-});
-
-// Autoloader for App\ and Config\ namespaces
-spl_autoload_register(function ($class) {
-    $classPath = str_replace(['App\\', 'Config\\', '\\'], ['app/', 'config/', '/'], $class);
-    $file = ROOT_PATH . '/' . $classPath . '.php';
-    if (file_exists($file)) {
-        require_once $file;
-    }
-});
-
-// ── Router ────────────────────────────────────────────────────────────
-$url      = isset($_GET['url']) ? rtrim($_GET['url'], '/') : 'dashboard';
-$url      = filter_var($url, FILTER_SANITIZE_URL);
-$parts    = explode('/', $url);
-
-$controllerName = !empty($parts[0]) ? ucfirst($parts[0]) . 'Controller' : 'DashboardController';
-$methodName     = !empty($parts[1]) ? $parts[1] : 'index';
-unset($parts[0], $parts[1]);
-$params = array_values($parts);
-
-// ── Global Auth Guard ─────────────────────────────────────────────────
-// Public routes that don't require authentication
-$publicRoutes = ['auth/login', 'auth/logout'];
-$currentRoute = strtolower($parts[0] ?? $url);  // normalized route string
-$isPublic     = in_array(strtolower(rtrim($url, '/')), $publicRoutes);
-
-if (!$isPublic && empty($_SESSION['user_id'])) {
-    // Not logged in and not on a public route — redirect to login
-    header('Location: ?url=auth/login');
+// ── Auth Guard ─────────────────────────────────────────────────
+if (!checkAuth()) {
+    header('Location: login.php');
     exit;
 }
 
-// ── Dispatch ──────────────────────────────────────────────────────────
-$controllerClass = '\\App\\Controllers\\' . $controllerName;
+$authUser = currentUser();
+$page = $_GET['page'] ?? 'dashboard';
 
-if (class_exists($controllerClass)) {
-    $instance = new $controllerClass();
-    if (method_exists($instance, $methodName)) {
-        call_user_func_array([$instance, $methodName], $params);
-    } else {
-        http_response_code(404);
-        echo "404: Method '{$methodName}' not found in '{$controllerName}'.";
-    }
-} else {
-    http_response_code(404);
-    echo "404: Controller '{$controllerName}' does not exist.";
+// Permission check — redirect to dashboard if not allowed
+if (!canAccess($page)) {
+    // Try to find the first allowed page as fallback
+    $allowed = allowedPages();
+    $page = !empty($allowed) ? $allowed[0] : 'dashboard';
 }
+
+// Helper: format currency
+function tk($amount) {
+    return '৳ ' . number_format((float)$amount, 0);
+}
+
+// ── Page Data Loaders ──────────────────────────────────────────
+switch ($page) {
+
+    case 'dashboard':
+        $today = date('Y-m-d');
+        $yesterday = date('Y-m-d', strtotime('-1 day'));
+        $dashModel = new DashboardModel();
+        $forecastModel = new ForecastingModel();
+
+        $cashData = $dashModel->getCashInDrawer($today);
+        $profitData = $dashModel->getNetProfit($today);
+        $profitYesterday = $dashModel->getNetProfit($yesterday);
+        $profitTrend = $profitYesterday['net_profit'] != 0
+            ? round(($profitData['net_profit'] - $profitYesterday['net_profit']) / abs($profitYesterday['net_profit']) * 100)
+            : 0;
+
+        $nextGasDate = $forecastModel->getNextGasRefillDate();
+        $gasDaysLeft = $nextGasDate ? max(0, (int)((strtotime($nextGasDate) - time()) / 86400)) : null;
+        $bazaarSuggestions = $forecastModel->getSmartBazaarSuggestions();
+        $supplierDues = $forecastModel->getSupplierDues();
+
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        $stmtEv = $db->prepare("SELECT event_name, impact_multiplier FROM calendar_events WHERE event_date = :d LIMIT 1");
+        $stmtEv->execute(['d' => $tomorrow]);
+        $tomorrowEvent = $stmtEv->fetch();
+
+        $stmtOrd = $db->prepare("SELECT * FROM advance_orders WHERE delivery_date = :d AND status = 'Pending'");
+        $stmtOrd->execute(['d' => $today]);
+        $pendingOrders = $stmtOrd->fetchAll();
+
+        $stmtCd = $db->prepare("SELECT * FROM customer_dues WHERE status = 'Unpaid' ORDER BY log_date DESC LIMIT 5");
+        $stmtCd->execute();
+        $customerDues = $stmtCd->fetchAll();
+
+        $totalItems = $db->query("SELECT COUNT(*) FROM items")->fetchColumn();
+        $totalStaff = $db->query("SELECT COUNT(*) FROM users WHERE role='STAFF' AND is_active=1")->fetchColumn();
+
+        $contentView = __DIR__ . '/views/dashboard/index.php';
+        break;
+
+    case 'items':
+        $items = $db->query("SELECT * FROM items ORDER BY id DESC")->fetchAll();
+        $contentView = __DIR__ . '/views/items/index.php';
+        break;
+
+    case 'suppliers':
+        $suppliers = $db->query("SELECT * FROM suppliers ORDER BY id DESC")->fetchAll();
+        $contentView = __DIR__ . '/views/suppliers/index.php';
+        break;
+
+    case 'morning':
+        $today = date('Y-m-d');
+        $items = $db->query("SELECT * FROM items ORDER BY item_name")->fetchAll();
+        $suppliers = $db->query("SELECT * FROM suppliers ORDER BY name")->fetchAll();
+
+        // Today's bazaar ledger
+        $stmtL = $db->prepare("SELECT * FROM bazaar_ledgers WHERE log_date = :d");
+        $stmtL->execute(['d' => $today]);
+        $todayLedger = $stmtL->fetch();
+
+        $bazaarItems = [];
+        if ($todayLedger) {
+            $stmtBI = $db->prepare("SELECT bi.*, s.name as supplier_name FROM bazaar_items bi LEFT JOIN suppliers s ON bi.supplier_id = s.id WHERE bi.ledger_id = :lid");
+            $stmtBI->execute(['lid' => $todayLedger['id']]);
+            $bazaarItems = $stmtBI->fetchAll();
+        }
+
+        // Today's stock entries
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
+        $stmtDS->execute(['d' => $today]);
+        $todayStocks = $stmtDS->fetchAll();
+
+        // Pending advance orders for today
+        $stmtOrd = $db->prepare("SELECT * FROM advance_orders WHERE delivery_date = :d AND status = 'Pending'");
+        $stmtOrd->execute(['d' => $today]);
+        $pendingOrders = $stmtOrd->fetchAll();
+
+        $contentView = __DIR__ . '/views/morning/index.php';
+        break;
+
+    case 'service':
+        $today = date('Y-m-d');
+        $items = $db->query("SELECT * FROM items ORDER BY item_name")->fetchAll();
+
+        // Today's stocks (for complimentary logging)
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
+        $stmtDS->execute(['d' => $today]);
+        $todayStocks = $stmtDS->fetchAll();
+
+        // Customer dues
+        $customerDues = $db->query("SELECT * FROM customer_dues ORDER BY CASE WHEN status='Unpaid' THEN 0 ELSE 1 END, log_date DESC")->fetchAll();
+
+        $contentView = __DIR__ . '/views/service/index.php';
+        break;
+
+    case 'closing':
+        $today = date('Y-m-d');
+        $dashModel = new DashboardModel();
+
+        // Today's stocks for closing
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price, i.cost_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
+        $stmtDS->execute(['d' => $today]);
+        $todayStocks = $stmtDS->fetchAll();
+
+        $cashData = $dashModel->getCashInDrawer($today);
+        $profitData = $dashModel->getNetProfit($today);
+
+        $contentView = __DIR__ . '/views/closing/index.php';
+        break;
+
+    case 'forecast':
+        $forecastModel = new ForecastingModel();
+        $nextGasDate = $forecastModel->getNextGasRefillDate();
+        $gasDaysLeft = $nextGasDate ? max(0, (int)((strtotime($nextGasDate) - time()) / 86400)) : null;
+        $bazaarSuggestions = $forecastModel->getSmartBazaarSuggestions();
+
+        $events = $db->query("SELECT * FROM calendar_events ORDER BY event_date ASC")->fetchAll();
+        $orders = $db->query("SELECT * FROM advance_orders ORDER BY delivery_date DESC")->fetchAll();
+        $items = $db->query("SELECT * FROM items ORDER BY item_name")->fetchAll();
+        $expenses = $db->query("SELECT * FROM expenses ORDER BY expense_date DESC")->fetchAll();
+
+        $contentView = __DIR__ . '/views/forecast/index.php';
+        break;
+
+    case 'staff':
+        $staff = $db->query("SELECT u.*, ss.monthly_salary, ss.daily_rate, ss.start_date, ss.id as salary_id FROM users u LEFT JOIN staff_salaries ss ON u.id = ss.user_id AND ss.end_date IS NULL ORDER BY u.id DESC")->fetchAll();
+        $suppliers = $db->query("SELECT * FROM suppliers ORDER BY id DESC")->fetchAll();
+
+        // Load permissions for each staff member
+        $staffPermissions = [];
+        $stmtPerms = $db->prepare("SELECT page_slug FROM staff_permissions WHERE user_id = :uid");
+        foreach ($staff as $s) {
+            $stmtPerms->execute(['uid' => $s['id']]);
+            $staffPermissions[$s['id']] = $stmtPerms->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        $today = date('Y-m-d');
+        $month = date('Y-m');
+        $stmtAtt = $db->prepare("SELECT al.*, u.name FROM attendance_logs al JOIN users u ON al.user_id = u.id WHERE al.absent_date LIKE :m ORDER BY al.absent_date DESC");
+        $stmtAtt->execute(['m' => $month . '%']);
+        $attendance = $stmtAtt->fetchAll();
+
+        $contentView = __DIR__ . '/views/staff/index.php';
+        break;
+
+    default:
+        $contentView = __DIR__ . '/views/dashboard/index.php';
+        break;
+}
+
+$pageTitle = ucfirst($page);
+include __DIR__ . '/views/layouts/main.php';

@@ -1,0 +1,110 @@
+🗄️ Phase 1: Master Database Schema (MySQL Schema)
+The entire system is divided into 5 logical modules.
+
+1. User, Staff & Access (Auth & HR)
+
+users: id, name, username (for Admin), password, access_token (Staff magic link), role (ADMIN/STAFF), is_active.
+
+staff_salaries: id, user_id, monthly_salary, daily_rate (Monthly / 30), start_date, end_date.
+
+attendance_logs: id, user_id, absent_date, deduct_salary (1/0).
+
+2. Suppliers & Customer Dues (Stakeholders & Dues)
+
+suppliers: id, name, contact, total_due (For specific vendors, like your Bagabarir ghee supplier or regular milkmen).
+
+customer_dues: id, customer_name, phone, due_amount, log_date, status (Unpaid/Paid).
+
+3. Inventory, Wastage & Daily Stock (Inventory Engine)
+
+items (Menu): id, item_name (e.g., BBQ Tilapia), selling_price, cost_price (used to calculate losses for free food/wastage).
+
+raw_inventory (Fridge/Store): id, item_name, current_qty, avg_unit_price.
+
+daily_stocks (Front Shop Stock): id, item_id, log_date, carry_forward_qty (yesterday's leftover), wastage_qty (spoiled), complimentary_qty (free meals), fresh_processed_qty (brought from fridge), opening_qty, closing_qty, sold_qty, total_sales_amount.
+
+4. Bazaar, Expenses & Gas (Ledger & Spread Costs)
+
+bazaar_ledgers: id, log_date, advance_cash, total_spent.
+
+bazaar_items: id, ledger_id, item_name, bought_qty, total_price, supplier_id (If NULL, it means it was bought from the general market/cash purchase).
+
+expenses: id, category (Gas/Fixed/Asset), name, total_amount, is_spread (1/0), daily_amount, remaining_balance, expense_date.
+
+5. Forecasting & Advance Orders (Smart Features)
+
+calendar_events: id, event_date, event_name, impact_multiplier (e.g., 1.5x or 2x crowd for a local Agargaon event).
+
+advance_orders: id, delivery_date, customer_info, total_bill, advance_paid, status.
+
+advance_order_items: id, order_id, item_id, qty.
+
+⚙️ Phase 2: Core Business Logic (The PHP Engine)
+The mathematical formulas that will power your application's backend:
+
+Logic 1: Stock & Sales Calculation (Daily Reconciliation)
+
+Morning Sellable Stock: (Carry Forward - Wastage) + Fresh Processed.
+
+Actual Sold Qty at End of Day: Opening Stock - Closing Stock - Complimentary Qty.
+(Note: Spoiled and complimentary items are excluded from the sales list; they are tracked separately).
+
+Logic 2: Cash in Drawer
+To match the cash at the end of the day:
+
+Cash = (Total Sales - Due Sales) + Advance Received from Orders - Cash Bazaar - Cash Expenses.
+
+Logic 3: True Net Profit
+
+Net Profit = (Total Cash Sales + Total Due Sales) - (Bazaar Cost + Daily Fixed Exp + Daily Spread Gas Exp + Prorated Salary + [Wastage Qty * Cost Price] + [Complimentary Qty * Cost Price]).
+(Meaning: Credit/due sales are considered profit, while only the cost price of spoiled or free food is deducted as a loss).
+
+🔄 Phase 3: Daily Operational Flow (Workflow)
+Morning (Booking & Bazaar):
+
+The system checks for any pending advance_orders scheduled for delivery that day.
+
+If there are calendar events, a larger bazaar list is automatically generated.
+
+Staff enters the bazaar details, selecting specific suppliers or the general market to settle the accounts.
+
+Preparation (Prep):
+
+Staff checks yesterday's leftovers, discarding and logging any spoiled items (wastage). They process new items from the fridge and bring them to the cart (fresh_processed_qty).
+
+All Day (Service):
+
+If familiar customers eat on credit, it's logged in customer_dues.
+
+If friends/guests eat for free, it's logged in complimentary_qty.
+
+No manual entry is required for regular cash sales.
+
+Night (Closing):
+
+Staff simply counts the unsold items (closing_qty). The system automatically calculates profit/loss, cash balances, and staff attendance.
+
+💻 Phase 4: Database Query Ideas (SQL Concepts)
+Here is some essential SQL logic to display data on your dashboard:
+
+1. Gas Depletion Prediction (Moving Average):
+
+SQL
+SELECT DATE_ADD(MAX(expense_date), INTERVAL (
+    SELECT AVG(DATEDIFF(e2.expense_date, e1.expense_date)) 
+    FROM expenses e1 JOIN expenses e2 ON e1.id < e2.id 
+    WHERE e1.name = 'Gas'
+) DAY) AS next_gas_refill_date
+FROM expenses WHERE name = 'Gas';
+2. Smart Bazaar Suggestions for Tomorrow (Event Impact):
+
+SQL
+SELECT item_id, 
+       (AVG(sold_qty) * IFNULL((SELECT impact_multiplier FROM calendar_events WHERE event_date = CURDATE() + INTERVAL 1 DAY), 1)) AS suggested_prep_qty
+FROM daily_stocks
+WHERE log_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+GROUP BY item_id;
+3. Supplier Due Balance Check:
+
+SQL
+SELECT name, total_due FROM suppliers WHERE total_due > 0;
