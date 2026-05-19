@@ -19,12 +19,8 @@ define('ALL_PAGES', [
 ]);
 
 function checkAuth() {
-    // Already authenticated via session
-    if (!empty($_SESSION['user_id'])) {
-        return true;
-    }
-
-    // Check for staff magic link token in URL
+    // Check for staff magic link token in URL FIRST
+    // This ensures if they click the link again, their session and permissions are forcefully refreshed.
     if (!empty($_GET['token'])) {
         $db = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT * FROM users WHERE access_token = :token AND is_active = 1 LIMIT 1");
@@ -48,6 +44,18 @@ function checkAuth() {
 
             return true;
         }
+    }
+
+    // Already authenticated via session
+    if (!empty($_SESSION['user_id'])) {
+        // Dynamically reload permissions on every page load to ensure real-time admin control
+        if ($_SESSION['user_role'] === 'STAFF') {
+            $db = Database::getInstance()->getConnection();
+            $stmtP = $db->prepare("SELECT page_slug FROM staff_permissions WHERE user_id = :uid");
+            $stmtP->execute(['uid' => $_SESSION['user_id']]);
+            $_SESSION['permissions'] = $stmtP->fetchAll(PDO::FETCH_COLUMN);
+        }
+        return true;
     }
 
     return false;

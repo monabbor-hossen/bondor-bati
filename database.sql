@@ -23,6 +23,14 @@ CREATE TABLE IF NOT EXISTS staff_salaries (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS staff_permissions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    page_slug VARCHAR(50) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_page (user_id, page_slug)
+);
+
 CREATE TABLE IF NOT EXISTS attendance_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
