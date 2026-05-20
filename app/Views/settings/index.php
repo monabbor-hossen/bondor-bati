@@ -46,7 +46,7 @@ $role = $_SESSION['role'] ?? 'staff';
                 </div>
                 <i class="fas fa-chevron-right text-xs text-text-muted group-hover:text-amber-400 transition-colors"></i>
             </a>
-            <a href="?url=admin/spread_costs" class="flex items-center justify-between py-4 px-2 border-b border-border/50 hover:bg-surface/50 transition-colors group">
+            <a href="?url=finance/spreadCosts" class="flex items-center justify-between py-4 px-2 border-b border-border/50 hover:bg-surface/50 transition-colors group">
                 <div class="flex items-center gap-4">
                     <i class="fas fa-money-bill-wave text-lg text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)] group-hover:scale-110 transition-transform"></i>
                     <span class="text-sm font-semibold text-text-primary"><?= __('link_spread_costs') ?></span>

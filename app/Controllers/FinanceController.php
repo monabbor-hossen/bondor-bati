@@ -114,4 +114,64 @@ public function __construct() {
 
         return $totalRevenue - $totalCosts;
     }
+
+    // ══════════════════════════════════════════════════════════════
+    //  SPREAD COSTS & FIXED COSTS
+    // ══════════════════════════════════════════════════════════════
+
+    public function spreadCosts() {
+        $this->requireAdmin();
+
+        $fixedCosts = $this->db->query("SELECT * FROM fixed_daily_costs ORDER BY name")->fetchAll();
+        $spreadCosts = $this->db->query("SELECT * FROM spread_costs ORDER BY asset_name")->fetchAll();
+
+        $this->view('finance/spread_costs', [
+            'pageTitle' => __('link_spread_costs'),
+            'activeNav' => 'settings',
+            'fixedCosts' => $fixedCosts,
+            'spreadCosts' => $spreadCosts
+        ]);
+    }
+
+    public function addFixedCost() {
+        $this->requireAdmin();
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        $name = trim($data['name'] ?? '');
+        $amount = (float)($data['amount'] ?? 0);
+        
+        if (empty($name) || $amount <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid data']);
+        }
+
+        $stmt = $this->db->prepare("INSERT INTO fixed_daily_costs (name, daily_amount, is_active) VALUES (:name, :amount, 1)");
+        $stmt->execute([':name' => $name, ':amount' => $amount]);
+        
+        $this->json(['success' => true]);
+    }
+
+    public function addSpreadCost() {
+        $this->requireAdmin();
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        $name = trim($data['asset_name'] ?? '');
+        $total = (float)($data['total_cost'] ?? 0);
+        $days = (int)($data['spread_days'] ?? 0);
+        
+        if (empty($name) || $total <= 0 || $days <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid data']);
+        }
+        
+        $daily = round($total / $days, 2);
+
+        $stmt = $this->db->prepare("INSERT INTO spread_costs (asset_name, total_cost, spread_days, daily_deduction) VALUES (:name, :total, :days, :daily)");
+        $stmt->execute([
+            ':name' => $name,
+            ':total' => $total,
+            ':days' => $days,
+            ':daily' => $daily
+        ]);
+        
+        $this->json(['success' => true]);
+    }
 }
