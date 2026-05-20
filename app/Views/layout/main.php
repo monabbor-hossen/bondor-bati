@@ -194,9 +194,10 @@
                     ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'bazaar'],
                 ];
 
-                // Admin-only tabs
+        // ── Admin-only tabs
                 if ($role === 'admin') {
                     $nav[] = ['url' => 'analytics', 'key' => 'analytics', 'icon' => 'fas fa-chart-line', 'label' => 'analytics'];
+                    $nav[] = ['url' => 'admin/settings', 'key' => 'settings', 'icon' => 'fas fa-cog', 'label' => 'settings'];
                 }
 
                 foreach ($nav as $item):
@@ -219,7 +220,7 @@
     <div id="toast-container"></div>
 
     <!-- ═══════════════════════════════════════════════════════
-         GLOBAL JS UTILITIES
+         GLOBAL JS UTILITIES & INDEXEDDB SYNC
     ════════════════════════════════════════════════════════ -->
     <script>
         // ── Toast Notifications ───────────────────────────────
@@ -239,6 +240,74 @@
             setTimeout(() => toast.remove(), duration);
         }
 
+        // ── IndexedDB Offline Queue ───────────────────────────
+        const DB_NAME = 'bondor_sync_db';
+        const STORE_NAME = 'sync_queue';
+        
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+        
+        async function saveToQueue(url, data) {
+            const db = await initDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).add({ url, data, timestamp: Date.now() });
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+        
+        async function processQueue() {
+            if (!navigator.onLine) return;
+            const db = await initDB();
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const request = store.getAll();
+            
+            request.onsuccess = async () => {
+                const items = request.result;
+                if (items.length === 0) return;
+                
+                showToast(`Syncing ${items.length} offline records...`, 'info');
+                let successCount = 0;
+                
+                for (let item of items) {
+                    try {
+                        const res = await fetch(item.url, {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(item.data)
+                        });
+                        if (res.ok) {
+                            await new Promise((resolve) => {
+                                const delTx = db.transaction(STORE_NAME, 'readwrite');
+                                delTx.objectStore(STORE_NAME).delete(item.id);
+                                delTx.oncomplete = resolve;
+                            });
+                            successCount++;
+                        }
+                    } catch (e) {
+                        console.error('Sync failed for item', item);
+                    }
+                }
+                
+                if (successCount > 0) {
+                    showToast(`Successfully synced ${successCount} records.`, 'success');
+                }
+            };
+        }
+
         // ── Offline/Online Detection ──────────────────────────
         const offlineBanner = document.getElementById('offline-banner');
         const connDot       = document.getElementById('connection-dot');
@@ -249,6 +318,7 @@
                 connDot.classList.remove('bg-warning');
                 connDot.classList.add('bg-success');
                 connDot.title = 'Online';
+                processQueue();
             } else {
                 offlineBanner.style.display = 'block';
                 connDot.classList.remove('bg-success');
@@ -266,8 +336,14 @@
             return '৳' + parseFloat(amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0});
         }
 
-        // ── AJAX Helper ───────────────────────────────────────
+        // ── AJAX Helper with Queueing ─────────────────────────
         async function apiPost(url, data) {
+            if (!navigator.onLine) {
+                await saveToQueue(url, data);
+                showToast('Offline: Data saved locally. Will sync when online.', 'warning');
+                return { success: true, offline: true, message: 'Saved to local queue.' };
+            }
+
             try {
                 const res = await fetch(url, {
                     method: 'POST',
@@ -276,8 +352,9 @@
                 });
                 return await res.json();
             } catch (err) {
-                showToast('Network error. Try again.', 'error');
-                return { success: false, error: err.message };
+                await saveToQueue(url, data);
+                showToast('Network error: Data saved locally.', 'warning');
+                return { success: true, offline: true, message: 'Saved to local queue.' };
             }
         }
     </script>
