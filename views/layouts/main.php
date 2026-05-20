@@ -21,8 +21,11 @@
     <?php $currentPage = $page ?? 'dashboard'; ?>
     <?php $user = currentUser(); ?>
     <aside class="sidebar glass-panel" id="sidebar">
-        <div class="brand">
-            <i class="fa-solid fa-fire-burner"></i> Bondor Bati
+        <div class="brand" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span><i class="fa-solid fa-fire-burner"></i> Bondor Bati</span>
+            <a href="?<?= http_build_query(array_merge($_GET, ['action' => 'toggle_lang'])) ?>" class="btn btn-glass" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; text-decoration: none; border-radius: 6px;">
+                <?= ($_SESSION['lang'] ?? 'en') === 'en' ? 'বাংলা' : 'EN' ?>
+            </a>
         </div>
         
         <ul class="nav-links">
@@ -34,7 +37,7 @@
                 $meta = ALL_PAGES[$slug];
             ?>
             <li><a href="?page=<?= $slug; ?>" class="nav-item <?= $currentPage === $slug ? 'active' : ''; ?>">
-                <i class="fa-solid <?= $meta['icon']; ?>"></i> <?= $meta['label']; ?>
+                <i class="fa-solid <?= $meta['icon']; ?>"></i> <?= __($meta['label']); ?>
             </a></li>
             <?php endforeach; ?>
         </ul>
@@ -42,12 +45,12 @@
         <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.5rem;">
             <?php if (canAccess('items')): ?>
             <a href="?page=items" class="btn btn-glass <?= $currentPage === 'items' ? 'active' : ''; ?>" style="width: 100%; justify-content: center; text-decoration: none;">
-                <i class="fa-solid fa-list"></i> Menu Items
+                <i class="fa-solid fa-list"></i> <?= __('Menu Items'); ?>
             </a>
             <?php endif; ?>
             <?php if (canAccess('suppliers')): ?>
             <a href="?page=suppliers" class="btn btn-glass <?= $currentPage === 'suppliers' ? 'active' : ''; ?>" style="width: 100%; justify-content: center; text-decoration: none;">
-                <i class="fa-solid fa-truck"></i> Suppliers
+                <i class="fa-solid fa-truck"></i> <?= __('Suppliers'); ?>
             </a>
             <?php endif; ?>
 
@@ -67,7 +70,7 @@
                     </div>
                 </div>
                 <a href="logout.php" class="btn btn-danger" style="width: 100%; justify-content: center; text-decoration: none;">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> <?= __('Logout'); ?>
                 </a>
             </div>
         </div>

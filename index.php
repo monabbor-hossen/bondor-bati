@@ -7,9 +7,20 @@ session_start();
 
 require_once __DIR__ . '/config/Database.php';
 require_once __DIR__ . '/core/Auth.php';
+require_once __DIR__ . '/core/Translate.php';
 require_once __DIR__ . '/models/DashboardModel.php';
 require_once __DIR__ . '/models/ForecastingModel.php';
 require_once __DIR__ . '/models/InventoryModel.php';
+
+// Handle language toggle
+if (isset($_GET['action']) && $_GET['action'] === 'toggle_lang') {
+    $_SESSION['lang'] = ($_SESSION['lang'] ?? 'en') === 'en' ? 'bn' : 'en';
+    $params = $_GET;
+    unset($params['action']);
+    $queryString = http_build_query($params);
+    header('Location: ' . strtok($_SERVER["REQUEST_URI"], '?') . ($queryString ? '?' . $queryString : ''));
+    exit;
+}
 
 $db = Database::getInstance()->getConnection();
 
@@ -50,6 +61,22 @@ switch ($page) {
             ? round(($profitData['net_profit'] - $profitYesterday['net_profit']) / abs($profitYesterday['net_profit']) * 100)
             : 0;
 
+        // Custom Range Report Logic
+        $range = $_GET['range'] ?? 'daily';
+        $reportFrom = $today;
+        $reportTo = $today;
+        if ($range === 'monthly') {
+            $reportFrom = date('Y-m-01');
+            $reportTo = date('Y-m-t');
+        } elseif ($range === 'lifetime') {
+            $reportFrom = '2000-01-01';
+            $reportTo = $today;
+        } elseif ($range === 'custom') {
+            $reportFrom = $_GET['from_date'] ?? $today;
+            $reportTo = $_GET['to_date'] ?? $today;
+        }
+        $rangeReport = $dashModel->getRangeReport($reportFrom, $reportTo);
+
         $nextGasDate = $forecastModel->getNextGasRefillDate();
         $gasDaysLeft = $nextGasDate ? max(0, (int)((strtotime($nextGasDate) - time()) / 86400)) : null;
         $bazaarSuggestions = $forecastModel->getSmartBazaarSuggestions();
@@ -71,11 +98,23 @@ switch ($page) {
         $totalItems = $db->query("SELECT COUNT(*) FROM items")->fetchColumn();
         $totalStaff = $db->query("SELECT COUNT(*) FROM users WHERE role='STAFF' AND is_active=1")->fetchColumn();
 
+        $lowStockItems = $db->query("
+            SELECT i.id, i.item_name, i.min_threshold,
+                   (SELECT COALESCE(ds.closing_qty, ds.opening_qty, 0) 
+                    FROM daily_stocks ds 
+                    WHERE ds.item_id = i.id 
+                    ORDER BY ds.log_date DESC, FIELD(ds.shift, 'Night', 'Evening', 'Morning') DESC 
+                    LIMIT 1) as current_qty
+            FROM items i
+            HAVING current_qty < i.min_threshold
+        ")->fetchAll();
+
         $contentView = __DIR__ . '/views/dashboard/index.php';
         break;
 
     case 'items':
         $items = $db->query("SELECT * FROM items ORDER BY id DESC")->fetchAll();
+        $rawInventory = $db->query("SELECT * FROM raw_inventory ORDER BY item_name")->fetchAll();
         $contentView = __DIR__ . '/views/items/index.php';
         break;
 
@@ -86,6 +125,7 @@ switch ($page) {
 
     case 'morning':
         $today = date('Y-m-d');
+        $shift = $_GET['shift'] ?? 'Morning';
         $items = $db->query("SELECT * FROM items ORDER BY item_name")->fetchAll();
         $suppliers = $db->query("SELECT * FROM suppliers ORDER BY name")->fetchAll();
 
@@ -94,6 +134,12 @@ switch ($page) {
         $stmtL->execute(['d' => $today]);
         $todayLedger = $stmtL->fetch();
 
+        // Yesterday's bazaar ledger (for carried forward cash)
+        $stmtY = $db->prepare("SELECT carry_forward_cash FROM bazaar_ledgers WHERE log_date = :d");
+        $stmtY->execute(['d' => date('Y-m-d', strtotime('-1 day'))]);
+        $yesterdayLedger = $stmtY->fetch();
+        $carriedAdvance = $yesterdayLedger ? (float)$yesterdayLedger['carry_forward_cash'] : 0;
+
         $bazaarItems = [];
         if ($todayLedger) {
             $stmtBI = $db->prepare("SELECT bi.*, s.name as supplier_name FROM bazaar_items bi LEFT JOIN suppliers s ON bi.supplier_id = s.id WHERE bi.ledger_id = :lid");
@@ -101,10 +147,32 @@ switch ($page) {
             $bazaarItems = $stmtBI->fetchAll();
         }
 
-        // Today's stock entries
-        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
-        $stmtDS->execute(['d' => $today]);
+        // Today's stock entries for this shift
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d AND ds.shift = :shift");
+        $stmtDS->execute(['d' => $today, 'shift' => $shift]);
         $todayStocks = $stmtDS->fetchAll();
+
+        // Map existing stock records
+        $todayStocksMap = [];
+        foreach ($todayStocks as $ts) {
+            $todayStocksMap[$ts['item_id']] = $ts;
+        }
+
+        // Fetch Carry Forward from previous shift
+        $prevDate = $today;
+        $prevShift = 'Night';
+        if ($shift === 'Morning') {
+            $prevDate = date('Y-m-d', strtotime('-1 day'));
+            $prevShift = 'Night';
+        } elseif ($shift === 'Evening') {
+            $prevShift = 'Morning';
+        } elseif ($shift === 'Night') {
+            $prevShift = 'Evening';
+        }
+
+        $stmtPrev = $db->prepare("SELECT item_id, closing_qty FROM daily_stocks WHERE log_date = :d AND shift = :shift");
+        $stmtPrev->execute(['d' => $prevDate, 'shift' => $prevShift]);
+        $prevClosings = $stmtPrev->fetchAll(PDO::FETCH_KEY_PAIR) ?: [];
 
         // Pending advance orders for today
         $stmtOrd = $db->prepare("SELECT * FROM advance_orders WHERE delivery_date = :d AND status = 'Pending'");
@@ -116,11 +184,12 @@ switch ($page) {
 
     case 'service':
         $today = date('Y-m-d');
+        $shift = $_GET['shift'] ?? 'Morning';
         $items = $db->query("SELECT * FROM items ORDER BY item_name")->fetchAll();
 
-        // Today's stocks (for complimentary logging)
-        $stmtDS = $db->prepare("SELECT ds.*, i.item_name FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
-        $stmtDS->execute(['d' => $today]);
+        // Today's stocks for this shift (for complimentary logging)
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d AND ds.shift = :shift");
+        $stmtDS->execute(['d' => $today, 'shift' => $shift]);
         $todayStocks = $stmtDS->fetchAll();
 
         // Customer dues
@@ -131,15 +200,16 @@ switch ($page) {
 
     case 'closing':
         $today = date('Y-m-d');
+        $shift = $_GET['shift'] ?? 'Morning';
         $dashModel = new DashboardModel();
 
-        // Today's stocks for closing
-        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price, i.cost_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d");
-        $stmtDS->execute(['d' => $today]);
+        // Today's stocks for closing in this shift
+        $stmtDS = $db->prepare("SELECT ds.*, i.item_name, i.selling_price, i.cost_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.log_date = :d AND ds.shift = :shift");
+        $stmtDS->execute(['d' => $today, 'shift' => $shift]);
         $todayStocks = $stmtDS->fetchAll();
 
-        $cashData = $dashModel->getCashInDrawer($today);
-        $profitData = $dashModel->getNetProfit($today);
+        $cashData = $dashModel->getCashInDrawer($today, $shift);
+        $profitData = $dashModel->getNetProfit($today, $shift);
 
         $contentView = __DIR__ . '/views/closing/index.php';
         break;

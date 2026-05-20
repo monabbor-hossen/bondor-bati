@@ -1,110 +1,135 @@
-🗄️ Phase 1: Master Database Schema (MySQL Schema)
-The entire system is divided into 5 logical modules.
+🏪 Bondor Bati POS — Project Context & Architecture
+=======================================================
+Built with: Raw PHP (no frameworks), MySQL, Vanilla CSS/JS
+Stack: LAMPP (Apache + MySQL + PHP), PWA-ready
 
-1. User, Staff & Access (Auth & HR)
+🗄️ DATABASE SCHEMA
+===================
 
-users: id, name, username (for Admin), password, access_token (Staff magic link), role (ADMIN/STAFF), is_active.
+1. Users & Auth
+   - users: id, name, username, password, access_token (magic link, single-use), role (ADMIN/STAFF), is_active
+   - staff_salaries: id, user_id, monthly_salary, daily_rate (generated: monthly/30), start_date, end_date
+   - attendance_logs: id, user_id, absent_date, deduct_salary (1/0)
+   - staff_permissions: id, user_id, page_slug (real-time access control)
 
-staff_salaries: id, user_id, monthly_salary, daily_rate (Monthly / 30), start_date, end_date.
+2. Suppliers & Customer Dues
+   - suppliers: id, name, contact, total_due
+   - customer_dues: id, customer_name, phone, due_amount, log_date, shift, status (Unpaid/Paid)
 
-attendance_logs: id, user_id, absent_date, deduct_salary (1/0).
+3. Inventory & Daily Stock
+   - items: id, item_name, selling_price, cost_price, min_threshold (stock alert)
+   - raw_inventory: id, item_name, current_qty, avg_unit_price
+   - daily_stocks: id, item_id, log_date, shift (Morning/Evening/Night), user_id,
+                   carry_forward_qty, wastage_qty, complimentary_qty, fresh_processed_qty,
+                   opening_qty, closing_qty, sold_qty, total_sales_amount
+     UNIQUE: (item_id, log_date, shift)
 
-2. Suppliers & Customer Dues (Stakeholders & Dues)
+4. Bazaar & Expenses
+   - bazaar_ledgers: id, log_date, advance_cash, total_spent
+   - bazaar_items: id, ledger_id, item_name, bought_qty, total_price, supplier_id
+   - expenses: id, category (Gas/Fixed/Asset), name, total_amount, is_spread, daily_amount, remaining_balance, expense_date
 
-suppliers: id, name, contact, total_due (For specific vendors, like your Bagabarir ghee supplier or regular milkmen).
+5. Forecasting & Orders
+   - calendar_events: id, event_date, event_name, impact_multiplier
+   - advance_orders: id, delivery_date, customer_info, total_bill, advance_paid, status
+   - advance_order_items: id, order_id, item_id, qty
 
-customer_dues: id, customer_name, phone, due_amount, log_date, status (Unpaid/Paid).
+⚙️ CORE BUSINESS LOGIC
+========================
 
-3. Inventory, Wastage & Daily Stock (Inventory Engine)
+Logic 1 — Stock & Sales (3-Shift System)
+  Opening Qty = (Carry Forward - Wastage) + Fresh Processed
+  Sold Qty = Opening Qty - Closing Qty - Complimentary Qty
+  Shifts: Morning → Evening → Night (carry-forward auto-loads previous shift's closing)
 
-items (Menu): id, item_name (e.g., BBQ Tilapia), selling_price, cost_price (used to calculate losses for free food/wastage).
+Logic 2 — Cash in Drawer
+  Cash = (Total Sales - Due Sales) + Advance Received - Cash Bazaar - Cash Expenses
 
-raw_inventory (Fridge/Store): id, item_name, current_qty, avg_unit_price.
+Logic 3 — True Net Profit
+  Net Profit = Total Sales - (Bazaar Cost + Fixed Exp + Spread Gas + Prorated Salary + Wastage*CostPrice + Comp*CostPrice)
+  Per-shift: Salary and fixed expenses prorated by ÷3
 
-daily_stocks (Front Shop Stock): id, item_id, log_date, carry_forward_qty (yesterday's leftover), wastage_qty (spoiled), complimentary_qty (free meals), fresh_processed_qty (brought from fridge), opening_qty, closing_qty, sold_qty, total_sales_amount.
+Logic 4 — Dues Separation
+  Dues (Baki): Counted as revenue, NOT in cash drawer (unrealized profit)
+  Complimentary: Not a sale, deducted at cost price as promotional loss
 
-4. Bazaar, Expenses & Gas (Ledger & Spread Costs)
+Logic 5 — Smart Gas Prediction
+  next_gas_date = last_gas_date + avg_days_between_gas_purchases
 
-bazaar_ledgers: id, log_date, advance_cash, total_spent.
+Logic 6 — Bazaar Suggestions
+  suggested_qty = avg_7day_sold * tomorrow_event_multiplier (1.0 if no event)
 
-bazaar_items: id, ledger_id, item_name, bought_qty, total_price, supplier_id (If NULL, it means it was bought from the general market/cash purchase).
+Logic 7 — Spread Expenses
+  Each day's expense load = SUM of one-time expenses on that day + daily_amount of all active spread expenses
 
-expenses: id, category (Gas/Fixed/Asset), name, total_amount, is_spread (1/0), daily_amount, remaining_balance, expense_date.
+Logic 8 — Staff Access Control (Real-time)
+  Permissions reloaded from DB on every page load (no caching in session for changes)
+  Magic links are single-use (token nullified after first authentication)
 
-5. Forecasting & Advance Orders (Smart Features)
+Logic 9 — Custom Range Reports
+  Date ranges: Daily / Monthly / Lifetime / Custom
+  Metrics: Total Sales, Total Dues, Bazaar Cost, Spread Expenses (with overlap math), Salary Cost, Wastage Loss, Net Profit
+  Analytics: Top 5 selling items, Top 5 high wastage items
 
-calendar_events: id, event_date, event_name, impact_multiplier (e.g., 1.5x or 2x crowd for a local Agargaon event).
+Logic 10 — Low Stock Alerts
+  If (latest closing_qty OR opening_qty) < items.min_threshold → show alert on dashboard + badge in Morning Prep view
 
-advance_orders: id, delivery_date, customer_info, total_bill, advance_paid, status.
+🔐 AUTHENTICATION
+=================
+- Admin: session-based username/password (login.php)
+- Staff: Magic link (?token=...) → session set → token nullified in DB (single-use)
+- Staff login page accepts full URL or bare token
+- Staff permissions are real-time (reloaded every request)
 
-advance_order_items: id, order_id, item_id, qty.
+🌐 ROUTES (index.php)
+======================
+?page=dashboard    Admin overview, low stock alerts, range reports
+?page=morning      Bazaar entry + stock preparation (shift-aware)
+?page=service      Customer dues + complimentary log (shift-aware)
+?page=closing      Night closing form + auto-calculated results (shift-aware)
+?page=forecast     Expenses, calendar events, advance orders, bazaar suggestions
+?page=staff        Staff management, permissions, attendance, supplier dues
+?page=items        Menu items CRUD with min_threshold + inline edit
+?page=suppliers    Suppliers CRUD with pay-due modal
+?action=toggle_lang  Switches session lang between 'en' and 'bn'
 
-⚙️ Phase 2: Core Business Logic (The PHP Engine)
-The mathematical formulas that will power your application's backend:
+📁 FILE STRUCTURE
+=================
+/index.php          Main router + controller logic
+/api.php            All AJAX endpoints (CRUD, auth, payments)
+/login.php          Admin login form handler
+/logout.php         Session destroy
+/database.sql       Master schema
+/manifest.json      PWA manifest
+/sw.js              Service Worker (offline-first cache)
+/config/Database.php  PDO singleton
+/core/Auth.php      Auth middleware, canAccess(), allowedPages()
+/core/Translate.php __() helper + EN/BN dictionary
+/models/DashboardModel.php  getCashInDrawer(), getNetProfit(), getRangeReport()
+/models/ForecastingModel.php  Gas prediction, bazaar suggestions, supplier dues
+/models/InventoryModel.php    Stock logging, carry-forward logic
+/assets/css/style.css  Glassmorphic dark theme
+/assets/js/main.js    AJAX, tabs, offline queue, toast notifications
+/views/layouts/main.php  Shell (sidebar, lang toggle, toast container)
+/views/dashboard/index.php  Main dashboard
+/views/morning/index.php   Shift-aware stock prep
+/views/service/index.php   Shift-aware dues + complimentary
+/views/closing/index.php   Shift-aware closing
+/views/forecast/index.php  Expenses, events, orders, suggestions
+/views/staff/index.php     Staff + permissions + attendance
+/views/items/index.php     Items with edit modal
+/views/suppliers/index.php Suppliers with pay-due modal
+/views/auth/login.php      Login page
 
-Logic 1: Stock & Sales Calculation (Daily Reconciliation)
+📱 OFFLINE SUPPORT
+==================
+- Service Worker caches CSS/JS/login
+- JS offline queue: forms and actions stored in localStorage when offline
+- Auto-sync fires on navigator.online event
+- Visual amber banner shows pending queue count with "Sync Now" button
 
-Morning Sellable Stock: (Carry Forward - Wastage) + Fresh Processed.
-
-Actual Sold Qty at End of Day: Opening Stock - Closing Stock - Complimentary Qty.
-(Note: Spoiled and complimentary items are excluded from the sales list; they are tracked separately).
-
-Logic 2: Cash in Drawer
-To match the cash at the end of the day:
-
-Cash = (Total Sales - Due Sales) + Advance Received from Orders - Cash Bazaar - Cash Expenses.
-
-Logic 3: True Net Profit
-
-Net Profit = (Total Cash Sales + Total Due Sales) - (Bazaar Cost + Daily Fixed Exp + Daily Spread Gas Exp + Prorated Salary + [Wastage Qty * Cost Price] + [Complimentary Qty * Cost Price]).
-(Meaning: Credit/due sales are considered profit, while only the cost price of spoiled or free food is deducted as a loss).
-
-🔄 Phase 3: Daily Operational Flow (Workflow)
-Morning (Booking & Bazaar):
-
-The system checks for any pending advance_orders scheduled for delivery that day.
-
-If there are calendar events, a larger bazaar list is automatically generated.
-
-Staff enters the bazaar details, selecting specific suppliers or the general market to settle the accounts.
-
-Preparation (Prep):
-
-Staff checks yesterday's leftovers, discarding and logging any spoiled items (wastage). They process new items from the fridge and bring them to the cart (fresh_processed_qty).
-
-All Day (Service):
-
-If familiar customers eat on credit, it's logged in customer_dues.
-
-If friends/guests eat for free, it's logged in complimentary_qty.
-
-No manual entry is required for regular cash sales.
-
-Night (Closing):
-
-Staff simply counts the unsold items (closing_qty). The system automatically calculates profit/loss, cash balances, and staff attendance.
-
-💻 Phase 4: Database Query Ideas (SQL Concepts)
-Here is some essential SQL logic to display data on your dashboard:
-
-1. Gas Depletion Prediction (Moving Average):
-
-SQL
-SELECT DATE_ADD(MAX(expense_date), INTERVAL (
-    SELECT AVG(DATEDIFF(e2.expense_date, e1.expense_date)) 
-    FROM expenses e1 JOIN expenses e2 ON e1.id < e2.id 
-    WHERE e1.name = 'Gas'
-) DAY) AS next_gas_refill_date
-FROM expenses WHERE name = 'Gas';
-2. Smart Bazaar Suggestions for Tomorrow (Event Impact):
-
-SQL
-SELECT item_id, 
-       (AVG(sold_qty) * IFNULL((SELECT impact_multiplier FROM calendar_events WHERE event_date = CURDATE() + INTERVAL 1 DAY), 1)) AS suggested_prep_qty
-FROM daily_stocks
-WHERE log_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-GROUP BY item_id;
-3. Supplier Due Balance Check:
-
-SQL
-SELECT name, total_due FROM suppliers WHERE total_due > 0;
+🌍 BILINGUAL SUPPORT
+====================
+- Toggle: ?action=toggle_lang (EN ↔ BN stored in $_SESSION['lang'])
+- All views wrapped with __('...') helper
+- Dictionary in core/Translate.php (120+ key-value pairs)

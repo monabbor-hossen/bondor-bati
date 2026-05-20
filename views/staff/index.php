@@ -80,13 +80,16 @@
                                     </button>
                                 </div>
                             <?php else: ?>
-                                <span style="color: var(--text-muted);">—</span>
+                                <span style="color: var(--text-muted); font-size: 0.8rem;"><i class="fa-solid fa-link-slash"></i> Used</span>
                             <?php endif; ?>
                         </td>
                         <td><span class="badge <?= $u['is_active'] ? 'success' : 'danger'; ?>"><?= $u['is_active'] ? 'Active' : 'Inactive'; ?></span></td>
-                        <td>
-                            <button class="btn btn-glass btn-sm" data-action="toggle_staff" data-id="<?= $u['id']; ?>">
+                        <td style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-glass btn-sm" data-action="toggle_staff" data-id="<?= $u['id']; ?>" title="Toggle Active/Inactive">
                                 <i class="fa-solid fa-<?= $u['is_active'] ? 'pause' : 'play'; ?>"></i>
+                            </button>
+                            <button class="btn btn-glass btn-sm" onclick="regenerateToken(<?= $u['id']; ?>)" title="Generate New Magic Link">
+                                <i class="fa-solid fa-rotate"></i>
                             </button>
                         </td>
                     </tr>
@@ -110,9 +113,30 @@
         navigator.clipboard.writeText(url).then(() => {
             showToast('Staff access URL copied to clipboard!', 'success');
         }).catch(() => {
-            // Fallback for older browsers
             prompt('Copy this URL:', url);
         });
+    }
+
+    function regenerateToken(userId) {
+        if (!confirm('Generate a new magic link for this staff member? The old link will stop working immediately.')) return;
+        const fd = new FormData();
+        fd.append('action', 'regenerate_token');
+        fd.append('id', userId);
+        fetch('api.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const url = window.location.origin + window.location.pathname + '?token=' + data.token;
+                    navigator.clipboard.writeText(url).then(() => {
+                        showToast('New magic link generated & copied!', 'success');
+                    }).catch(() => {
+                        prompt('New Staff Access URL:', url);
+                    });
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
     }
     </script>
 </div>
@@ -206,7 +230,8 @@
             <h2><i class="fa-solid fa-shield-halved"></i> Page Access Control</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-            Toggle which pages each staff member can see and access. Admins always have full access. Changes take effect on the staff member's next login.
+            Toggle which pages each staff member can see and access. Admins always have full access.
+            <strong style="color: var(--success);"><i class="fa-solid fa-bolt"></i> Changes apply in real-time</strong> — no re-login needed.
         </p>
 
         <?php

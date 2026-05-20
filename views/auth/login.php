@@ -122,15 +122,36 @@
 
             <!-- Staff Magic Link Access -->
             <div class="staff-link-section">
-                <p><i class="fa-solid fa-wand-magic-sparkles"></i> Staff? Enter your access key to log in instantly.</p>
-                <form method="GET" action="index.php">
+                <p><i class="fa-solid fa-wand-magic-sparkles"></i> Staff? Paste your access URL or key below.</p>
+                <form id="staff-token-form" method="GET" action="index.php" onsubmit="extractToken(event)">
                     <div class="token-input-row">
-                        <input type="text" name="token" class="form-control" placeholder="Paste your access key" required>
+                        <input type="text" id="token-input-raw" class="form-control" placeholder="Paste access URL or token key" required>
+                        <input type="hidden" name="token" id="token-hidden">
                         <button type="submit" class="btn btn-glass"><i class="fa-solid fa-key"></i> Go</button>
                     </div>
                 </form>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    <i class="fa-solid fa-circle-info"></i> You can paste the full access link or just the token key.
+                </p>
             </div>
         </div>
     </div>
+    <script>
+    function extractToken(e) {
+        e.preventDefault();
+        const raw = document.getElementById('token-input-raw').value.trim();
+        let token = raw;
+        // If it's a URL, extract the ?token= param
+        try {
+            const url = new URL(raw);
+            const t = url.searchParams.get('token');
+            if (t) token = t;
+        } catch(err) {
+            // Not a URL, use as-is (bare token)
+        }
+        document.getElementById('token-hidden').value = token;
+        document.getElementById('staff-token-form').submit();
+    }
+    </script>
 </body>
 </html>

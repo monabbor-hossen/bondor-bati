@@ -33,6 +33,10 @@ function checkAuth() {
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_token'] = $user['access_token'];
 
+            // Nullify token in database immediately upon successful authentication to make it single-use
+            $stmtNull = $db->prepare("UPDATE users SET access_token = NULL WHERE id = :uid");
+            $stmtNull->execute(['uid' => $user['id']]);
+
             // Load and cache permissions for staff
             if ($user['role'] === 'STAFF') {
                 $stmtP = $db->prepare("SELECT page_slug FROM staff_permissions WHERE user_id = :uid");

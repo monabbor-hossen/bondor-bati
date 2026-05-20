@@ -13,6 +13,24 @@
     </div>
 </header>
 
+<!-- Low Stock Alerts -->
+<?php if (!empty($lowStockItems)): ?>
+<div class="stat-card glass-panel" style="margin-bottom: 1.5rem; border-left: 4px solid var(--danger);">
+    <h3 style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Low Stock Alerts</h3>
+    <div class="list-group" style="margin-top: 0.75rem;">
+        <?php foreach ($lowStockItems as $item): ?>
+        <div class="list-item" style="padding: 0.5rem 0.75rem; border-radius: 6px;">
+            <div class="item-info">
+                <h4><?= htmlspecialchars($item['item_name']); ?></h4>
+                <p>Current Stock: <strong style="color: var(--danger);"><?= $item['current_qty'] ?: 0; ?></strong> | Min Threshold: <?= $item['min_threshold']; ?></p>
+            </div>
+            <span class="badge danger">Low Stock</span>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Top Statistics Row -->
 <div class="grid-cards">
     <!-- True Net Profit -->
@@ -214,3 +232,99 @@
         </div>
     </div>
 </div>
+
+<!-- Range Reporting Panel -->
+<div class="section-panel glass-panel" style="margin-top: 1.5rem; width: 100%;">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <h2><i class="fa-solid fa-chart-pie" style="color: var(--accent-primary);"></i> <?= __('Dynamic Custom Range Report'); ?></h2>
+        
+        <form method="GET" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input type="hidden" name="page" value="dashboard">
+            <select name="range" class="form-control" onchange="toggleCustomDates(this.value)" style="width: auto;">
+                <option value="daily" <?= $range === 'daily' ? 'selected' : ''; ?>><?= __('Daily'); ?></option>
+                <option value="monthly" <?= $range === 'monthly' ? 'selected' : ''; ?>><?= __('Monthly'); ?></option>
+                <option value="lifetime" <?= $range === 'lifetime' ? 'selected' : ''; ?>><?= __('Lifetime'); ?></option>
+                <option value="custom" <?= $range === 'custom' ? 'selected' : ''; ?>><?= __('Custom Date Range'); ?></option>
+            </select>
+            
+            <div id="custom-date-inputs" style="display: <?= $range === 'custom' ? 'flex' : 'none'; ?>; gap: 0.5rem; align-items: center;">
+                <input type="date" name="from_date" class="form-control" value="<?= htmlspecialchars($reportFrom); ?>" style="width: auto;">
+                <span style="color: var(--text-muted);"><?= __('to'); ?></span>
+                <input type="date" name="to_date" class="form-control" value="<?= htmlspecialchars($reportTo); ?>" style="width: auto;">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-filter"></i> <?= __('Filter'); ?></button>
+        </form>
+    </div>
+    
+    <div class="grid-cards" style="margin-top: 1.5rem; margin-bottom: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <div class="stat-card glass-panel" style="background: rgba(255, 255, 255, 0.02);">
+            <h3><?= __('Total Sales'); ?></h3>
+            <div class="value" style="font-size: 1.5rem;">৳ <?= number_format($rangeReport['total_sales'], 0); ?></div>
+        </div>
+        <div class="stat-card glass-panel" style="background: rgba(255, 255, 255, 0.02);">
+            <h3><?= __('Total Dues'); ?></h3>
+            <div class="value" style="font-size: 1.5rem; color: var(--warning);">৳ <?= number_format($rangeReport['total_dues'], 0); ?></div>
+        </div>
+        <div class="stat-card glass-panel" style="background: rgba(255, 255, 255, 0.02);">
+            <h3><?= __('Net Profit'); ?></h3>
+            <div class="value" style="font-size: 1.5rem; color: <?= $rangeReport['net_profit'] >= 0 ? 'var(--success)' : 'var(--danger)'; ?>;">
+                ৳ <?= number_format($rangeReport['net_profit'], 0); ?>
+            </div>
+        </div>
+        <div class="stat-card glass-panel" style="background: rgba(255, 255, 255, 0.02);">
+            <h3><?= __('Wastage Cost'); ?></h3>
+            <div class="value" style="font-size: 1.5rem; color: var(--danger);">৳ <?= number_format($rangeReport['wastage_loss'], 0); ?></div>
+        </div>
+    </div>
+    
+    <div class="sections-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div>
+            <h3 style="font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-trophy" style="color: var(--warning);"></i> <?= __('Top Selling Items'); ?>
+            </h3>
+            <?php if (empty($rangeReport['top_selling'])): ?>
+                <p style="color: var(--text-muted); font-size: 0.9rem;"><?= __('No sales in this range.'); ?></p>
+            <?php else: ?>
+                <div class="list-group">
+                    <?php foreach ($rangeReport['top_selling'] as $item): ?>
+                    <div class="list-item" style="padding: 0.5rem 0.75rem;">
+                        <div class="item-info">
+                            <h4><?= htmlspecialchars($item['item_name']); ?></h4>
+                            <p><?= __('Revenue'); ?>: ৳<?= number_format($item['total_revenue'], 0); ?></p>
+                        </div>
+                        <span class="badge success"><?= round($item['total_sold']); ?> <?= __('sold'); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+        
+        <div>
+            <h3 style="font-size: 1rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-dumpster-fire" style="color: var(--danger);"></i> <?= __('High Wastage Items'); ?>
+            </h3>
+            <?php if (empty($rangeReport['high_wastage'])): ?>
+                <p style="color: var(--text-muted); font-size: 0.9rem;"><?= __('No wastage logged in this range.'); ?></p>
+            <?php else: ?>
+                <div class="list-group">
+                    <?php foreach ($rangeReport['high_wastage'] as $item): ?>
+                    <div class="list-item" style="padding: 0.5rem 0.75rem;">
+                        <div class="item-info">
+                            <h4><?= htmlspecialchars($item['item_name']); ?></h4>
+                            <p><?= __('Cost Loss'); ?>: ৳<?= number_format($item['total_wasted_cost'], 0); ?></p>
+                        </div>
+                        <span class="badge danger"><?= round($item['total_wasted']); ?> <?= __('wasted'); ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCustomDates(val) {
+    document.getElementById('custom-date-inputs').style.display = (val === 'custom') ? 'flex' : 'none';
+}
+</script>

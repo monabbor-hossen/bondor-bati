@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS customer_dues (
     phone VARCHAR(20),
     due_amount DECIMAL(10,2) NOT NULL,
     log_date DATE NOT NULL,
+    shift ENUM('Morning', 'Evening', 'Night') NOT NULL DEFAULT 'Morning',
     status ENUM('Unpaid', 'Paid') DEFAULT 'Unpaid',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,6 +65,8 @@ CREATE TABLE IF NOT EXISTS items (
     item_name VARCHAR(100) NOT NULL,
     selling_price DECIMAL(10,2) NOT NULL,
     cost_price DECIMAL(10,2) NOT NULL,
+    min_threshold DECIMAL(10,2) DEFAULT 10.00,
+    unit VARCHAR(20) DEFAULT 'pcs',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -79,6 +82,8 @@ CREATE TABLE IF NOT EXISTS daily_stocks (
     id INT PRIMARY KEY AUTO_INCREMENT,
     item_id INT NOT NULL,
     log_date DATE NOT NULL,
+    shift ENUM('Morning', 'Evening', 'Night') NOT NULL DEFAULT 'Morning',
+    user_id INT NULL,
     carry_forward_qty DECIMAL(10,2) DEFAULT 0,
     wastage_qty DECIMAL(10,2) DEFAULT 0,
     complimentary_qty DECIMAL(10,2) DEFAULT 0,
@@ -88,7 +93,8 @@ CREATE TABLE IF NOT EXISTS daily_stocks (
     sold_qty DECIMAL(10,2) DEFAULT 0,
     total_sales_amount DECIMAL(10,2) DEFAULT 0,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_item_date (item_id, log_date)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE KEY unique_item_date_shift (item_id, log_date, shift)
 );
 
 -- 4. Bazaar, Expenses & Gas (Ledger & Spread Costs)
@@ -97,6 +103,8 @@ CREATE TABLE IF NOT EXISTS bazaar_ledgers (
     log_date DATE NOT NULL,
     advance_cash DECIMAL(10,2) DEFAULT 0,
     total_spent DECIMAL(10,2) DEFAULT 0,
+    return_cash DECIMAL(10,2) DEFAULT 0,
+    carry_forward_cash DECIMAL(10,2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_date (log_date)
 );
@@ -106,6 +114,7 @@ CREATE TABLE IF NOT EXISTS bazaar_items (
     ledger_id INT NOT NULL,
     item_name VARCHAR(100) NOT NULL,
     bought_qty DECIMAL(10,2) NOT NULL,
+    unit VARCHAR(20) DEFAULT 'pcs',
     total_price DECIMAL(10,2) NOT NULL,
     supplier_id INT,
     FOREIGN KEY (ledger_id) REFERENCES bazaar_ledgers(id) ON DELETE CASCADE,

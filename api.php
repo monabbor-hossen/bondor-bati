@@ -7,6 +7,8 @@ header('Content-Type: application/json');
 session_start();
 
 require_once __DIR__ . '/config/Database.php';
+require_once __DIR__ . '/core/Translate.php';
+require_once __DIR__ . '/core/Auth.php';
 $db = Database::getInstance()->getConnection();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
@@ -19,24 +21,36 @@ try {
         // ITEMS (Menu) CRUD
         // ═══════════════════════════════════════════════════════
         case 'add_item':
-            $stmt = $db->prepare("INSERT INTO items (item_name, selling_price, cost_price) VALUES (:n, :sp, :cp)");
+            $stmt = $db->prepare("INSERT INTO items (item_name, selling_price, cost_price, min_threshold, unit) VALUES (:n, :sp, :cp, :mt, :u)");
             $stmt->execute([
                 'n'  => trim($_POST['item_name']),
                 'sp' => (float)$_POST['selling_price'],
-                'cp' => (float)$_POST['cost_price']
+                'cp' => (float)$_POST['cost_price'],
+                'mt' => (float)($_POST['min_threshold'] ?? 10),
+                'u'  => $_POST['unit'] ?? 'pcs'
             ]);
             $response = ['success' => true, 'message' => 'Item added.'];
             break;
 
         case 'update_item':
-            $stmt = $db->prepare("UPDATE items SET item_name = :n, selling_price = :sp, cost_price = :cp WHERE id = :id");
+            $stmt = $db->prepare("UPDATE items SET item_name = :n, selling_price = :sp, cost_price = :cp, min_threshold = :mt, unit = :u WHERE id = :id");
             $stmt->execute([
                 'n'  => trim($_POST['item_name']),
                 'sp' => (float)$_POST['selling_price'],
                 'cp' => (float)$_POST['cost_price'],
+                'mt' => (float)($_POST['min_threshold'] ?? 10),
+                'u'  => $_POST['unit'] ?? 'pcs',
                 'id' => (int)$_POST['id']
             ]);
             $response = ['success' => true, 'message' => 'Item updated.'];
+            break;
+
+        case 'regenerate_token':
+            requireAdmin();
+            $newToken = bin2hex(random_bytes(32));
+            $db->prepare("UPDATE users SET access_token = :t WHERE id = :id AND role = 'STAFF'")
+               ->execute(['t' => $newToken, 'id' => (int)$_POST['id']]);
+            $response = ['success' => true, 'message' => 'New magic link generated.', 'token' => $newToken];
             break;
 
         case 'delete_item':
@@ -75,12 +89,26 @@ try {
             $response = ['success' => true, 'message' => 'Supplier deleted.'];
             break;
 
+        case 'pay_supplier_due':
+            $amountPaid = (float)($_POST['amount_paid'] ?? 0);
+            $suppId = (int)$_POST['id'];
+            $stmtS = $db->prepare("SELECT total_due FROM suppliers WHERE id = :id");
+            $stmtS->execute(['id' => $suppId]);
+            $currentDue = (float)($stmtS->fetchColumn() ?: 0);
+            $newDue = max(0, $currentDue - $amountPaid);
+            $db->prepare("UPDATE suppliers SET total_due = :d WHERE id = :id")
+               ->execute(['d' => $newDue, 'id' => $suppId]);
+            $response = ['success' => true, 'message' => 'Payment of ৳' . number_format($amountPaid, 0) . ' recorded. Remaining due: ৳' . number_format($newDue, 0) . '.'];
+            break;
+
         // ═══════════════════════════════════════════════════════
         // BAZAAR LEDGER & ITEMS
         // ═══════════════════════════════════════════════════════
         case 'save_bazaar':
             $logDate = $_POST['log_date'] ?? date('Y-m-d');
             $advanceCash = (float)($_POST['advance_cash'] ?? 0);
+            $returnCash = (float)($_POST['return_cash'] ?? 0);
+            $carryForwardCash = (float)($_POST['carry_forward_cash'] ?? 0);
 
             // Upsert ledger
             $stmtCheck = $db->prepare("SELECT id FROM bazaar_ledgers WHERE log_date = :d");
@@ -100,17 +128,19 @@ try {
             $totalSpent = 0;
             $names = $_POST['bi_name'] ?? [];
             $qtys = $_POST['bi_qty'] ?? [];
+            $units = $_POST['bi_unit'] ?? [];
             $prices = $_POST['bi_price'] ?? [];
             $sids = $_POST['bi_supplier'] ?? [];
 
             for ($i = 0; $i < count($names); $i++) {
                 if (empty(trim($names[$i]))) continue;
                 $suppId = !empty($sids[$i]) ? (int)$sids[$i] : null;
+                $unit = $units[$i] ?? 'pcs';
                 $price = (float)$prices[$i];
                 $totalSpent += $price;
 
-                $db->prepare("INSERT INTO bazaar_items (ledger_id, item_name, bought_qty, total_price, supplier_id) VALUES (:lid, :n, :q, :p, :s)")
-                   ->execute(['lid' => $ledgerId, 'n' => trim($names[$i]), 'q' => (float)$qtys[$i], 'p' => $price, 's' => $suppId]);
+                $db->prepare("INSERT INTO bazaar_items (ledger_id, item_name, bought_qty, unit, total_price, supplier_id) VALUES (:lid, :n, :q, :u, :p, :s)")
+                   ->execute(['lid' => $ledgerId, 'n' => trim($names[$i]), 'q' => (float)$qtys[$i], 'u' => $unit, 'p' => $price, 's' => $suppId]);
 
                 // Update supplier due if applicable
                 if ($suppId) {
@@ -118,7 +148,7 @@ try {
                 }
             }
 
-            $db->prepare("UPDATE bazaar_ledgers SET total_spent = :ts WHERE id = :id")->execute(['ts' => $totalSpent, 'id' => $ledgerId]);
+            $db->prepare("UPDATE bazaar_ledgers SET total_spent = :ts, return_cash = :rc, carry_forward_cash = :cfc WHERE id = :id")->execute(['ts' => $totalSpent, 'rc' => $returnCash, 'cfc' => $carryForwardCash, 'id' => $ledgerId]);
             $response = ['success' => true, 'message' => 'Bazaar ledger saved. Total: ৳' . number_format($totalSpent, 0)];
             break;
 
@@ -127,10 +157,12 @@ try {
         // ═══════════════════════════════════════════════════════
         case 'save_morning_stock':
             $logDate = $_POST['log_date'] ?? date('Y-m-d');
+            $shift = $_POST['shift'] ?? 'Morning';
             $itemIds = $_POST['stock_item_id'] ?? [];
             $cfs = $_POST['carry_forward'] ?? [];
             $wastes = $_POST['wastage'] ?? [];
             $freshes = $_POST['fresh_processed'] ?? [];
+            $userId = $_SESSION['user_id'] ?? null;
 
             for ($i = 0; $i < count($itemIds); $i++) {
                 $itemId = (int)$itemIds[$i];
@@ -139,15 +171,16 @@ try {
                 $fp = (float)($freshes[$i] ?? 0);
                 $opening = ($cf - $w) + $fp;
 
-                $sql = "INSERT INTO daily_stocks (item_id, log_date, carry_forward_qty, wastage_qty, fresh_processed_qty, opening_qty)
-                        VALUES (:item, :d, :cf, :w, :fp, :op)
+                $sql = "INSERT INTO daily_stocks (item_id, log_date, shift, user_id, carry_forward_qty, wastage_qty, fresh_processed_qty, opening_qty)
+                        VALUES (:item, :d, :shift, :uid, :cf, :w, :fp, :op)
                         ON DUPLICATE KEY UPDATE
+                        user_id = VALUES(user_id),
                         carry_forward_qty = VALUES(carry_forward_qty),
                         wastage_qty = VALUES(wastage_qty),
                         fresh_processed_qty = VALUES(fresh_processed_qty),
                         opening_qty = VALUES(opening_qty)";
                 $db->prepare($sql)->execute([
-                    'item' => $itemId, 'd' => $logDate,
+                    'item' => $itemId, 'd' => $logDate, 'shift' => $shift, 'uid' => $userId,
                     'cf' => $cf, 'w' => $w, 'fp' => $fp, 'op' => $opening
                 ]);
             }
@@ -159,9 +192,11 @@ try {
         // ═══════════════════════════════════════════════════════
         case 'save_closing':
             $logDate = $_POST['log_date'] ?? date('Y-m-d');
+            $shift = $_POST['shift'] ?? 'Morning';
             $itemIds = $_POST['close_item_id'] ?? [];
             $closings = $_POST['closing_qty'] ?? [];
             $comps = $_POST['complimentary_qty'] ?? [];
+            $userId = $_SESSION['user_id'] ?? null;
 
             for ($i = 0; $i < count($itemIds); $i++) {
                 $itemId = (int)$itemIds[$i];
@@ -169,8 +204,8 @@ try {
                 $compQty = (float)($comps[$i] ?? 0);
 
                 // Fetch opening qty & selling price
-                $stmtFetch = $db->prepare("SELECT ds.opening_qty, i.selling_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.item_id = :item AND ds.log_date = :d");
-                $stmtFetch->execute(['item' => $itemId, 'd' => $logDate]);
+                $stmtFetch = $db->prepare("SELECT ds.opening_qty, i.selling_price FROM daily_stocks ds JOIN items i ON ds.item_id = i.id WHERE ds.item_id = :item AND ds.log_date = :d AND ds.shift = :shift");
+                $stmtFetch->execute(['item' => $itemId, 'd' => $logDate, 'shift' => $shift]);
                 $row = $stmtFetch->fetch();
 
                 if ($row) {
@@ -178,8 +213,8 @@ try {
                     if ($soldQty < 0) $soldQty = 0;
                     $totalSales = $soldQty * $row['selling_price'];
 
-                    $db->prepare("UPDATE daily_stocks SET closing_qty = :cq, complimentary_qty = :comp, sold_qty = :sq, total_sales_amount = :tsa WHERE item_id = :item AND log_date = :d")
-                       ->execute(['cq' => $closeQty, 'comp' => $compQty, 'sq' => $soldQty, 'tsa' => $totalSales, 'item' => $itemId, 'd' => $logDate]);
+                    $db->prepare("UPDATE daily_stocks SET closing_qty = :cq, complimentary_qty = :comp, sold_qty = :sq, total_sales_amount = :tsa, user_id = :uid WHERE item_id = :item AND log_date = :d AND shift = :shift")
+                       ->execute(['cq' => $closeQty, 'comp' => $compQty, 'sq' => $soldQty, 'tsa' => $totalSales, 'uid' => $userId, 'item' => $itemId, 'd' => $logDate, 'shift' => $shift]);
                 }
             }
             $response = ['success' => true, 'message' => 'Night closing saved. Profit/loss calculated.'];
@@ -189,12 +224,13 @@ try {
         // CUSTOMER DUES
         // ═══════════════════════════════════════════════════════
         case 'add_due':
-            $db->prepare("INSERT INTO customer_dues (customer_name, phone, due_amount, log_date) VALUES (:n, :p, :a, :d)")
+            $db->prepare("INSERT INTO customer_dues (customer_name, phone, due_amount, log_date, shift) VALUES (:n, :p, :a, :d, :shift)")
                ->execute([
                    'n' => trim($_POST['customer_name']),
                    'p' => trim($_POST['phone'] ?? ''),
                    'a' => (float)$_POST['due_amount'],
-                   'd' => $_POST['log_date'] ?? date('Y-m-d')
+                   'd' => $_POST['log_date'] ?? date('Y-m-d'),
+                   'shift' => $_POST['shift'] ?? 'Morning'
                ]);
             $response = ['success' => true, 'message' => 'Customer due logged.'];
             break;
@@ -355,7 +391,7 @@ try {
                 $stmtIns->execute(['uid' => $userId, 'slug' => trim($slug)]);
             }
 
-            $response = ['success' => true, 'message' => 'Permissions updated for staff. Changes take effect on their next login.'];
+            $response = ['success' => true, 'message' => 'Permissions updated successfully and applied in real-time.'];
             break;
     }
 
