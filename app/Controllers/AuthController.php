@@ -54,10 +54,31 @@ class AuthController extends Controller {
     }
 
     /**
-     * Magic Link Authentication (staff)
-     * Route: ?url=auth/magic&token=XXXXX
+     * Generate a new access token for a user
      */
-    public function magic() {
+    public function generateToken($userId) {
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
+        
+        $stmt = $this->db->prepare("
+            UPDATE users 
+            SET access_token = :token, token_expires_at = :expires_at 
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            ':token' => $token,
+            ':expires_at' => $expiresAt,
+            ':id' => $userId
+        ]);
+        
+        return $token;
+    }
+
+    /**
+     * Verify Magic Link Token and Login
+     * Route: ?url=auth/verifyToken&token=XXXXX
+     */
+    public function verifyToken() {
         $token = $_GET['token'] ?? '';
 
         if (empty($token)) {
@@ -65,36 +86,32 @@ class AuthController extends Controller {
             return;
         }
 
-        // Find valid, unused, non-expired magic link
         $stmt = $this->db->prepare("
-            SELECT ml.*, u.name, u.name_bn, u.role, u.is_active, u.permissions
-            FROM magic_links ml
-            JOIN users u ON ml.user_id = u.id
-            WHERE ml.token = :token
-              AND ml.used_at IS NULL
-              AND ml.expires_at > NOW()
-              AND u.is_active = 1
+            SELECT * FROM users
+            WHERE access_token = :token 
+              AND token_expires_at > NOW() 
+              AND is_active = 1
             LIMIT 1
         ");
         $stmt->execute([':token' => $token]);
-        $link = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$link) {
-            $this->view('auth/magic_error', ['message' => 'Link expired or already used.'], false);
+        if (!$user) {
+            $this->view('auth/magic_error', ['message' => __('token_expired')], false);
             return;
         }
 
-        // Immediately invalidate the link (one-time use)
-        $upd = $this->db->prepare("UPDATE magic_links SET used_at = NOW() WHERE id = :id");
-        $upd->execute([':id' => $link['id']]);
+        // Clear token (one-time use)
+        $upd = $this->db->prepare("UPDATE users SET access_token = NULL, token_expires_at = NULL WHERE id = :id");
+        $upd->execute([':id' => $user['id']]);
 
         // Establish session
         session_regenerate_id(true);
-        $_SESSION['user_id']      = $link['user_id'];
-        $_SESSION['user_name']    = $link['name'];
-        $_SESSION['user_name_bn'] = $link['name_bn'] ?? $link['name'];
-        $_SESSION['role']         = $link['role'];
-        $_SESSION['permissions']  = json_decode($link['permissions'] ?? '{}', true);
+        $_SESSION['user_id']      = $user['id'];
+        $_SESSION['user_name']    = $user['name'];
+        $_SESSION['user_name_bn'] = $user['name_bn'] ?? $user['name'];
+        $_SESSION['role']         = $user['role'];
+        $_SESSION['permissions']  = json_decode($user['permissions'] ?? '{}', true);
 
         $this->redirect('?url=dashboard');
     }
@@ -112,36 +129,76 @@ class AuthController extends Controller {
 
         $data   = json_decode(file_get_contents('php://input'), true);
         $userId = (int) ($data['user_id'] ?? 0);
-        $hours  = (int) ($data['hours'] ?? 72);
 
         if (!$userId) {
             $this->json(['success' => false, 'error' => 'User ID required']);
         }
 
-        // Generate secure token
-        $token = bin2hex(random_bytes(32));
-        $expiresAt = date('Y-m-d H:i:s', strtotime("+{$hours} hours"));
-
-        $stmt = $this->db->prepare("
-            INSERT INTO magic_links (user_id, token, expires_at)
-            VALUES (:user_id, :token, :expires_at)
-        ");
-        $stmt->execute([
-            ':user_id'    => $userId,
-            ':token'      => $token,
-            ':expires_at' => $expiresAt,
-        ]);
+        $token = $this->generateToken($userId);
 
         // Build the full magic link URL
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host     = $_SERVER['HTTP_HOST'];
         $baseUrl  = "{$protocol}://{$host}/bondor-bati";
-        $magicUrl = "{$baseUrl}/?url=auth/magic&token={$token}";
+        $magicUrl = "{$baseUrl}/?url=auth/verifyToken&token={$token}";
 
         $this->json([
             'success'    => true,
-            'magic_link' => $magicUrl,
-            'expires_at' => $expiresAt,
+            'magic_link' => $magicUrl
+        ]);
+    }
+
+    /**
+     * Add Staff (Admin only)
+     * Route: ?url=auth/addStaff
+     */
+    public function addStaff() {
+        $this->requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required'], 400);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $name = trim($data['name'] ?? '');
+        $phone = trim($data['phone'] ?? ''); 
+        $role = trim($data['role'] ?? 'staff');
+
+        if (empty($name) || empty($phone)) {
+            $this->json(['success' => false, 'error' => 'Name and phone are required.']);
+        }
+
+        // Check if username (phone) exists
+        $stmt = $this->db->prepare("SELECT id FROM users WHERE username = :username");
+        $stmt->execute([':username' => $phone]);
+        if ($stmt->fetch()) {
+            $this->json(['success' => false, 'error' => 'User with this phone number already exists.']);
+        }
+
+        // Insert new user
+        $ins = $this->db->prepare("
+            INSERT INTO users (name, username, role, is_active)
+            VALUES (:name, :username, :role, 1)
+        ");
+        $ins->execute([
+            ':name' => $name,
+            ':username' => $phone,
+            ':role' => $role
+        ]);
+        
+        $userId = $this->db->lastInsertId();
+        
+        // Generate Token
+        $token = $this->generateToken($userId);
+        
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host     = $_SERVER['HTTP_HOST'];
+        $baseUrl  = "{$protocol}://{$host}/bondor-bati";
+        $magicUrl = "{$baseUrl}/?url=auth/verifyToken&token={$token}";
+
+        $this->json([
+            'success' => true,
+            'magic_link' => $magicUrl
         ]);
     }
 

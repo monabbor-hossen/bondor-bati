@@ -198,6 +198,7 @@
                 if ($role === 'admin') {
                     $nav[] = ['url' => 'analytics', 'key' => 'analytics', 'icon' => 'fas fa-chart-line', 'label' => 'analytics'];
                     $nav[] = ['url' => 'admin/settings', 'key' => 'settings', 'icon' => 'fas fa-cog', 'label' => 'settings'];
+                    $nav[] = ['url' => 'admin/users', 'key' => 'staff', 'icon' => 'fas fa-users', 'label' => 'staff'];
                 }
 
                 foreach ($nav as $item):

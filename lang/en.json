@@ -138,5 +138,16 @@
     "status": "Status",
     "pending": "Pending",
     "paid": "Paid",
-    "settle": "Settle"
+    "settle": "Settle",
+
+    "staff_management": "Staff Management",
+    "add_new_staff": "Add New Staff",
+    "staff_name": "Full Name",
+    "whatsapp_number": "WhatsApp Number",
+    "role": "Role",
+    "role_staff": "Staff",
+    "role_admin": "Admin",
+    "generate_link": "Generate Link",
+    "link_copied": "Magic Link Copied!",
+    "token_expired": "This login link has expired."
 }

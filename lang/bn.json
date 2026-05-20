@@ -119,5 +119,16 @@
     "status": "অবস্থা",
     "pending": "মুলতুবি",
     "paid": "পরিশোধিত",
-    "settle": "নিষ্পত্তি"
+    "settle": "নিষ্পত্তি",
+
+    "staff_management": "স্টাফ ম্যানেজমেন্ট",
+    "add_new_staff": "নতুন স্টাফ যোগ করুন",
+    "staff_name": "পুরো নাম",
+    "whatsapp_number": "হোয়াটসঅ্যাপ নম্বর",
+    "role": "পদবি",
+    "role_staff": "স্টাফ",
+    "role_admin": "অ্যাডমিন",
+    "generate_link": "লিঙ্ক তৈরি করুন",
+    "link_copied": "ম্যাজিক লিঙ্ক কপি হয়েছে!",
+    "token_expired": "এই লগইন লিঙ্কটির মেয়াদ শেষ হয়ে গেছে।"
 }

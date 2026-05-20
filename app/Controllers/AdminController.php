@@ -37,6 +37,22 @@ class AdminController extends Controller {
         ]);
     }
 
+    public function users() {
+        $this->requireAdmin();
+
+        $users = $this->db->query("
+            SELECT id, name, name_bn, username, role, is_active 
+            FROM users 
+            ORDER BY role, name
+        ")->fetchAll();
+
+        $this->view('admin/users', [
+            'pageTitle' => __('staff_management'),
+            'activeNav' => 'settings',
+            'users'     => $users
+        ]);
+    }
+
     public function saveEntity() {
         $this->requireAdmin();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
