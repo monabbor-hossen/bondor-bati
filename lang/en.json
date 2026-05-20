@@ -149,5 +149,18 @@
     "role_admin": "Admin",
     "generate_link": "Generate Link",
     "link_copied": "Magic Link Copied!",
-    "token_expired": "This login link has expired."
+    "token_expired": "This login link has expired.",
+    "nav_dashboard": "Home",
+    "nav_prep": "Prep",
+    "nav_close": "Close",
+    "nav_settings": "Settings",
+    "settings_title": "Settings & Tools",
+    "section_management": "Team Management",
+    "section_finance": "Finance & Reports",
+    "section_system": "System Preferences",
+    "link_staff": "Staff & Users",
+    "link_analytics": "Analytics Dashboard",
+    "link_spread_costs": "Spread Costs",
+    "link_language": "Change Language",
+    "link_logout": "Secure Logout"
 }

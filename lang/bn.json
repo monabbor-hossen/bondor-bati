@@ -130,5 +130,18 @@
     "role_admin": "অ্যাডমিন",
     "generate_link": "লিঙ্ক তৈরি করুন",
     "link_copied": "ম্যাজিক লিঙ্ক কপি হয়েছে!",
-    "token_expired": "এই লগইন লিঙ্কটির মেয়াদ শেষ হয়ে গেছে।"
+    "token_expired": "এই লগইন লিঙ্কটির মেয়াদ শেষ হয়ে গেছে।",
+    "nav_dashboard": "হোম",
+    "nav_prep": "প্রস্তুতি",
+    "nav_close": "হিসাব",
+    "nav_settings": "সেটিংস",
+    "settings_title": "সেটিংস এবং টুলস",
+    "section_management": "টিম ম্যানেজমেন্ট",
+    "section_finance": "অর্থ এবং রিপোর্ট",
+    "section_system": "সিস্টেম পছন্দ",
+    "link_staff": "স্টাফ এবং ইউজার",
+    "link_analytics": "অ্যানালিটিক্স",
+    "link_spread_costs": "স্প্রেড খরচ",
+    "link_language": "ভাষা পরিবর্তন",
+    "link_logout": "লগআউট"
 }

@@ -188,18 +188,11 @@
                 <?php
                 $role = $_SESSION['role'] ?? 'staff';
                 $nav  = [
-                    ['url' => 'dashboard', 'key' => 'home',      'icon' => 'fas fa-home',          'label' => 'dashboard'],
-                    ['url' => 'inventory/dailyPrep', 'key' => 'stock', 'icon' => 'fas fa-boxes-stacked', 'label' => 'stock'],
-                    ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'close'],
-                    ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'bazaar'],
+                    ['url' => 'dashboard', 'key' => 'dashboard', 'icon' => 'fas fa-home',          'label' => 'nav_dashboard'],
+                    ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'nav_prep'],
+                    ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'nav_close'],
+                    ['url' => 'settings',  'key' => 'settings',  'icon' => 'fas fa-cog',           'label' => 'nav_settings'],
                 ];
-
-        // ── Admin-only tabs
-                if ($role === 'admin') {
-                    $nav[] = ['url' => 'analytics', 'key' => 'analytics', 'icon' => 'fas fa-chart-line', 'label' => 'analytics'];
-                    $nav[] = ['url' => 'admin/settings', 'key' => 'settings', 'icon' => 'fas fa-cog', 'label' => 'settings'];
-                    $nav[] = ['url' => 'admin/users', 'key' => 'staff', 'icon' => 'fas fa-users', 'label' => 'staff'];
-                }
 
                 foreach ($nav as $item):
                     $isActive = ($activeNav ?? '') === $item['key'];
