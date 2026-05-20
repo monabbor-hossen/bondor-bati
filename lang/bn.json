@@ -1,5 +1,5 @@
 {
-    "app_name": "বন্দর বাটি",
+    "app_name": "বন্দর বাতি",
     "welcome_back": "স্বাগতম,",
     "sign_out": "সাইন আউট",
     "dashboard": "ড্যাশবোর্ড",
@@ -10,13 +10,11 @@
     "payroll": "বেতন",
     "bazaar": "বাজার",
     "settings": "সেটিংস",
-
     "morning": "সকাল",
     "evening": "সন্ধ্যা",
     "night": "রাত",
     "shift": "শিফট",
     "select_shift": "শিফট নির্বাচন করুন",
-
     "opening_stock": "ওপেনিং স্টক",
     "closing_stock": "ক্লোজিং স্টক",
     "sold": "বিক্রি",
@@ -25,13 +23,11 @@
     "wastage": "নষ্ট",
     "fresh_processed": "তাজা প্রস্তুত",
     "carry_forward": "বহনকৃত",
-
     "total_sales": "মোট বিক্রি",
     "net_profit": "নিট লাভ",
     "cash_in_drawer": "ক্যাশ ড্রয়ারে",
     "total_revenue": "মোট আয়",
     "total_expenses": "মোট খরচ",
-
     "save": "সেভ",
     "submit": "জমা দিন",
     "cancel": "বাতিল",
@@ -40,14 +36,12 @@
     "add": "যোগ করুন",
     "close_shift": "শিফট বন্ধ করুন",
     "save_prep": "সকালের প্রস্তুতি সেভ করুন",
-
     "item": "আইটেম",
     "qty": "পরিমাণ",
     "price": "দাম",
     "total": "মোট",
     "unit": "একক",
     "plates": "প্লেট",
-
     "gas_status": "গ্যাসের অবস্থা",
     "days_remaining": "বাকি দিন",
     "refill_date": "রিফিল তারিখ",
@@ -55,46 +49,38 @@
     "low_plan": "কম — রিফিল পরিকল্পনা করুন",
     "sufficient": "পর্যাপ্ত",
     "no_gas_data": "কোনো গ্যাস খরচ রেকর্ড নেই।",
-
     "bazaar_suggestions": "বাজার পরামর্শ",
     "avg_7d": "৭ দিনের গড়",
     "suggested": "পরামর্শিত",
     "multiplier": "গুণক",
-
     "supplier_dues": "সরবরাহকারীর বকেয়া",
     "customer_dues": "ক্রেতার বকেয়া",
     "pending_orders": "মুলতুবি অর্ডার",
     "advance_orders": "অগ্রিম অর্ডার",
-
     "login": "লগইন",
     "username": "ইউজারনেম",
     "password": "পাসওয়ার্ড",
     "login_btn": "সাইন ইন",
     "magic_link_title": "স্টাফ অ্যাক্সেস",
     "magic_link_desc": "লগইন করতে অ্যাডমিনের দেওয়া লিংক ব্যবহার করুন।",
-
     "low_stock_alert": "কম স্টক সতর্কতা",
     "items_below_threshold": "আইটেম ন্যূনতম স্টকের নিচে",
-
     "reports": "রিপোর্ট",
     "daily_report": "দৈনিক রিপোর্ট",
     "monthly_report": "মাসিক রিপোর্ট",
     "custom_range": "কাস্টম রেঞ্জ",
     "top_selling": "সর্বাধিক বিক্রিত",
     "high_wastage": "বেশি নষ্ট",
-
     "expense": "খরচ",
     "spread_cost": "ছড়ানো খরচ",
     "daily_deduction": "দৈনিক কর্তন",
     "remaining": "অবশিষ্ট",
-
     "staff": "স্টাফ",
     "admin": "অ্যাডমিন",
     "salary": "বেতন",
     "absent_days": "অনুপস্থিতির দিন",
     "deduction": "কর্তন",
     "final_pay": "চূড়ান্ত বেতন",
-
     "no_data": "কোনো ডেটা নেই",
     "success": "সফল!",
     "error": "ত্রুটি!",
@@ -102,7 +88,6 @@
     "offline_mode": "অফলাইন মোড",
     "syncing": "সিঙ্ক হচ্ছে...",
     "all_synced": "সব ডেটা সিঙ্ক হয়েছে",
-
     "today": "আজ",
     "yesterday": "গতকাল",
     "this_month": "এই মাস",
@@ -113,24 +98,20 @@
     "download": "ডাউনলোড",
     "export_csv": "CSV রপ্তানি",
     "backup": "ব্যাকআপ",
-
     "tk": "টাকা",
     "advance": "অগ্রিম",
     "spent": "খরচ হয়েছে",
     "balance": "ব্যালেন্স",
     "returned": "ফেরত",
     "due_to_staff": "স্টাফকে প্রদেয়",
-
     "event_prep": "ইভেন্ট প্রস্তুতি",
     "expect_volume": "বেশি চাহিদা প্রত্যাশিত",
     "prep_suggestion": "প্রস্তুতির পরামর্শ",
-
     "morning_prep": "সকালের প্রস্তুতি",
     "night_closing": "রাতের ক্লোজিং",
     "shift_closing": "শিফট ক্লোজিং",
     "daily_summary": "দৈনিক সারসংক্ষেপ",
     "results": "ফলাফল",
-
     "customer_name": "ক্রেতার নাম",
     "phone": "ফোন",
     "amount": "পরিমাণ",
