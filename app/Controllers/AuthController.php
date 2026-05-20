@@ -9,9 +9,7 @@ use PDO;
  * Auth Controller — Admin login + Magic Link staff authentication
  */
 class AuthController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 

@@ -9,9 +9,7 @@ use PDO;
  * Analytics Controller — Reports, Top Sellers, Wastage, Custom Ranges
  */
 class AnalyticsController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 

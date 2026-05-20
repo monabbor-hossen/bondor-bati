@@ -9,9 +9,7 @@ use PDO;
  * Finance Controller — Cash Drawer, Net Profit, Daily P&L formulas
  */
 class FinanceController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 

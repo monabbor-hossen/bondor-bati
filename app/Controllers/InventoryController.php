@@ -9,9 +9,7 @@ use PDO;
  * Inventory Controller — Morning Prep + 3-Shift Closing System
  */
 class InventoryController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 

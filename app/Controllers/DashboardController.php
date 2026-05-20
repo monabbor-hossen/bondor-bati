@@ -9,9 +9,7 @@ use PDO;
  * Dashboard Controller — Smart dashboard with forecasting widgets
  */
 class DashboardController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 

@@ -9,9 +9,7 @@ use PDO;
  * Bazaar Controller — Requisition Ledger (Advance / Spend / Balance)
  */
 class BazaarController extends Controller {
-    private $db;
-
-    public function __construct() {
+public function __construct() {
         $this->db = (new Database())->getConnection();
     }
 
