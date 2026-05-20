@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline — Bondor Bati</title>
+    <style>
+        body {
+            background: #0a0a0f; color: #e2e8f0;
+            font-family: Inter, system-ui, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; text-align: center; padding: 2rem;
+        }
+        .icon { font-size: 3rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem; }
+        p { color: #64748b; font-size: 0.9rem; }
+        button {
+            margin-top: 1.5rem; background: #f43f5e; color: #fff;
+            border: none; padding: 0.75rem 2rem; border-radius: 12px;
+            font-weight: 700; font-size: 0.9rem; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div class="icon">📡</div>
+        <h2>You're Offline</h2>
+        <p>No internet connection detected. Your data is saved locally and will sync when you're back online.</p>
+        <button onclick="location.reload()">Try Again</button>
+    </div>
+</body>
+</html>
