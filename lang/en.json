@@ -162,5 +162,18 @@
     "link_analytics": "Analytics Dashboard",
     "link_spread_costs": "Spread Costs",
     "link_language": "Change Language",
-    "link_logout": "Secure Logout"
+    "link_logout": "Secure Logout",
+    "status_active": "Active",
+    "status_inactive": "Revoked",
+    "action_delete": "Delete User",
+    "daily_fixed_costs": "Daily Fixed Costs",
+    "cost_name": "Cost Name (e.g., Van Fee)",
+    "cost_amount": "Amount",
+    "spread_costs_setup": "Capital Spread Costs",
+    "asset_name": "Asset Name (e.g., Freezer)",
+    "total_cost": "Total Cost",
+    "spread_days": "Days to Spread",
+    "daily_deduction": "Daily Deduction",
+    "add_cost": "Add Cost",
+    "revoke_success": "Access revoked from all devices."
 }

@@ -97,4 +97,31 @@ class AdminController extends Controller {
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
+
+    public function toggleUserStatus() {
+        $this->requireAdmin();
+        $data = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($data['user_id'] ?? 0);
+        $isActive = (int)($data['is_active'] ?? 0);
+        
+        if ($userId) {
+            $stmt = $this->db->prepare("UPDATE users SET is_active = :is_active WHERE id = :id");
+            $stmt->execute([':is_active' => $isActive, ':id' => $userId]);
+            $this->json(['success' => true]);
+        }
+        $this->json(['success' => false, 'error' => 'Invalid user']);
+    }
+
+    public function deleteUser() {
+        $this->requireAdmin();
+        $data = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($data['user_id'] ?? 0);
+        
+        if ($userId) {
+            $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->execute([':id' => $userId]);
+            $this->json(['success' => true]);
+        }
+        $this->json(['success' => false, 'error' => 'Invalid user']);
+    }
 }

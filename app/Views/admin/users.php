@@ -50,19 +50,35 @@
 <!-- Current Staff List -->
 <div class="space-y-3 stagger" id="staffList">
     <?php foreach ($users as $user): ?>
-    <div class="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+    <div class="bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between" id="user-row-<?= $user['id'] ?>">
         <div>
-            <h4 class="font-bold text-sm mb-0.5"><?= htmlspecialchars($user['name' . (currentLang() === 'bn' ? '_bn' : '')] ?? $user['name']) ?></h4>
+            <h4 class="font-bold text-sm mb-0.5 <?= !$user['is_active'] ? 'line-through text-text-muted' : '' ?>" id="user-name-<?= $user['id'] ?>">
+                <?= htmlspecialchars($user['name' . (currentLang() === 'bn' ? '_bn' : '')] ?? $user['name']) ?>
+            </h4>
             <div class="text-xs text-text-muted flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded text-[0.6rem] font-bold <?= $user['role'] === 'admin' ? 'bg-info/20 text-info border border-info/30' : 'bg-surface border border-border' ?> uppercase">
+                <span class="px-2 py-0.5 rounded text-[0.6rem] font-bold <?= $user['role'] === 'admin' ? 'bg-info/10 text-info border border-info/30' : 'bg-surface border border-border' ?> uppercase">
                     <?= __('role_' . $user['role']) ?>
                 </span>
-                <span><i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($user['username']) ?></span>
+                <span class="<?= !$user['is_active'] ? 'opacity-50' : '' ?>" id="user-phone-<?= $user['id'] ?>"><i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($user['username']) ?></span>
             </div>
         </div>
-        <button class="btn-generate-link w-10 h-10 rounded-full bg-surface border border-border text-text-muted hover:text-accent hover:border-accent transition-colors flex items-center justify-center flex-shrink-0" data-id="<?= $user['id'] ?>" title="<?= __('generate_link') ?>">
-            <i class="fas fa-link"></i>
-        </button>
+        <div class="flex items-center gap-3">
+            <!-- Line-art Toggle Switch -->
+            <label class="relative inline-flex items-center cursor-pointer" title="<?= __('status_active') ?>">
+                <input type="checkbox" class="sr-only peer toggle-user" data-id="<?= $user['id'] ?>" <?= $user['is_active'] ? 'checked' : '' ?>>
+                <div class="w-8 h-4 bg-transparent border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted peer-checked:after:bg-accent after:border-transparent after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:border-accent/50"></div>
+            </label>
+
+            <!-- Generate Link -->
+            <button class="btn-generate-link text-text-muted hover:text-info hover:drop-shadow-[0_0_5px_rgba(96,165,250,0.5)] transition-all flex-shrink-0" data-id="<?= $user['id'] ?>" title="<?= __('generate_link') ?>">
+                <i class="fas fa-link"></i>
+            </button>
+
+            <!-- Delete Button -->
+            <button class="btn-delete-user text-text-muted hover:text-red-400 hover:drop-shadow-[0_0_5px_rgba(248,113,113,0.5)] transition-all flex-shrink-0" data-id="<?= $user['id'] ?>" title="<?= __('action_delete') ?>">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
     </div>
     <?php endforeach; ?>
 </div>
@@ -130,6 +146,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else {
                 showToast(res.error || 'Failed to generate link', 'error');
+                btn.innerHTML = icon;
+                btn.disabled = false;
+            }
+        });
+    });
+
+    // Toggle User Status
+    document.querySelectorAll('.toggle-user').forEach(toggle => {
+        toggle.addEventListener('change', async (e) => {
+            const userId = e.target.dataset.id;
+            const isActive = e.target.checked ? 1 : 0;
+            
+            const res = await apiPost('?url=admin/toggleUserStatus', { user_id: userId, is_active: isActive });
+            
+            if (res.success) {
+                showToast(isActive ? 'User Activated' : '<?= __("revoke_success") ?>', isActive ? 'success' : 'warning');
+                const nameEl = document.getElementById(`user-name-${userId}`);
+                const phoneEl = document.getElementById(`user-phone-${userId}`);
+                if (isActive) {
+                    nameEl.classList.remove('line-through', 'text-text-muted');
+                    phoneEl.classList.remove('opacity-50');
+                } else {
+                    nameEl.classList.add('line-through', 'text-text-muted');
+                    phoneEl.classList.add('opacity-50');
+                }
+            } else {
+                e.target.checked = !isActive; // Revert
+                showToast(res.error || 'Failed to toggle status', 'error');
+            }
+        });
+    });
+
+    // Delete User
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('<?= __("confirm_action") ?>')) return;
+            
+            const userId = btn.dataset.id;
+            const icon = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const res = await apiPost('?url=admin/deleteUser', { user_id: userId });
+            
+            if (res.success) {
+                document.getElementById(`user-row-${userId}`).remove();
+                showToast('User deleted', 'success');
+            } else {
+                showToast(res.error || 'Failed to delete user', 'error');
                 btn.innerHTML = icon;
                 btn.disabled = false;
             }

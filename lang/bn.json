@@ -143,5 +143,18 @@
     "link_analytics": "অ্যানালিটিক্স",
     "link_spread_costs": "স্প্রেড খরচ",
     "link_language": "ভাষা পরিবর্তন",
-    "link_logout": "লগআউট"
+    "link_logout": "লগআউট",
+    "status_active": "সক্রিয়",
+    "status_inactive": "বাতিল",
+    "action_delete": "ইউজার মুছুন",
+    "daily_fixed_costs": "দৈনিক নির্দিষ্ট খরচ",
+    "cost_name": "খরচের নাম (যেমন: ভ্যান ভাড়া)",
+    "cost_amount": "পরিমাণ",
+    "spread_costs_setup": "দীর্ঘমেয়াদী খরচ",
+    "asset_name": "সম্পদের নাম (যেমন: ফ্রিজার)",
+    "total_cost": "মোট খরচ",
+    "spread_days": "কত দিনের জন্য",
+    "daily_deduction": "দৈনিক কর্তন",
+    "add_cost": "খরচ যোগ করুন",
+    "revoke_success": "সব ডিভাইস থেকে অ্যাক্সেস বাতিল করা হয়েছে।"
 }

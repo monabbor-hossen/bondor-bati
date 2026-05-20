@@ -60,11 +60,12 @@ $methodName     = !empty($parts[1]) ? $parts[1] : 'index';
 unset($parts[0], $parts[1]);
 $params = array_values($parts);
 
-// ── Auth Guard ────────────────────────────────────────────────────────
-$publicRoutes = ['auth/login', 'auth/logout', 'auth/magic', 'api/sync'];
+// ── Auth Guard & Persistent Login ─────────────────────────────────────
+$publicRoutes = ['auth/login', 'auth/logout', 'auth/verifytoken', 'api/sync'];
 $isPublic     = in_array(strtolower(rtrim($url, '/')), $publicRoutes);
 
-if (!$isPublic && empty($_SESSION['user_id'])) {
+// If there's a token and no session, we let the Controller constructor handle it
+if (!$isPublic && empty($_SESSION['user_id']) && empty($_COOKIE['bb_token'])) {
     header('Location: ?url=auth/login');
     exit;
 }

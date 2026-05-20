@@ -101,9 +101,12 @@ class AuthController extends Controller {
             return;
         }
 
-        // Clear token (one-time use)
-        $upd = $this->db->prepare("UPDATE users SET access_token = NULL, token_expires_at = NULL WHERE id = :id");
+        // Clear token expiration but KEEP the token for persistent cookie verification
+        $upd = $this->db->prepare("UPDATE users SET token_expires_at = NULL WHERE id = :id");
         $upd->execute([':id' => $user['id']]);
+
+        // Set persistent 30-day cookie
+        setcookie('bb_token', $token, time() + (86400 * 30), '/');
 
         // Establish session
         session_regenerate_id(true);

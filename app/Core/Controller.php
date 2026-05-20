@@ -6,6 +6,44 @@ namespace App\Core;
  * Renders views inside the master layout with bilingual data injection.
  */
 class Controller {
+    protected $db;
+
+    public function __construct() {
+        $this->db = (new \Config\Database())->getConnection();
+
+        // 1. If we have a persistent cookie but no session, try to log them in
+        if (isset($_COOKIE['bb_token']) && empty($_SESSION['user_id'])) {
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE access_token = :token LIMIT 1");
+            $stmt->execute([':token' => $_COOKIE['bb_token']]);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($user && $user['is_active'] == 1) {
+                $_SESSION['user_id']      = $user['id'];
+                $_SESSION['user_name']    = $user['name'];
+                $_SESSION['user_name_bn'] = $user['name_bn'] ?? $user['name'];
+                $_SESSION['role']         = $user['role'];
+                $_SESSION['permissions']  = json_decode($user['permissions'] ?? '{}', true);
+            } else {
+                setcookie('bb_token', '', time() - 3600, '/');
+                $this->redirect('?url=auth/login');
+            }
+        } 
+        
+        // 2. Kill switch: if a user has a session, ensure they are still active
+        if (!empty($_SESSION['user_id'])) {
+            $stmt = $this->db->prepare("SELECT is_active FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $_SESSION['user_id']]);
+            $isActive = $stmt->fetchColumn();
+
+            if (!$isActive) {
+                // Admin revoked access or user deleted -> kill session and cookie
+                $_SESSION = [];
+                session_destroy();
+                setcookie('bb_token', '', time() - 3600, '/');
+                $this->redirect('?url=auth/login');
+            }
+        }
+    }
 
     /**
      * Render a view, optionally wrapped in the master layout.
