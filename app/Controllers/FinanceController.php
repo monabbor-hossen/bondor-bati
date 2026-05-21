@@ -125,7 +125,7 @@ public function __construct() {
 
         $this->view('finance/spread_costs', [
             'pageTitle' => __('link_spread_costs'),
-            'activeNav' => 'settings',
+            'activeNav' => 'costs',
             'fixedCosts' => $fixedCosts,
             'spreadCosts' => $spreadCosts
         ]);

@@ -179,5 +179,6 @@
     "add_due": "Log Due",
     "remaining_balance": "Remaining",
     "mark_finished": "Mark Finished",
-    "confirm_finish": "Are you sure? Any remaining balance will be written off as an expense for today."
+    "confirm_finish": "Are you sure? Any remaining balance will be written off as an expense for today.",
+    "nav_costs": "Costs"
 }

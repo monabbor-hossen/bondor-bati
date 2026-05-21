@@ -193,6 +193,7 @@
                 }
                 $nav[] = ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'nav_prep'];
                 $nav[] = ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'nav_close'];
+                $nav[] = ['url' => 'finance/spreadCosts', 'key' => 'costs', 'icon' => 'fas fa-fire',     'label' => 'nav_costs'];
                 if ($role === 'admin') {
                     $nav[] = ['url' => 'settings',  'key' => 'settings',  'icon' => 'fas fa-cog',           'label' => 'nav_settings'];
                 }
