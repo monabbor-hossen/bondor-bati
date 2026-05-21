@@ -30,7 +30,7 @@ public function __construct() {
         
         $assignedStaffId = $ledger ? (int)$ledger['assigned_staff_id'] : $defaultStaff;
         
-        $staffList = $this->db->query("SELECT id, name FROM users WHERE role = 'staff' AND is_active = 1")->fetchAll();
+        $staffList = $this->db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER BY role DESC, name ASC")->fetchAll();
 
         $bazaarItems = [];
         if ($ledger) {

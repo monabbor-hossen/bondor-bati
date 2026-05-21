@@ -45,7 +45,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                 <select id="bazaar-assigned-staff" class="bg-surface border border-border rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-accent appearance-none cursor-pointer">
                     <option value="0">-- Select --</option>
                     <?php foreach ($staffList as $staff): ?>
-                        <option value="<?= $staff['id'] ?>" <?= $staff['id'] == $assignedStaffId ? 'selected' : '' ?>><?= htmlspecialchars($staff['name']) ?></option>
+                        <option value="<?= $staff['id'] ?>" <?= $staff['id'] == $assignedStaffId ? 'selected' : '' ?>><?= htmlspecialchars($staff['name']) ?> (<?= ucfirst($staff['role']) ?>)</option>
                     <?php endforeach; ?>
                 </select>
                 <button type="button" id="btn-set-default" class="text-xs text-accent hover:underline font-bold bg-transparent border-none cursor-pointer">
@@ -98,7 +98,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                         <input type="number" placeholder="৳/<?= __('unit') ?>" value="<?= (empty($bi['unit_price']) || $bi['unit_price'] == 0) ? '' : (float)$bi['unit_price'] ?>"
                                class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                         <div class="flex items-center gap-1">
-                            <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳<?= number_format($bi['total_price']) ?></span>
+                            <input type="number" placeholder="Total" value="<?= (empty($bi['total_price']) || $bi['total_price'] == 0) ? '' : (float)$bi['total_price'] ?>" class="bi-total w-full bg-card border border-border rounded-lg px-2 py-2 text-sm font-bold text-accent text-center focus:border-accent focus:outline-none" step="1">
                             <button type="button" onclick="this.closest('.bazaar-item').remove(); recalcBazaar();"
                                     class="text-red-400 text-xs p-1"><i class="fas fa-times"></i></button>
                         </div>
@@ -123,7 +123,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                         <input type="number" placeholder="৳/<?= __('unit') ?>" value=""
                                class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                         <div class="flex items-center gap-1">
-                            <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳0</span>
+                            <input type="number" placeholder="Total" value="" class="bi-total w-full bg-card border border-border rounded-lg px-2 py-2 text-sm font-bold text-accent text-center focus:border-accent focus:outline-none" step="1">
                             <button type="button" onclick="this.closest('.bazaar-item').remove(); recalcBazaar();"
                                     class="text-red-400 text-xs p-1"><i class="fas fa-times"></i></button>
                         </div>
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <input type="number" placeholder="<?= __('qty') ?>" value="" class="bi-qty bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="0.5">
                 <input type="number" placeholder="৳/<?= __('unit') ?>" value="" class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                 <div class="flex items-center gap-1">
-                    <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳0</span>
+                    <input type="number" placeholder="Total" value="" class="bi-total w-full bg-card border border-border rounded-lg px-2 py-2 text-sm font-bold text-accent text-center focus:border-accent focus:outline-none" step="1">
                     <button type="button" onclick="this.closest('.bazaar-item').remove(); recalcBazaar();" class="text-red-400 text-xs p-1"><i class="fas fa-times"></i></button>
                 </div>
             </div>
@@ -215,10 +215,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const tot = row.querySelector('.bi-total');
 
         [qty, up].forEach(el => el.addEventListener('input', () => {
-            const total = (parseFloat(qty.value) || 0) * (parseFloat(up.value) || 0);
-            tot.textContent = '৳' + total.toLocaleString('en-IN');
+            const q = parseFloat(qty.value) || 0;
+            const p = parseFloat(up.value) || 0;
+            if (q > 0 && p > 0) {
+                tot.value = Math.round(q * p);
+            } else if (!p) {
+                tot.value = '';
+            }
             recalcBazaar();
         }));
+
+        tot.addEventListener('input', () => {
+            const q = parseFloat(qty.value) || 0;
+            const t = parseFloat(tot.value) || 0;
+            if (q > 0 && t > 0) {
+                const newUp = (t / q).toFixed(2);
+                up.value = newUp.replace(/\.00$/, ''); // removes .00 for clean display
+            } else if (!t) {
+                up.value = '';
+            }
+            recalcBazaar();
+        });
     }
 
     // Bind all existing rows
@@ -230,9 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let totalSpent = 0;
         document.querySelectorAll('.bazaar-item').forEach(row => {
-            const q = parseFloat(row.querySelector('.bi-qty').value) || 0;
-            const p = parseFloat(row.querySelector('.bi-up').value) || 0;
-            totalSpent += q * p;
+            const t = parseFloat(row.querySelector('.bi-total').value) || 0;
+            totalSpent += t;
         });
 
         const balance = advance - totalSpent;

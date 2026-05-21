@@ -64,6 +64,13 @@
             <i class="fas fa-plus mr-1"></i> <?= __('add_cost') ?>
         </button>
     </form>
+    
+    <div class="mt-4 pt-4 border-t border-border/50">
+        <h4 class="text-[0.6rem] font-bold text-text-muted uppercase mb-2">Quick Presets</h4>
+        <button type="button" id="btn-quick-gas" class="text-xs font-bold bg-orange-500/10 text-orange-400 border border-orange-500/30 px-3 py-1.5 rounded-lg hover:bg-orange-500/20 transition-all">
+            <i class="fas fa-fire mr-1"></i> Add Gas Cylinder
+        </button>
+    </div>
 </div>
 
 <!-- Summaries -->
@@ -78,9 +85,14 @@
                     <span class="text-sm font-semibold block"><?= htmlspecialchars($fc['name']) ?></span>
                     <span class="text-sm font-black text-text-primary">৳<?= number_format($fc['daily_amount'], 2) ?></span>
                 </div>
-                <button class="btn-edit-fc p-2 text-text-muted hover:text-cyan-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($fc), ENT_QUOTES, 'UTF-8') ?>'>
-                    <i class="fas fa-pencil-alt"></i>
-                </button>
+                <div class="flex items-center gap-1">
+                    <button class="btn-edit-fc p-2 text-text-muted hover:text-cyan-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($fc), ENT_QUOTES, 'UTF-8') ?>'>
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button class="btn-delete-entity p-2 text-text-muted hover:text-red-400 transition-colors" data-entity="fixed_daily_costs" data-id="<?= $fc['id'] ?>" data-name="<?= htmlspecialchars($fc['name']) ?>">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
@@ -98,9 +110,14 @@
                     <span class="text-[0.6rem] text-text-muted">Total: ৳<?= number_format($sc['total_cost'], 0) ?> / <?= $sc['spread_days'] ?> days</span>
                     <div class="text-sm font-black text-purple-400">৳<?= number_format($sc['daily_deduction'], 2) ?> / day</div>
                 </div>
-                <button class="btn-edit-sc p-2 text-text-muted hover:text-purple-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($sc), ENT_QUOTES, 'UTF-8') ?>'>
-                    <i class="fas fa-pencil-alt"></i>
-                </button>
+                <div class="flex items-center gap-1">
+                    <button class="btn-edit-sc p-2 text-text-muted hover:text-purple-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($sc), ENT_QUOTES, 'UTF-8') ?>'>
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button class="btn-delete-entity p-2 text-text-muted hover:text-red-400 transition-colors" data-entity="spread_costs" data-id="<?= $sc['id'] ?>" data-name="<?= htmlspecialchars($sc['asset_name']) ?>">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
@@ -204,6 +221,40 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = originalHtml;
             btn.disabled = false;
         }
+    });
+
+
+    // Quick Gas Buying logic
+    const btnQuickGas = document.getElementById('btn-quick-gas');
+    if (btnQuickGas) {
+        btnQuickGas.addEventListener('click', () => {
+            const form = document.getElementById('spreadCostForm');
+            form.dataset.id = 0;
+            document.getElementById('scName').value = "Gas Cylinder";
+            document.getElementById('scTotal').value = 1500;
+            document.getElementById('scDays').value = 20;
+            updateCalc();
+            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-plus mr-1"></i> <?= __("add_cost") ?>';
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+
+    // Deletion
+    document.querySelectorAll('.btn-delete-entity').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const entity = btn.dataset.entity;
+            const name = btn.dataset.name;
+            if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+
+            const res = await apiPost('?url=admin/deleteEntity', { entity: entity, id: id });
+            if (res.success) {
+                btn.closest('.flex.justify-between').remove();
+                showToast(name + ' deleted!', 'success');
+            } else {
+                showToast(res.error || '<?= __("error") ?>', 'error');
+            }
+        });
     });
 });
 </script>
