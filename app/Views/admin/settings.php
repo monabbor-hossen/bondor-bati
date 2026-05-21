@@ -129,9 +129,14 @@
                     Min: <?= $raw['min_stock_threshold'] ?>
                 </div>
             </div>
-            <button class="btn-edit-raw p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($raw), ENT_QUOTES, 'UTF-8') ?>'>
-                <i class="fas fa-pencil-alt"></i>
-            </button>
+            <div class="flex items-center gap-1">
+                <button class="btn-edit-raw p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($raw), ENT_QUOTES, 'UTF-8') ?>'>
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button class="btn-delete-raw p-2 text-text-muted hover:text-red-400 transition-colors" data-id="<?= $raw['id'] ?>" data-name="<?= htmlspecialchars($raw['item_name']) ?>" title="<?= __('action_delete_item') ?>">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
         </div>
         <?php endforeach; ?>
     </div>
@@ -242,6 +247,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirm(`<?= __('confirm_delete') ?>`)) return;
 
             const res = await apiPost('?url=admin/deleteEntity', { entity: 'items', id });
+            if (res.success) {
+                btn.closest('.flex.justify-between').remove();
+                showToast(name + ' deleted!', 'success');
+            } else {
+                showToast(res.error || '<?= __("error") ?>', 'error');
+            }
+        });
+    });
+
+    // ── Delete Raw Inventory ───────────────────────────────────
+    document.querySelectorAll('.btn-delete-raw').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.name;
+            if (!confirm(`<?= __('confirm_delete') ?>`)) return;
+
+            const res = await apiPost('?url=admin/deleteEntity', { entity: 'raw_inventory', id });
             if (res.success) {
                 btn.closest('.flex.justify-between').remove();
                 showToast(name + ' deleted!', 'success');
