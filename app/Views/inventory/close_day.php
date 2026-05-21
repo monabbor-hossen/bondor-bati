@@ -65,9 +65,6 @@
                 </h3>
                 <div class="flex items-center gap-1">
                     <span class="text-xs text-text-muted mr-1">৳<?= number_format($item['selling_price']) ?>/<?= __('unit') ?></span>
-                    <button type="button" class="btn-sync-item text-accent hover:text-emerald-400 transition-colors p-1" title="<?= __('save') ?>">
-                        <i class="fas fa-arrows-rotate text-xs"></i>
-                    </button>
                     <button type="button" class="btn-remove-item text-text-muted hover:text-red-400 transition-colors p-1" title="<?= __('delete') ?>">
                         <i class="fas fa-trash-alt text-xs"></i>
                     </button>
@@ -115,6 +112,15 @@
             <p class="text-sm text-text-muted"><?= __('no_data') ?></p>
         </div>
     <?php endif; ?>
+
+    <!-- Update Ledger Button -->
+    <?php if (!empty($todayItems)): ?>
+    <button type="button" id="btn-update-ledger"
+            class="w-full mt-4 bg-indigo-600 text-white font-bold py-3.5 rounded-xl
+                   hover:bg-indigo-500 transition-all active:scale-[0.97] text-sm">
+        <i class="fas fa-check-circle mr-2"></i> Update Day Ledger
+    </button>
+    <?php endif; ?>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -134,6 +140,18 @@
                    class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
             <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
                    class="w-28 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+        </div>
+        <div class="flex gap-2">
+            <select id="due-item-id" class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400 appearance-none cursor-pointer">
+                <option value="">(Optional) Select Item...</option>
+                <?php foreach ($menuItems as $mi): ?>
+                    <option value="<?= $mi['id'] ?>">
+                        <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
+                   class="w-20 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-amber-400">
         </div>
         <button type="button" id="btn-add-due"
                 class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg
@@ -251,31 +269,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ── Sync (Save) Item ──────────────────────────────────────
-    document.querySelectorAll('.btn-sync-item').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const row = btn.closest('.day-item');
-            const icon = btn.querySelector('i');
-            icon.className = 'fas fa-spinner fa-spin text-xs';
+    // ── Update Day Ledger (All Items) ─────────────────────────
+    const btnUpdateLedger = document.getElementById('btn-update-ledger');
+    if (btnUpdateLedger) {
+        btnUpdateLedger.addEventListener('click', async () => {
+            btnUpdateLedger.disabled = true;
+            btnUpdateLedger.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Updating...';
 
-            const res = await apiPost('?url=inventory/upsertDayItem', {
-                item_id: row.dataset.itemId,
-                opening_qty: parseFloat(row.querySelector('.di-opening').value) || 0,
-                closing_qty: parseFloat(row.querySelector('.di-closing').value) || 0,
-                complimentary_qty: parseFloat(row.querySelector('.di-comp').value) || 0,
+            const closeItems = [];
+            document.querySelectorAll('.day-item').forEach(row => {
+                closeItems.push({
+                    item_id: row.dataset.itemId,
+                    effective_opening: parseFloat(row.querySelector('.di-opening').value) || 0,
+                    closing_qty: parseFloat(row.querySelector('.di-closing').value) || 0,
+                    complimentary_qty: parseFloat(row.querySelector('.di-comp').value) || 0,
+                    due_qty: 0,
+                    selling_price: parseFloat(row.dataset.sellingPrice) || 0,
+                });
+            });
+
+            // Use the legacy saveShiftClose endpoint which processes an array of items
+            const res = await apiPost('?url=inventory/saveShiftClose', {
+                items: closeItems,
+                dues: [] // Dues are handled separately now
             });
 
             if (res.success) {
-                icon.className = 'fas fa-check text-xs';
-                showToast('<?= __("success") ?>', 'success');
-                setTimeout(() => icon.className = 'fas fa-arrows-rotate text-xs', 1500);
+                showToast('<?= __("success") ?> Ledger Updated', 'success');
             } else {
-                icon.className = 'fas fa-times text-xs';
                 showToast(res.error || '<?= __("error") ?>', 'error');
-                setTimeout(() => icon.className = 'fas fa-arrows-rotate text-xs', 1500);
             }
+
+            btnUpdateLedger.disabled = false;
+            btnUpdateLedger.innerHTML = '<i class="fas fa-check-circle mr-2"></i> Update Day Ledger';
         });
-    });
+    }
 
     // ── Remove Item ───────────────────────────────────────────
     document.querySelectorAll('.btn-remove-item').forEach(btn => {
@@ -302,10 +330,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const nameInput   = document.getElementById('due-name');
         const amountInput = document.getElementById('due-amount');
         const phoneInput  = document.getElementById('due-phone');
+        const itemSelect  = document.getElementById('due-item-id');
+        const qtyInput    = document.getElementById('due-item-qty');
 
         const name   = nameInput.value.trim();
         const amount = parseFloat(amountInput.value) || 0;
         const phone  = phoneInput.value.trim();
+        const itemId = parseInt(itemSelect.value) || 0;
+        const qty    = parseFloat(qtyInput.value) || 0;
 
         if (!name) return showToast('<?= __("customer_name_req") ?>', 'error');
         if (amount <= 0) return showToast('<?= __("due_amount_req") ?>', 'error');
@@ -314,6 +346,8 @@ document.addEventListener('DOMContentLoaded', () => {
             customer_name: name,
             due_amount: amount,
             phone: phone,
+            item_id: itemId,
+            qty: qty
         });
 
         if (res.success) {
@@ -321,10 +355,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const list = document.getElementById('dues-list');
             const div = document.createElement('div');
             div.className = 'flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row';
+            
+            let itemNameStr = '';
+            if (itemId > 0) {
+                const itemOpt = itemSelect.options[itemSelect.selectedIndex];
+                itemNameStr = ` <span class="text-xs text-text-muted bg-card px-1.5 py-0.5 rounded ml-1 border border-border">${itemOpt.text.trim()} (x${qty})</span>`;
+            }
+
             div.innerHTML = `
                 <div>
-                    <span class="text-sm font-semibold">${name}</span>
-                    ${phone ? `<span class="text-[0.6rem] text-text-muted ml-1">${phone}</span>` : ''}
+                    <span class="text-sm font-semibold">${name}</span>${itemNameStr}
+                    ${phone ? `<br><span class="text-[0.6rem] text-text-muted">${phone}</span>` : ''}
                 </div>
                 <span class="text-sm font-bold text-amber-400">৳${amount.toLocaleString('en-IN')}</span>
             `;
@@ -334,6 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
             nameInput.value = '';
             amountInput.value = '';
             phoneInput.value = '';
+            itemSelect.value = '';
+            qtyInput.value = '';
 
             showToast('<?= __("success") ?>', 'success');
         } else {

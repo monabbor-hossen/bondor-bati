@@ -300,14 +300,19 @@ public function __construct() {
         $dueAmount    = (float)($data['due_amount'] ?? 0);
         $phone        = trim($data['phone'] ?? '');
 
+        $itemId       = (int)($data['item_id'] ?? 0);
+        $qty          = (float)($data['qty'] ?? 0);
+
         if (empty($customerName) || $dueAmount <= 0) {
             $this->json(['success' => false, 'error' => 'Name and amount required']);
         }
 
         try {
+            $this->db->beginTransaction();
+
             $stmt = $this->db->prepare("
-                INSERT INTO customer_dues (customer_name, phone, due_amount, log_date, shift)
-                VALUES (:name, :phone, :amount, :date, :shift)
+                INSERT INTO customer_dues (customer_name, phone, due_amount, log_date, shift, item_id, qty)
+                VALUES (:name, :phone, :amount, :date, :shift, :item_id, :qty)
             ");
             $stmt->execute([
                 ':name'   => $customerName,
@@ -315,11 +320,16 @@ public function __construct() {
                 ':amount' => $dueAmount,
                 ':date'   => $logDate,
                 ':shift'  => $shift,
+                ':item_id'=> $itemId > 0 ? $itemId : null,
+                ':qty'    => $qty,
             ]);
+            
+            $newId = (int)$this->db->lastInsertId();
+            $this->db->commit();
 
             $this->json([
                 'success' => true,
-                'id'      => (int)$this->db->lastInsertId(),
+                'id'      => $newId,
             ]);
         } catch (\Exception $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()]);
