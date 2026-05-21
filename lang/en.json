@@ -176,5 +176,8 @@
     "customer_dues_baki": "Customer Dues (Baki)",
     "customer_name_req": "Customer Name *",
     "due_amount_req": "Due Amount *",
-    "add_due": "Log Due"
+    "add_due": "Log Due",
+    "remaining_balance": "Remaining",
+    "mark_finished": "Mark Finished",
+    "confirm_finish": "Are you sure? Any remaining balance will be written off as an expense for today."
 }

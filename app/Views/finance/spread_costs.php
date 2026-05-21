@@ -106,11 +106,16 @@
             <?php foreach ($spreadCosts as $sc): ?>
             <div class="flex justify-between items-center py-2 px-3 bg-surface border border-border/50 rounded-lg">
                 <div class="flex-1">
-                    <span class="text-sm font-semibold block"><?= htmlspecialchars($sc['asset_name']) ?></span>
-                    <span class="text-[0.6rem] text-text-muted">Total: ৳<?= number_format($sc['total_cost'], 0) ?> / <?= $sc['spread_days'] ?> days</span>
-                    <div class="text-sm font-black text-purple-400">৳<?= number_format($sc['daily_deduction'], 2) ?> / day</div>
+                    <span class="text-sm font-semibold block"><?= htmlspecialchars($sc['name']) ?></span>
+                    <span class="text-[0.6rem] text-text-muted">Total: ৳<?= number_format($sc['total_amount'], 0) ?></span>
+                    <div class="text-sm font-black text-purple-400">
+                        Daily: ৳<?= number_format($sc['daily_amount'], 2) ?> | <?= __('remaining_balance') ?>: ৳<?= number_format($sc['remaining_balance'], 2) ?>
+                    </div>
                 </div>
                 <div class="flex items-center gap-1">
+                    <button class="btn-finish-sc p-2 text-text-muted hover:text-emerald-400 transition-colors" data-id="<?= $sc['id'] ?>" title="<?= __('mark_finished') ?>">
+                        <i class="fas fa-flag-checkered text-xs border rounded p-1 border-current"></i>
+                    </button>
                     <button class="btn-edit-sc p-2 text-text-muted hover:text-purple-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($sc), ENT_QUOTES, 'UTF-8') ?>'>
                         <i class="fas fa-pencil-alt"></i>
                     </button>
@@ -163,12 +168,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = JSON.parse(btn.dataset.item);
             const form = document.getElementById('spreadCostForm');
             form.dataset.id = item.id;
-            document.getElementById('scName').value = item.asset_name;
-            document.getElementById('scTotal').value = item.total_cost;
-            document.getElementById('scDays').value = item.spread_days;
+            document.getElementById('scName').value = item.name;
+            document.getElementById('scTotal').value = item.total_amount;
+            
+            const total = parseFloat(item.total_amount) || 0;
+            const daily = parseFloat(item.daily_amount) || 0;
+            document.getElementById('scDays').value = daily > 0 ? Math.round(total / daily) : 0;
+            
             updateCalc();
             form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save mr-1"></i> <?= __("btn_update") ?? "Update" ?>';
             form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // Finish Spread Cost (True-Up)
+    document.querySelectorAll('.btn-finish-sc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm(`<?= __('confirm_finish') ?>`)) return;
+            
+            const id = btn.dataset.id;
+            const icon = btn.querySelector('i');
+            icon.className = 'fas fa-spinner fa-spin text-xs border rounded p-1 border-current';
+            
+            const res = await apiPost('?url=finance/finishSpreadCost', { id: id });
+            if (res.success) {
+                showToast('Marked as finished!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(res.error || 'Failed to finish', 'error');
+                icon.className = 'fas fa-flag-checkered text-xs border rounded p-1 border-current';
+            }
         });
     });
 

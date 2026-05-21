@@ -125,7 +125,6 @@ public function __construct() {
      * Route: ?url=admin/deleteEntity
      */
     public function deleteEntity() {
-        $this->requireAdmin();
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'error' => 'POST required']);
         }
@@ -134,7 +133,7 @@ public function __construct() {
         $entity = $data['entity'] ?? '';
         $id     = (int)($data['id'] ?? 0);
 
-        $allowed = ['items', 'raw_inventory'];
+        $allowed = ['items', 'raw_inventory', 'expenses', 'fixed_daily_costs', 'spread_costs'];
         if (!in_array($entity, $allowed) || $id <= 0) {
             $this->json(['success' => false, 'error' => 'Invalid entity or ID']);
         }

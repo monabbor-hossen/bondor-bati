@@ -120,10 +120,8 @@ public function __construct() {
     // ══════════════════════════════════════════════════════════════
 
     public function spreadCosts() {
-        $this->requireAdmin();
-
         $fixedCosts = $this->db->query("SELECT * FROM fixed_daily_costs ORDER BY name")->fetchAll();
-        $spreadCosts = $this->db->query("SELECT * FROM spread_costs ORDER BY asset_name")->fetchAll();
+        $spreadCosts = $this->db->query("SELECT * FROM expenses WHERE is_spread = 1 AND is_active = 1 ORDER BY expense_date DESC")->fetchAll();
 
         $this->view('finance/spread_costs', [
             'pageTitle' => __('link_spread_costs'),
@@ -134,7 +132,6 @@ public function __construct() {
     }
 
     public function addFixedCost() {
-        $this->requireAdmin();
         $data = json_decode(file_get_contents('php://input'), true);
         
         $id = (int)($data['id'] ?? 0);
@@ -157,7 +154,6 @@ public function __construct() {
     }
 
     public function addSpreadCost() {
-        $this->requireAdmin();
         $data = json_decode(file_get_contents('php://input'), true);
         
         $id = (int)($data['id'] ?? 0);
@@ -170,26 +166,65 @@ public function __construct() {
         }
         
         $daily = round($total / $days, 2);
+        $date = date('Y-m-d');
 
         if ($id > 0) {
-            $stmt = $this->db->prepare("UPDATE spread_costs SET asset_name = :name, total_cost = :total, spread_days = :days, daily_deduction = :daily WHERE id = :id");
+            $stmt = $this->db->prepare("UPDATE expenses SET name = :name, total_amount = :total, remaining_balance = :total, daily_amount = :daily WHERE id = :id AND is_spread = 1");
             $stmt->execute([
                 ':name' => $name,
                 ':total' => $total,
-                ':days' => $days,
                 ':daily' => $daily,
                 ':id' => $id
             ]);
         } else {
-            $stmt = $this->db->prepare("INSERT INTO spread_costs (asset_name, total_cost, spread_days, daily_deduction) VALUES (:name, :total, :days, :daily)");
+            $stmt = $this->db->prepare("INSERT INTO expenses (category, name, total_amount, is_spread, daily_amount, remaining_balance, expense_date, is_active) VALUES ('Capital', :name, :total, 1, :daily, :total, :date, 1)");
             $stmt->execute([
                 ':name' => $name,
                 ':total' => $total,
-                ':days' => $days,
-                ':daily' => $daily
+                ':daily' => $daily,
+                ':date' => $date
             ]);
         }
         
         $this->json(['success' => true]);
+    }
+
+    public function finishSpreadCost() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = (int)($data['id'] ?? 0);
+        
+        if ($id <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid ID']);
+        }
+
+        try {
+            $this->db->beginTransaction();
+            
+            $stmt = $this->db->prepare("SELECT name, remaining_balance FROM expenses WHERE id = :id AND is_spread = 1 AND is_active = 1");
+            $stmt->execute([':id' => $id]);
+            $expense = $stmt->fetch();
+
+            if ($expense && (float)$expense['remaining_balance'] > 0) {
+                $rem = (float)$expense['remaining_balance'];
+                $newName = $expense['name'] . ' (Early Finish)';
+                $today = date('Y-m-d');
+                
+                $ins = $this->db->prepare("INSERT INTO expenses (category, name, total_amount, is_spread, expense_date) VALUES ('True-Up', :name, :rem, 0, :today)");
+                $ins->execute([
+                    ':name' => $newName,
+                    ':rem' => $rem,
+                    ':today' => $today
+                ]);
+            }
+
+            $upd = $this->db->prepare("UPDATE expenses SET remaining_balance = 0, is_active = 0 WHERE id = :id");
+            $upd->execute([':id' => $id]);
+
+            $this->db->commit();
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 }

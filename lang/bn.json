@@ -178,5 +178,8 @@
     "customer_dues_baki": "বাকি খাতা",
     "customer_name_req": "কাস্টমারের নাম *",
     "due_amount_req": "বাকির পরিমাণ *",
-    "add_due": "বাকি যোগ করুন"
+    "add_due": "বাকি যোগ করুন",
+    "remaining_balance": "অবশিষ্ট",
+    "mark_finished": "শেষ চিহ্নিত করুন",
+    "confirm_finish": "আপনি কি নিশ্চিত? অবশিষ্ট ব্যালেন্স আজকের খরচ হিসেবে যুক্ত হবে।"
 }

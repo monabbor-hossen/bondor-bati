@@ -428,6 +428,9 @@ public function __construct() {
                 }
             }
 
+            // Deduct daily spread costs
+            $this->db->query("UPDATE expenses SET remaining_balance = GREATEST(0, remaining_balance - daily_amount) WHERE is_spread = 1 AND remaining_balance > 0 AND is_active = 1");
+
             $this->db->commit();
 
             // Calculate financial results
