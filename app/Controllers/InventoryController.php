@@ -6,7 +6,7 @@ use Config\Database;
 use PDO;
 
 /**
- * Inventory Controller — Morning Prep + 3-Shift Closing System
+ * Inventory Controller — Morning Prep + Day Ledger System
  */
 class InventoryController extends Controller {
 public function __construct() {
@@ -119,80 +119,216 @@ public function __construct() {
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  SHIFT CLOSING (3-SHIFT SYSTEM)
+    //  DAY LEDGER (unified closing)
     // ══════════════════════════════════════════════════════════════
 
     /**
-     * Display Shift Closing form
+     * Display Day Ledger
      * Route: ?url=inventory/closeDayView
      */
     public function closeDayView() {
         $date  = $this->getBusinessDate();
         $shift = $this->getCurrentShift();
 
-        $items = $this->db->query("SELECT * FROM items WHERE is_active = 1 ORDER BY sort_order, item_name")->fetchAll();
+        // All active menu items for the "Add to Today" dropdown
+        $menuItems = $this->db->query("SELECT id, item_name, item_name_bn, selling_price, cost_price FROM items WHERE is_active = 1 ORDER BY sort_order, item_name")->fetchAll();
 
-        $closeData = [];
-        foreach ($items as $item) {
-            // Get opening qty from daily_stocks
-            $dsStmt = $this->db->prepare("SELECT opening_qty FROM daily_stocks WHERE item_id = :id AND log_date = :date");
-            $dsStmt->execute([':id' => $item['id'], ':date' => $date]);
-            $openingQty = (float)($dsStmt->fetchColumn() ?: 0);
-
-            // Calculate what's already been closed in previous shifts today
-            $prevStmt = $this->db->prepare("
-                SELECT SUM(sold_qty) AS prev_sold, SUM(complimentary_qty) AS prev_comp, SUM(due_qty) AS prev_due
-                FROM shift_closings
-                WHERE item_id = :id AND log_date = :date AND shift != :shift
-            ");
-            $prevStmt->execute([':id' => $item['id'], ':date' => $date, ':shift' => $shift]);
-            $prev = $prevStmt->fetch();
-
-            // Effective opening for THIS shift = total opening - already sold/comp/due
-            $prevSold = (float)($prev['prev_sold'] ?? 0);
-            $prevComp = (float)($prev['prev_comp'] ?? 0);
-            $prevDue  = (float)($prev['prev_due'] ?? 0);
-            $effectiveOpening = $openingQty - $prevSold - $prevComp - $prevDue;
-
-            // Check if this shift already has data
-            $existStmt = $this->db->prepare("
-                SELECT * FROM shift_closings
-                WHERE item_id = :id AND log_date = :date AND shift = :shift
-            ");
-            $existStmt->execute([':id' => $item['id'], ':date' => $date, ':shift' => $shift]);
-            $existing = $existStmt->fetch();
-
-            $closeData[] = [
-                'item_id'            => $item['id'],
-                'item_name'          => $item['item_name'],
-                'item_name_bn'       => $item['item_name_bn'] ?? $item['item_name'],
-                'selling_price'      => (float)$item['selling_price'],
-                'cost_price'         => (float)$item['cost_price'],
-                'effective_opening'  => max(0, $effectiveOpening),
-                'closing_qty'        => $existing ? (float)$existing['closing_qty'] : '',
-                'complimentary_qty'  => $existing ? (float)$existing['complimentary_qty'] : 0,
-                'due_qty'            => $existing ? (float)$existing['due_qty'] : 0,
-                'is_saved'           => (bool)$existing,
-            ];
-        }
-
-        // Get list of which shifts are already closed
-        $closedShifts = $this->db->prepare("
-            SELECT DISTINCT shift FROM shift_closings WHERE log_date = :date
+        // Items already tracked today (from daily_stocks joined with shift_closings)
+        $todayStmt = $this->db->prepare("
+            SELECT ds.item_id, ds.opening_qty,
+                   i.item_name, i.item_name_bn, i.selling_price, i.cost_price,
+                   COALESCE(sc.closing_qty, '') AS closing_qty,
+                   COALESCE(sc.complimentary_qty, 0) AS complimentary_qty,
+                   COALESCE(sc.sold_qty, 0) AS sold_qty,
+                   COALESCE(sc.total_sales_amount, 0) AS total_sales_amount
+            FROM daily_stocks ds
+            JOIN items i ON i.id = ds.item_id
+            LEFT JOIN shift_closings sc ON sc.item_id = ds.item_id AND sc.log_date = ds.log_date AND sc.shift = :shift
+            WHERE ds.log_date = :date
+            ORDER BY i.sort_order, i.item_name
         ");
-        $closedShifts->execute([':date' => $date]);
-        $closed = $closedShifts->fetchAll(PDO::FETCH_COLUMN);
+        $todayStmt->execute([':date' => $date, ':shift' => $shift]);
+        $todayItems = $todayStmt->fetchAll();
+
+        // Today's customer dues
+        $duesStmt = $this->db->prepare("SELECT id, customer_name, phone, due_amount, status FROM customer_dues WHERE log_date = :date ORDER BY id DESC");
+        $duesStmt->execute([':date' => $date]);
+        $todayDues = $duesStmt->fetchAll();
 
         $this->view('inventory/close_day', [
-            'pageTitle'     => __('shift_closing'),
+            'pageTitle'     => __('day_ledger'),
             'activeNav'     => 'close',
-            'closeData'     => $closeData,
-            'logDate'       => $date,
-            'currentShift'  => $shift,
-            'closedShifts'  => $closed,
+            'menuItems'     => $menuItems,
+            'todayItems'    => $todayItems,
+            'todayDues'     => $todayDues,
             'businessDate'  => $date,
+            'currentShift'  => $shift,
         ]);
     }
+
+    /**
+     * Upsert a day item (AJAX)
+     * Route: ?url=inventory/upsertDayItem
+     */
+    public function upsertDayItem() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data       = json_decode(file_get_contents('php://input'), true);
+        $logDate    = $this->getBusinessDate();
+        $shift      = $this->getCurrentShift();
+        $itemId     = (int)($data['item_id'] ?? 0);
+        $openingQty = (float)($data['opening_qty'] ?? 0);
+        $closingQty = (float)($data['closing_qty'] ?? 0);
+        $compQty    = (float)($data['complimentary_qty'] ?? 0);
+
+        if ($itemId <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid item']);
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Upsert into daily_stocks (opening)
+            $dsStmt = $this->db->prepare("
+                INSERT INTO daily_stocks (item_id, log_date, opening_qty)
+                VALUES (:item_id, :date, :opening)
+                ON DUPLICATE KEY UPDATE
+                    opening_qty = VALUES(opening_qty)
+            ");
+            $dsStmt->execute([
+                ':item_id' => $itemId,
+                ':date'    => $logDate,
+                ':opening' => $openingQty,
+            ]);
+
+            // Get selling price for revenue calc
+            $priceStmt = $this->db->prepare("SELECT selling_price FROM items WHERE id = :id");
+            $priceStmt->execute([':id' => $itemId]);
+            $sellingPrice = (float)$priceStmt->fetchColumn();
+
+            // Deductive sales
+            $soldQty = max(0, $openingQty - $closingQty - $compQty);
+            $salesAmount = $soldQty * $sellingPrice;
+
+            // Upsert into shift_closings
+            $scStmt = $this->db->prepare("
+                INSERT INTO shift_closings
+                    (item_id, log_date, shift, user_id, closing_qty, complimentary_qty, due_qty, sold_qty, total_sales_amount)
+                VALUES
+                    (:item_id, :date, :shift, :user_id, :closing, :comp, 0, :sold, :sales)
+                ON DUPLICATE KEY UPDATE
+                    closing_qty = VALUES(closing_qty),
+                    complimentary_qty = VALUES(complimentary_qty),
+                    sold_qty = VALUES(sold_qty),
+                    total_sales_amount = VALUES(total_sales_amount),
+                    user_id = VALUES(user_id)
+            ");
+            $scStmt->execute([
+                ':item_id' => $itemId,
+                ':date'    => $logDate,
+                ':shift'   => $shift,
+                ':user_id' => $_SESSION['user_id'] ?? null,
+                ':closing' => $closingQty,
+                ':comp'    => $compQty,
+                ':sold'    => $soldQty,
+                ':sales'   => $salesAmount,
+            ]);
+
+            $this->db->commit();
+            $this->json([
+                'success'   => true,
+                'sold_qty'  => $soldQty,
+                'sales'     => $salesAmount,
+            ]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Remove item from today's ledger (AJAX)
+     * Route: ?url=inventory/removeDayItem
+     */
+    public function removeDayItem() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data    = json_decode(file_get_contents('php://input'), true);
+        $logDate = $this->getBusinessDate();
+        $itemId  = (int)($data['item_id'] ?? 0);
+
+        if ($itemId <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid item']);
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Remove from daily_stocks
+            $this->db->prepare("DELETE FROM daily_stocks WHERE item_id = :id AND log_date = :date")
+                ->execute([':id' => $itemId, ':date' => $logDate]);
+
+            // Remove from shift_closings (all shifts for this day)
+            $this->db->prepare("DELETE FROM shift_closings WHERE item_id = :id AND log_date = :date")
+                ->execute([':id' => $itemId, ':date' => $logDate]);
+
+            $this->db->commit();
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Add a customer due (AJAX)
+     * Route: ?url=inventory/addCustomerDue
+     */
+    public function addCustomerDue() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data         = json_decode(file_get_contents('php://input'), true);
+        $logDate      = $this->getBusinessDate();
+        $shift        = $this->getCurrentShift();
+        $customerName = trim($data['customer_name'] ?? '');
+        $dueAmount    = (float)($data['due_amount'] ?? 0);
+        $phone        = trim($data['phone'] ?? '');
+
+        if (empty($customerName) || $dueAmount <= 0) {
+            $this->json(['success' => false, 'error' => 'Name and amount required']);
+        }
+
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO customer_dues (customer_name, phone, due_amount, log_date, shift)
+                VALUES (:name, :phone, :amount, :date, :shift)
+            ");
+            $stmt->execute([
+                ':name'   => $customerName,
+                ':phone'  => $phone ?: null,
+                ':amount' => $dueAmount,
+                ':date'   => $logDate,
+                ':shift'  => $shift,
+            ]);
+
+            $this->json([
+                'success' => true,
+                'id'      => (int)$this->db->lastInsertId(),
+            ]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  LEGACY: Save Shift Closing (kept for backwards compat)
+    // ══════════════════════════════════════════════════════════════
 
     /**
      * Save Shift Closing (AJAX)
@@ -302,6 +438,4 @@ public function __construct() {
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
-
-    // Removed old detectCurrentShift helper as it's now in Core\Controller
 }

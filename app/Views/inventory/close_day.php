@@ -1,289 +1,343 @@
 <?php
 /**
- * Shift Closing View — 3-Shift System
- * Variables: $closeData, $logDate, $currentShift, $closedShifts
- * Formula: Sold = Effective Opening - Closing - Complimentary - Due
+ * Day Ledger View — Unified Closing System
+ * Variables: $menuItems, $todayItems, $todayDues, $businessDate, $currentShift
  */
-$shifts = ['morning', 'evening', 'night'];
 ?>
 
 <div class="mb-4 animate-slideUp">
     <div class="flex items-center justify-between mb-1">
         <h2 class="text-lg font-black">
-            <i class="fas fa-moon text-indigo-400 mr-1"></i> <?= __('shift_closing') ?>
+            <i class="fas fa-book text-indigo-400 mr-1"></i> <?= __('day_ledger') ?>
         </h2>
         <span class="text-xs font-semibold text-text-muted bg-card border border-border px-2.5 py-1 rounded-full">
-            Date: <?= date('d M, Y', strtotime($businessDate)) ?>
+            <?= date('d M, Y', strtotime($businessDate)) ?>
+        </span>
+    </div>
+    <div class="flex items-center gap-2 mt-1">
+        <span class="text-[0.65rem] font-bold text-accent uppercase tracking-widest">
+            <i class="fas fa-clock mr-1"></i> <?= __($currentShift) ?> <?= __('shift') ?>
         </span>
     </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SECTION 1: Add Item to Today's Ledger                   -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="bg-card border border-border rounded-xl p-4 mb-4 animate-slideUp">
+    <p class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-3">
+        <i class="fas fa-plus-circle text-accent mr-1"></i> <?= __('add_to_day') ?>
+    </p>
+    <div class="flex gap-2">
+        <select id="add-item-select"
+                class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent appearance-none cursor-pointer">
+            <option value=""><?= __('select_menu_item') ?></option>
+            <?php foreach ($menuItems as $mi): ?>
+                <option value="<?= $mi['id'] ?>" data-price="<?= $mi['selling_price'] ?>">
+                    <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?> — ৳<?= $mi['selling_price'] ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <input type="number" id="add-item-opening" step="0.5" min="0" placeholder="<?= __('opening_qty') ?>"
+               class="w-24 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-accent">
+        <button type="button" id="btn-add-day-item"
+                class="text-xs font-bold text-accent bg-accent/10 border border-accent/30 px-3 py-2.5 rounded-lg
+                       hover:bg-accent/20 transition-all">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+</div>
 
-<!-- Current Shift Label -->
-<div class="flex items-center gap-2 mb-4 animate-slideUp">
-    <span class="text-[0.65rem] font-bold text-accent uppercase tracking-widest">
-        <i class="fas fa-clock mr-1"></i> <?= __($currentShift) ?> <?= __('shift') ?>
-    </span>
-    <?php if (in_array($currentShift, $closedShifts)): ?>
-    <span class="text-[0.6rem] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-        <i class="fas fa-lock mr-0.5"></i> Already Closed
-    </span>
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SECTION 2: Today's Active Items                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="space-y-3 mb-4 stagger" id="day-items-list">
+    <?php if (!empty($todayItems)): ?>
+        <?php foreach ($todayItems as $item): ?>
+        <div class="bg-card border border-border rounded-xl p-4 day-item"
+             data-item-id="<?= $item['item_id'] ?>"
+             data-selling-price="<?= $item['selling_price'] ?>">
+
+            <!-- Item Header -->
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-sm">
+                    <?= htmlspecialchars(currentLang() === 'bn' ? $item['item_name_bn'] : $item['item_name']) ?>
+                </h3>
+                <div class="flex items-center gap-1">
+                    <span class="text-xs text-text-muted mr-1">৳<?= number_format($item['selling_price']) ?>/<?= __('unit') ?></span>
+                    <button type="button" class="btn-sync-item text-accent hover:text-emerald-400 transition-colors p-1" title="<?= __('save') ?>">
+                        <i class="fas fa-arrows-rotate text-xs"></i>
+                    </button>
+                    <button type="button" class="btn-remove-item text-text-muted hover:text-red-400 transition-colors p-1" title="<?= __('delete') ?>">
+                        <i class="fas fa-trash-alt text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Input Grid -->
+            <div class="grid grid-cols-3 gap-2.5 mb-3">
+                <!-- Opening -->
+                <div>
+                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('opening_qty') ?></label>
+                    <input type="number" step="0.5" min="0"
+                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-opening"
+                           value="<?= (float)$item['opening_qty'] ?>" placeholder="0">
+                </div>
+                <!-- Closing -->
+                <div>
+                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('closing_qty') ?></label>
+                    <input type="number" step="0.5" min="0"
+                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-closing"
+                           value="<?= $item['closing_qty'] !== '' ? (float)$item['closing_qty'] : '' ?>" placeholder="0">
+                </div>
+                <!-- Complimentary -->
+                <div>
+                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('comp_qty') ?></label>
+                    <input type="number" step="0.5" min="0"
+                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-comp"
+                           value="<?= (float)$item['complimentary_qty'] ?: '' ?>" placeholder="0">
+                </div>
+            </div>
+
+            <!-- Calculated Sold -->
+            <div class="flex items-center justify-between bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
+                <span class="text-xs font-bold text-text-muted uppercase"><?= __('sold') ?></span>
+                <div class="text-right">
+                    <span class="text-lg font-black text-accent di-sold">0</span>
+                    <span class="text-xs text-text-muted ml-1">= ৳<span class="di-revenue text-accent font-bold">0</span></span>
+                </div>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <div id="empty-state" class="bg-card border border-border/30 rounded-xl p-8 text-center animate-slideUp">
+            <i class="fas fa-clipboard-list text-3xl text-text-muted/30 mb-2"></i>
+            <p class="text-sm text-text-muted"><?= __('no_data') ?></p>
+        </div>
     <?php endif; ?>
 </div>
 
-<!-- Items List -->
-<form id="close-form" class="space-y-3 stagger">
-    <input type="hidden" id="close-log-date" value="<?= $logDate ?>">
-    <input type="hidden" id="close-shift" value="<?= $currentShift ?>">
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  SECTION 3: Customer Dues (Baki)                          -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="bg-card border border-amber-500/20 rounded-xl p-4 mb-4 animate-slideUp">
+    <p class="text-[0.65rem] font-bold text-amber-400 uppercase tracking-widest mb-3">
+        <i class="fas fa-hand-holding-dollar mr-1"></i> <?= __('customer_dues') ?>
+    </p>
 
-    <?php foreach ($closeData as $item): ?>
-    <div class="bg-card border border-border rounded-xl p-4 close-item"
-         data-item-id="<?= $item['item_id'] ?>"
-         data-selling-price="<?= $item['selling_price'] ?>"
-         data-cost-price="<?= $item['cost_price'] ?>">
-
-        <!-- Item Header -->
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-bold text-sm">
-                <?= htmlspecialchars(currentLang() === 'bn' ? $item['item_name_bn'] : $item['item_name']) ?>
-            </h3>
-            <span class="text-xs text-text-muted">৳<?= number_format($item['selling_price']) ?>/<?= __('unit') ?></span>
+    <!-- Add Due Form -->
+    <div class="space-y-2 mb-4">
+        <input type="text" id="due-name" placeholder="<?= __('customer_name_req') ?>"
+               class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+        <div class="flex gap-2">
+            <input type="number" id="due-amount" step="1" min="1" placeholder="<?= __('due_amount_req') ?>"
+                   class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+            <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
+                   class="w-28 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
         </div>
-
-        <!-- Effective Opening (read-only) -->
-        <div class="flex items-center justify-between bg-surface/50 rounded-lg px-3 py-2 mb-3">
-            <span class="text-[0.65rem] font-bold text-text-muted uppercase"><?= __('opening_stock') ?></span>
-            <span class="text-lg font-black text-text-primary close-opening"><?= $item['effective_opening'] ?></span>
-            <input type="hidden" class="close-opening-val" value="<?= $item['effective_opening'] ?>">
-        </div>
-
-        <!-- Input Grid -->
-        <div class="grid grid-cols-2 gap-2.5 mb-3">
-            <!-- Closing Stock -->
-            <div>
-                <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('closing_stock') ?></label>
-                <input type="number" step="0.5" min="0"
-                       class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent close-closing"
-                       value="<?= $item['closing_qty'] ?>" placeholder="0">
-            </div>
-            <!-- Complimentary -->
-            <div>
-                <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('complimentary') ?></label>
-                <input type="number" step="0.5" min="0"
-                       class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent close-comp"
-                       value="<?= $item['complimentary_qty'] ?>" placeholder="0">
-            </div>
-        </div>
-
-        <!-- Due (Baki) -->
-        <div class="mb-3">
-            <label class="block text-[0.6rem] font-bold text-amber-400 uppercase tracking-wider mb-1">
-                <i class="fas fa-hand-holding-dollar mr-0.5"></i> <?= __('due_baki') ?>
-            </label>
-            <input type="number" step="0.5" min="0"
-                   class="w-full bg-surface border border-amber-500/30 rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-amber-400 close-due"
-                   value="<?= $item['due_qty'] ?>" placeholder="0">
-        </div>
-
-        <!-- Calculated Sold -->
-        <div class="flex items-center justify-between bg-accent/5 border border-accent/20 rounded-lg px-3 py-2">
-            <span class="text-xs font-bold text-text-muted uppercase"><?= __('sold') ?></span>
-            <div class="text-right">
-                <span class="text-lg font-black text-accent close-sold">0</span>
-                <span class="text-xs text-text-muted ml-1">= ৳<span class="close-revenue text-accent font-bold">0</span></span>
-            </div>
-        </div>
-    </div>
-    <?php endforeach; ?>
-
-    <!-- Due Customer Details (collapsible) -->
-    <div class="bg-card border border-amber-500/20 rounded-xl p-4 animate-slideUp" id="due-section" style="display:none;">
-        <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-3">
-            <i class="fas fa-users mr-1"></i> <?= __('customer_dues') ?>
-        </p>
-        <div id="due-entries" class="space-y-3"></div>
         <button type="button" id="btn-add-due"
-                class="mt-2 text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2 rounded-lg w-full
-                       hover:bg-amber-500/20 transition-all">
-            <i class="fas fa-plus mr-1"></i> <?= __('add') ?> <?= __('due_baki') ?>
+                class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg
+                       hover:bg-amber-500/20 transition-all mt-1">
+            <i class="fas fa-plus mr-1"></i> <?= __('add_due') ?>
         </button>
     </div>
 
-    <!-- Totals Summary -->
-    <div class="bg-card border border-border rounded-xl p-4 animate-slideUp">
-        <p class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-3"><?= __('daily_summary') ?></p>
-        <div class="space-y-2">
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('total_sales') ?></span>
-                <span class="font-bold text-accent" id="summary-total-sales">৳0</span>
+    <!-- Today's Dues List -->
+    <div id="dues-list" class="space-y-2">
+        <?php if (!empty($todayDues)): ?>
+            <?php foreach ($todayDues as $due): ?>
+            <div class="flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row" data-due-id="<?= $due['id'] ?>">
+                <div>
+                    <span class="text-sm font-semibold"><?= htmlspecialchars($due['customer_name']) ?></span>
+                    <?php if (!empty($due['phone'])): ?>
+                        <span class="text-[0.6rem] text-text-muted ml-1"><?= htmlspecialchars($due['phone']) ?></span>
+                    <?php endif; ?>
+                </div>
+                <span class="text-sm font-bold text-amber-400">৳<?= number_format($due['due_amount']) ?></span>
             </div>
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('sold') ?> (<?= __('qty') ?>)</span>
-                <span class="font-bold" id="summary-total-sold">0</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('complimentary') ?></span>
-                <span class="font-bold text-amber-400" id="summary-total-comp">0</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('due_baki') ?></span>
-                <span class="font-bold text-indigo-400" id="summary-total-due">0</span>
-            </div>
-        </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
+</div>
 
-    <!-- Submit Button -->
-    <button type="button" id="btn-close-shift"
-            class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl
-                   hover:bg-indigo-500 transition-all active:scale-[0.97] text-sm">
-        <i class="fas fa-lock mr-2"></i> <?= __('close_shift') ?> — <?= __(ucfirst($currentShift)) ?>
-    </button>
-</form>
-
-<!-- Results Modal (shown after successful close) -->
-<div id="results-modal" class="fixed inset-0 z-[100] flex items-center justify-center px-4" style="display:none;">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="document.getElementById('results-modal').style.display='none'"></div>
-    <div class="relative bg-card border border-border rounded-2xl p-6 w-full max-w-sm z-10">
-        <h3 class="text-center text-lg font-black mb-4">
-            <i class="fas fa-check-circle text-emerald-400 mr-1"></i> <?= __('results') ?>
-        </h3>
-        <div class="space-y-3 mb-5">
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('total_revenue') ?></span>
-                <span class="font-bold text-accent" id="result-revenue">৳0</span>
-            </div>
-            <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('cash_in_drawer') ?></span>
-                <span class="font-bold text-emerald-400" id="result-cash">৳0</span>
-            </div>
-            <div class="flex justify-between text-sm border-t border-border pt-2">
-                <span class="text-text-muted"><?= __('net_profit') ?></span>
-                <span class="font-bold text-lg" id="result-profit">৳0</span>
-            </div>
+<!-- ══════════════════════════════════════════════════════════ -->
+<!--  Summary                                                   -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="bg-card border border-border rounded-xl p-4 animate-slideUp">
+    <p class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-3"><?= __('daily_summary') ?></p>
+    <div class="space-y-2">
+        <div class="flex justify-between text-sm">
+            <span class="text-text-muted"><?= __('total_sales') ?></span>
+            <span class="font-bold text-accent" id="summary-total-sales">৳0</span>
         </div>
-        <button onclick="document.getElementById('results-modal').style.display='none'"
-                class="w-full bg-accent text-white font-bold py-3 rounded-xl hover:bg-accent-light transition-all text-sm">
-            <?= __('close') ?>
-        </button>
+        <div class="flex justify-between text-sm">
+            <span class="text-text-muted"><?= __('sold') ?> (<?= __('qty') ?>)</span>
+            <span class="font-bold" id="summary-total-sold">0</span>
+        </div>
+        <div class="flex justify-between text-sm">
+            <span class="text-text-muted"><?= __('complimentary') ?></span>
+            <span class="font-bold text-amber-400" id="summary-total-comp">0</span>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const items = document.querySelectorAll('.close-item');
-    const dueSection = document.getElementById('due-section');
 
     // ── Live Calculation ──────────────────────────────────────
     function recalcAll() {
-        let totalSold = 0, totalRevenue = 0, totalComp = 0, totalDue = 0;
+        let totalSold = 0, totalRevenue = 0, totalComp = 0;
 
-        items.forEach(row => {
-            const opening = parseFloat(row.querySelector('.close-opening-val').value) || 0;
-            const closing = parseFloat(row.querySelector('.close-closing').value) || 0;
-            const comp    = parseFloat(row.querySelector('.close-comp').value) || 0;
-            const due     = parseFloat(row.querySelector('.close-due').value) || 0;
+        document.querySelectorAll('.day-item').forEach(row => {
+            const opening = parseFloat(row.querySelector('.di-opening').value) || 0;
+            const closing = parseFloat(row.querySelector('.di-closing').value) || 0;
+            const comp    = parseFloat(row.querySelector('.di-comp').value) || 0;
             const price   = parseFloat(row.dataset.sellingPrice) || 0;
 
-            const sold = Math.max(0, opening - closing - comp - due);
+            const sold = Math.max(0, opening - closing - comp);
             const revenue = sold * price;
 
-            row.querySelector('.close-sold').textContent = sold % 1 === 0 ? sold : sold.toFixed(1);
-            row.querySelector('.close-revenue').textContent = revenue.toLocaleString('en-IN');
+            row.querySelector('.di-sold').textContent = sold % 1 === 0 ? sold : sold.toFixed(1);
+            row.querySelector('.di-revenue').textContent = revenue.toLocaleString('en-IN');
 
             totalSold    += sold;
             totalRevenue += revenue;
             totalComp    += comp;
-            totalDue     += due;
         });
 
         document.getElementById('summary-total-sales').textContent = '৳' + totalRevenue.toLocaleString('en-IN');
         document.getElementById('summary-total-sold').textContent = totalSold;
         document.getElementById('summary-total-comp').textContent = totalComp;
-        document.getElementById('summary-total-due').textContent = totalDue;
-
-        // Show/hide due section
-        dueSection.style.display = totalDue > 0 ? 'block' : 'none';
     }
 
-    items.forEach(row => {
-        ['close-closing', 'close-comp', 'close-due'].forEach(cls => {
-            row.querySelector('.' + cls).addEventListener('input', recalcAll);
+    // Bind existing rows
+    function bindRowInputs(row) {
+        ['di-opening', 'di-closing', 'di-comp'].forEach(cls => {
+            const el = row.querySelector('.' + cls);
+            if (el) el.addEventListener('input', recalcAll);
         });
-    });
+    }
 
+    document.querySelectorAll('.day-item').forEach(bindRowInputs);
     recalcAll();
 
-    // ── Add Due Entry ─────────────────────────────────────────
-    let dueIndex = 0;
-    document.getElementById('btn-add-due').addEventListener('click', () => {
-        const container = document.getElementById('due-entries');
-        const div = document.createElement('div');
-        div.className = 'bg-surface border border-border rounded-lg p-3 space-y-2';
-        div.innerHTML = `
-            <div class="flex gap-2">
-                <input type="text" placeholder="<?= __('customer_name') ?>" class="due-name flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-                <input type="tel" placeholder="<?= __('phone') ?>" class="due-phone w-28 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-            </div>
-            <div class="flex gap-2">
-                <input type="number" placeholder="<?= __('amount') ?> (৳)" class="due-amount flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-                <button type="button" onclick="this.closest('.space-y-2').remove()" class="text-red-400 px-3"><i class="fas fa-trash-alt"></i></button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
+    // ── Add Item to Day ───────────────────────────────────────
+    document.getElementById('btn-add-day-item').addEventListener('click', async () => {
+        const sel = document.getElementById('add-item-select');
+        const openingInput = document.getElementById('add-item-opening');
+        const itemId = sel.value;
+        const openingQty = parseFloat(openingInput.value) || 0;
 
-    // ── Submit Shift Close ────────────────────────────────────
-    document.getElementById('btn-close-shift').addEventListener('click', async () => {
-        const btn = document.getElementById('btn-close-shift');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Saving...';
+        if (!itemId) return showToast('<?= __("select_menu_item") ?>', 'error');
+        if (openingQty <= 0) return showToast('<?= __("opening_qty") ?> required', 'error');
 
-        const closeItems = [];
-        items.forEach(row => {
-            closeItems.push({
-                item_id: row.dataset.itemId,
-                effective_opening: parseFloat(row.querySelector('.close-opening-val').value) || 0,
-                closing_qty: parseFloat(row.querySelector('.close-closing').value) || 0,
-                complimentary_qty: parseFloat(row.querySelector('.close-comp').value) || 0,
-                due_qty: parseFloat(row.querySelector('.close-due').value) || 0,
-                selling_price: parseFloat(row.dataset.sellingPrice) || 0,
-            });
-        });
+        // Check if already on the list
+        if (document.querySelector(`.day-item[data-item-id="${itemId}"]`)) {
+            return showToast('Already added!', 'error');
+        }
 
-        // Collect due entries
-        const dues = [];
-        document.querySelectorAll('#due-entries > div').forEach(entry => {
-            const name   = entry.querySelector('.due-name').value;
-            const phone  = entry.querySelector('.due-phone').value;
-            const amount = parseFloat(entry.querySelector('.due-amount').value) || 0;
-            if (name && amount > 0) {
-                dues.push({ customer_name: name, phone, amount });
-            }
-        });
-
-        const res = await apiPost('?url=inventory/saveShiftClose', {
-            log_date: document.getElementById('close-log-date').value,
-            shift: document.getElementById('close-shift').value,
-            items: closeItems,
-            dues: dues,
+        const res = await apiPost('?url=inventory/upsertDayItem', {
+            item_id: itemId,
+            opening_qty: openingQty,
+            closing_qty: 0,
+            complimentary_qty: 0,
         });
 
         if (res.success) {
-            showToast('<?= __('success') ?> Shift closed!', 'success');
-
-            // Show results modal
-            document.getElementById('result-revenue').textContent = '৳' + (res.total_revenue || 0).toLocaleString('en-IN');
-            document.getElementById('result-cash').textContent = '৳' + (res.cash_in_drawer || 0).toLocaleString('en-IN');
-            const profitEl = document.getElementById('result-profit');
-            profitEl.textContent = '৳' + (res.net_profit || 0).toLocaleString('en-IN');
-            profitEl.className = 'font-bold text-lg ' + ((res.net_profit || 0) >= 0 ? 'text-emerald-400' : 'text-red-400');
-            document.getElementById('results-modal').style.display = 'flex';
-
-            btn.innerHTML = '<i class="fas fa-check mr-2"></i> Closed';
+            showToast('<?= __("success") ?>', 'success');
+            setTimeout(() => window.location.reload(), 500);
         } else {
-            showToast(res.error || '<?= __('error') ?>', 'error');
-            btn.innerHTML = '<i class="fas fa-lock mr-2"></i> <?= __('close_shift') ?>';
-            btn.disabled = false;
+            showToast(res.error || '<?= __("error") ?>', 'error');
+        }
+    });
+
+    // ── Sync (Save) Item ──────────────────────────────────────
+    document.querySelectorAll('.btn-sync-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const row = btn.closest('.day-item');
+            const icon = btn.querySelector('i');
+            icon.className = 'fas fa-spinner fa-spin text-xs';
+
+            const res = await apiPost('?url=inventory/upsertDayItem', {
+                item_id: row.dataset.itemId,
+                opening_qty: parseFloat(row.querySelector('.di-opening').value) || 0,
+                closing_qty: parseFloat(row.querySelector('.di-closing').value) || 0,
+                complimentary_qty: parseFloat(row.querySelector('.di-comp').value) || 0,
+            });
+
+            if (res.success) {
+                icon.className = 'fas fa-check text-xs';
+                showToast('<?= __("success") ?>', 'success');
+                setTimeout(() => icon.className = 'fas fa-arrows-rotate text-xs', 1500);
+            } else {
+                icon.className = 'fas fa-times text-xs';
+                showToast(res.error || '<?= __("error") ?>', 'error');
+                setTimeout(() => icon.className = 'fas fa-arrows-rotate text-xs', 1500);
+            }
+        });
+    });
+
+    // ── Remove Item ───────────────────────────────────────────
+    document.querySelectorAll('.btn-remove-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('<?= __("confirm_delete") ?>')) return;
+
+            const row = btn.closest('.day-item');
+            const res = await apiPost('?url=inventory/removeDayItem', {
+                item_id: row.dataset.itemId,
+            });
+
+            if (res.success) {
+                row.remove();
+                recalcAll();
+                showToast('<?= __("success") ?>', 'success');
+            } else {
+                showToast(res.error || '<?= __("error") ?>', 'error');
+            }
+        });
+    });
+
+    // ── Add Customer Due ──────────────────────────────────────
+    document.getElementById('btn-add-due').addEventListener('click', async () => {
+        const nameInput   = document.getElementById('due-name');
+        const amountInput = document.getElementById('due-amount');
+        const phoneInput  = document.getElementById('due-phone');
+
+        const name   = nameInput.value.trim();
+        const amount = parseFloat(amountInput.value) || 0;
+        const phone  = phoneInput.value.trim();
+
+        if (!name) return showToast('<?= __("customer_name_req") ?>', 'error');
+        if (amount <= 0) return showToast('<?= __("due_amount_req") ?>', 'error');
+
+        const res = await apiPost('?url=inventory/addCustomerDue', {
+            customer_name: name,
+            due_amount: amount,
+            phone: phone,
+        });
+
+        if (res.success) {
+            // Append to list
+            const list = document.getElementById('dues-list');
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row';
+            div.innerHTML = `
+                <div>
+                    <span class="text-sm font-semibold">${name}</span>
+                    ${phone ? `<span class="text-[0.6rem] text-text-muted ml-1">${phone}</span>` : ''}
+                </div>
+                <span class="text-sm font-bold text-amber-400">৳${amount.toLocaleString('en-IN')}</span>
+            `;
+            list.prepend(div);
+
+            // Clear inputs
+            nameInput.value = '';
+            amountInput.value = '';
+            phoneInput.value = '';
+
+            showToast('<?= __("success") ?>', 'success');
+        } else {
+            showToast(res.error || '<?= __("error") ?>', 'error');
         }
     });
 });

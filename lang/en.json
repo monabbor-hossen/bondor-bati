@@ -166,5 +166,15 @@
     "unit_pcs": "pcs",
     "action_delete_item": "Delete Item",
     "opening_current_stock": "Opening / Current Stock (Qty)",
-    "confirm_delete": "Are you sure you want to delete this? This action cannot be undone."
+    "confirm_delete": "Are you sure you want to delete this? This action cannot be undone.",
+    "day_ledger": "Day Ledger",
+    "select_menu_item": "Select Menu Item...",
+    "opening_qty": "Opening Stock",
+    "closing_qty": "Closing Stock",
+    "comp_qty": "Complimentary",
+    "add_to_day": "Add to Today",
+    "customer_dues_baki": "Customer Dues (Baki)",
+    "customer_name_req": "Customer Name *",
+    "due_amount_req": "Due Amount *",
+    "add_due": "Log Due"
 }
