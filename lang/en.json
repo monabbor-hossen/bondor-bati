@@ -10,13 +10,11 @@
     "payroll": "Payroll",
     "bazaar": "Bazaar",
     "settings": "Settings",
-
     "morning": "Morning",
     "evening": "Evening",
     "night": "Night",
     "shift": "Shift",
     "select_shift": "Select Shift",
-
     "opening_stock": "Opening Stock",
     "closing_stock": "Closing Stock",
     "sold": "Sold",
@@ -25,13 +23,11 @@
     "wastage": "Wastage",
     "fresh_processed": "Fresh Processed",
     "carry_forward": "Carry Forward",
-
     "total_sales": "Total Sales",
     "net_profit": "Net Profit",
     "cash_in_drawer": "Cash in Drawer",
     "total_revenue": "Total Revenue",
     "total_expenses": "Total Expenses",
-
     "save": "Save",
     "submit": "Submit",
     "cancel": "Cancel",
@@ -40,14 +36,12 @@
     "add": "Add",
     "close_shift": "Close Shift",
     "save_prep": "Save Morning Prep",
-
     "item": "Item",
     "qty": "Qty",
     "price": "Price",
     "total": "Total",
     "unit": "Unit",
     "plates": "plates",
-
     "gas_status": "Gas Status",
     "days_remaining": "Days Remaining",
     "refill_date": "Refill Date",
@@ -55,46 +49,37 @@
     "low_plan": "Low — Plan Refill",
     "sufficient": "Sufficient",
     "no_gas_data": "No gas expense on record.",
-
     "bazaar_suggestions": "Bazaar Suggestions",
     "avg_7d": "7d Avg",
     "suggested": "Suggested",
     "multiplier": "Multiplier",
-
     "supplier_dues": "Supplier Dues",
     "customer_dues": "Customer Dues",
     "pending_orders": "Pending Orders",
     "advance_orders": "Advance Orders",
-
     "login": "Login",
     "username": "Username",
     "password": "Password",
     "login_btn": "Sign In",
     "magic_link_title": "Staff Access",
     "magic_link_desc": "Use the link provided by your admin to log in.",
-
     "low_stock_alert": "Low Stock Alert",
     "items_below_threshold": "items below minimum stock",
-
     "reports": "Reports",
     "daily_report": "Daily Report",
     "monthly_report": "Monthly Report",
     "custom_range": "Custom Range",
     "top_selling": "Top Selling Items",
     "high_wastage": "High Wastage Items",
-
     "expense": "Expense",
     "spread_cost": "Spread Cost",
-    "daily_deduction": "Daily Deduction",
     "remaining": "Remaining",
-
     "staff": "Staff",
     "admin": "Admin",
     "salary": "Salary",
     "absent_days": "Absent Days",
     "deduction": "Deduction",
     "final_pay": "Final Pay",
-
     "no_data": "No data available",
     "success": "Success!",
     "error": "Error!",
@@ -102,7 +87,6 @@
     "offline_mode": "Offline Mode",
     "syncing": "Syncing...",
     "all_synced": "All data synced",
-
     "today": "Today",
     "yesterday": "Yesterday",
     "this_month": "This Month",
@@ -113,24 +97,20 @@
     "download": "Download",
     "export_csv": "Export CSV",
     "backup": "Backup",
-
     "tk": "TK",
     "advance": "Advance",
     "spent": "Spent",
     "balance": "Balance",
     "returned": "Returned",
     "due_to_staff": "Due to Staff",
-
     "event_prep": "Event Prep",
     "expect_volume": "Expect volume increase",
     "prep_suggestion": "Prep Suggestion",
-
     "morning_prep": "Morning Prep",
     "night_closing": "Night Closing",
     "shift_closing": "Shift Closing",
     "daily_summary": "Daily Summary",
     "results": "Results",
-
     "customer_name": "Customer Name",
     "phone": "Phone",
     "amount": "Amount",
@@ -139,7 +119,6 @@
     "pending": "Pending",
     "paid": "Paid",
     "settle": "Settle",
-
     "staff_management": "Staff Management",
     "add_new_staff": "Add New Staff",
     "staff_name": "Full Name",
@@ -175,5 +154,8 @@
     "spread_days": "Days to Spread",
     "daily_deduction": "Daily Deduction",
     "add_cost": "Add Cost",
-    "revoke_success": "Access revoked from all devices."
+    "revoke_success": "Access revoked from all devices.",
+    "action_edit": "Edit",
+    "btn_update": "Update",
+    "update_success": "Updated successfully."
 }

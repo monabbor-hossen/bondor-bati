@@ -22,16 +22,13 @@ public function __construct() {
             LEFT JOIN staff_salaries s ON u.id = s.user_id 
             ORDER BY u.role, u.name
         ")->fetchAll();
-        
-        $fixedCosts = $this->db->query("SELECT * FROM fixed_daily_costs ORDER BY name")->fetchAll();
 
         $this->view('admin/settings', [
             'pageTitle'    => 'Settings',
             'activeNav'    => 'settings',
             'items'        => $items,
             'rawInventory' => $rawInventory,
-            'users'        => $users,
-            'fixedCosts'   => $fixedCosts
+            'users'        => $users
         ]);
     }
 
@@ -62,7 +59,7 @@ public function __construct() {
         $id = (int)($data['id'] ?? 0);
         $fields = $data['fields'] ?? [];
         
-        $allowed = ['items', 'raw_inventory', 'users', 'fixed_daily_costs'];
+        $allowed = ['items', 'raw_inventory', 'users', 'fixed_daily_costs', 'spread_costs'];
         if (!in_array($entity, $allowed) || empty($fields)) {
             $this->json(['success' => false, 'error' => 'Invalid entity or payload']);
         }

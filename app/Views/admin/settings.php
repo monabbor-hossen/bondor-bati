@@ -15,167 +15,115 @@
 <div class="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar animate-slideUp">
     <button class="settings-tab active flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-accent/10 border-accent/40 text-accent border transition-all" data-target="tab-items">Menu Items</button>
     <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-raw">Raw Inventory</button>
-    <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-fixed">Fixed Costs</button>
 </div>
 
 <!-- Tab: Menu Items -->
-<div id="tab-items" class="settings-pane block space-y-3 stagger">
-    <?php foreach ($items as $item): ?>
-    <div class="bg-card border border-border rounded-xl p-3" data-entity="items" data-id="<?= $item['id'] ?>">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="item_name" value="<?= htmlspecialchars($item['item_name']) ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="English Name">
-            <input type="text" data-field="item_name_bn" value="<?= htmlspecialchars($item['item_name_bn']) ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Bangla Name">
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Sell Price</label>
-                <input type="number" data-field="selling_price" value="<?= $item['selling_price'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm">
+<div id="tab-items" class="settings-pane block space-y-4 stagger">
+    <div class="bg-card border border-border/50 rounded-xl p-4">
+        <form id="form-items" data-id="0" class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+                <div class="relative">
+                    <input type="text" id="it_name" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="English Name">
+                    <label for="it_name" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">English Name</label>
+                </div>
+                <div class="relative">
+                    <input type="text" id="it_name_bn" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Bangla Name">
+                    <label for="it_name_bn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Bangla Name</label>
+                </div>
             </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Cost Price</label>
-                <input type="number" data-field="cost_price" value="<?= $item['cost_price'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm">
+            <div class="grid grid-cols-3 gap-2 pt-2">
+                <div class="relative">
+                    <input type="number" id="it_sell" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Sell Price">
+                    <label for="it_sell" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Sell Price</label>
+                </div>
+                <div class="relative">
+                    <input type="number" id="it_cost" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Cost Price">
+                    <label for="it_cost" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Cost Price</label>
+                </div>
+                <div class="relative">
+                    <input type="number" id="it_min" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Min Stock">
+                    <label for="it_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
+                </div>
             </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Min Stock</label>
-                <input type="number" data-field="min_stock_threshold" value="<?= $item['min_stock_threshold'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm">
+            <div class="flex items-center justify-between pt-2">
+                <label class="flex items-center gap-2 text-sm text-text-muted">
+                    <input type="checkbox" id="it_active" checked class="accent-accent"> Active
+                </label>
+                <button type="submit" id="btn-submit-item" class="text-xs font-bold bg-accent/20 text-accent px-4 py-2 rounded-lg hover:bg-accent/30 transition-colors"><i class="fas fa-plus mr-1"></i> <?= __('add') ?></button>
             </div>
-        </div>
-        <div class="flex items-center justify-between mt-2">
-            <label class="flex items-center gap-2 text-sm text-text-muted">
-                <input type="checkbox" data-field="is_active" <?= $item['is_active'] ? 'checked' : '' ?> class="accent-accent"> Active
-            </label>
-            <button class="btn-save text-xs font-bold bg-accent/20 text-accent px-4 py-1.5 rounded-lg hover:bg-accent/30"><i class="fas fa-save mr-1"></i> Save</button>
-        </div>
+        </form>
     </div>
-    <?php endforeach; ?>
-    <button class="btn-add-new w-full py-3 bg-surface border border-dashed border-border rounded-xl text-text-muted text-sm font-bold hover:border-accent hover:text-accent transition-all" data-template="tpl-item">
-        <i class="fas fa-plus mr-1"></i> Add New Item
-    </button>
+
+    <div class="space-y-2">
+        <?php foreach ($items as $item): ?>
+        <div class="flex justify-between items-center p-3 bg-card border border-border/50 rounded-xl">
+            <div>
+                <div class="text-sm font-bold"><?= htmlspecialchars($item['item_name']) ?> <span class="text-xs font-normal text-text-muted">(<?= htmlspecialchars($item['item_name_bn']) ?>)</span></div>
+                <div class="text-[0.65rem] text-text-muted mt-1 uppercase tracking-wider">
+                    Sell: <span class="text-accent font-bold">৳<?= $item['selling_price'] ?></span> | 
+                    Cost: <span class="text-orange-400 font-bold">৳<?= $item['cost_price'] ?></span> | 
+                    Min: <?= $item['min_stock_threshold'] ?>
+                </div>
+            </div>
+            <button class="btn-edit-item p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($item), ENT_QUOTES, 'UTF-8') ?>'>
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        </div>
+        <?php endforeach; ?>
+    </div>
 </div>
 
 <!-- Tab: Raw Inventory -->
-<div id="tab-raw" class="settings-pane hidden space-y-3 stagger">
-    <?php foreach ($rawInventory as $raw): ?>
-    <div class="bg-card border border-border rounded-xl p-3" data-entity="raw_inventory" data-id="<?= $raw['id'] ?>">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="item_name" value="<?= htmlspecialchars($raw['item_name']) ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="English Name">
-            <input type="text" data-field="item_name_bn" value="<?= htmlspecialchars($raw['item_name_bn']) ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Bangla Name">
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Unit</label>
-                <input type="text" data-field="unit" value="<?= $raw['unit'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-center">
+<div id="tab-raw" class="settings-pane hidden space-y-4 stagger">
+    <div class="bg-card border border-border/50 rounded-xl p-4">
+        <form id="form-raw" data-id="0" class="space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+                <div class="relative">
+                    <input type="text" id="raw_name" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="English Name">
+                    <label for="raw_name" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">English Name</label>
+                </div>
+                <div class="relative">
+                    <input type="text" id="raw_name_bn" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Bangla Name">
+                    <label for="raw_name_bn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Bangla Name</label>
+                </div>
             </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Avg Price</label>
-                <input type="number" data-field="avg_unit_price" value="<?= $raw['avg_unit_price'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm">
+            <div class="grid grid-cols-3 gap-2 pt-2">
+                <div class="relative">
+                    <input type="text" id="raw_unit" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Unit">
+                    <label for="raw_unit" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Unit</label>
+                </div>
+                <div class="relative">
+                    <input type="number" id="raw_price" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Avg Price">
+                    <label for="raw_price" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Avg Price</label>
+                </div>
+                <div class="relative">
+                    <input type="number" id="raw_min" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Min Stock">
+                    <label for="raw_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
+                </div>
             </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Min Stock</label>
-                <input type="number" data-field="min_stock_threshold" value="<?= $raw['min_stock_threshold'] ?>" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm">
+            <div class="flex justify-end pt-2">
+                <button type="submit" id="btn-submit-raw" class="text-xs font-bold bg-accent/20 text-accent px-4 py-2 rounded-lg hover:bg-accent/30 transition-colors"><i class="fas fa-plus mr-1"></i> <?= __('add') ?></button>
             </div>
-        </div>
-        <div class="flex justify-end mt-2">
-            <button class="btn-save text-xs font-bold bg-accent/20 text-accent px-4 py-1.5 rounded-lg hover:bg-accent/30"><i class="fas fa-save mr-1"></i> Save</button>
-        </div>
+        </form>
     </div>
-    <?php endforeach; ?>
-    <button class="btn-add-new w-full py-3 bg-surface border border-dashed border-border rounded-xl text-text-muted text-sm font-bold hover:border-accent hover:text-accent transition-all" data-template="tpl-raw">
-        <i class="fas fa-plus mr-1"></i> Add Raw Item
-    </button>
+
+    <div class="space-y-2">
+        <?php foreach ($rawInventory as $raw): ?>
+        <div class="flex justify-between items-center p-3 bg-card border border-border/50 rounded-xl">
+            <div>
+                <div class="text-sm font-bold"><?= htmlspecialchars($raw['item_name']) ?> <span class="text-xs font-normal text-text-muted">(<?= htmlspecialchars($raw['item_name_bn']) ?>)</span></div>
+                <div class="text-[0.65rem] text-text-muted mt-1 uppercase tracking-wider">
+                    Avg Price: <span class="text-accent font-bold">৳<?= $raw['avg_unit_price'] ?></span> / <?= htmlspecialchars($raw['unit']) ?> | 
+                    Min: <?= $raw['min_stock_threshold'] ?>
+                </div>
+            </div>
+            <button class="btn-edit-raw p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($raw), ENT_QUOTES, 'UTF-8') ?>'>
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+        </div>
+        <?php endforeach; ?>
+    </div>
 </div>
-
-<!-- Tab: Fixed Costs -->
-<div id="tab-fixed" class="settings-pane hidden space-y-3 stagger">
-    <?php foreach ($fixedCosts as $fc): ?>
-    <div class="bg-card border border-border rounded-xl p-3" data-entity="fixed_daily_costs" data-id="<?= $fc['id'] ?>">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="name" value="<?= htmlspecialchars($fc['name']) ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Name">
-            <input type="number" data-field="daily_amount" value="<?= $fc['daily_amount'] ?>" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Daily Amount (৳)">
-        </div>
-        <div class="flex items-center justify-between mt-2">
-            <label class="flex items-center gap-2 text-sm text-text-muted">
-                <input type="checkbox" data-field="is_active" <?= $fc['is_active'] ? 'checked' : '' ?> class="accent-accent"> Active
-            </label>
-            <button class="btn-save text-xs font-bold bg-accent/20 text-accent px-4 py-1.5 rounded-lg hover:bg-accent/30"><i class="fas fa-save mr-1"></i> Save</button>
-        </div>
-    </div>
-    <?php endforeach; ?>
-    <button class="btn-add-new w-full py-3 bg-surface border border-dashed border-border rounded-xl text-text-muted text-sm font-bold hover:border-accent hover:text-accent transition-all" data-template="tpl-fixed">
-        <i class="fas fa-plus mr-1"></i> Add Fixed Cost
-    </button>
-</div>
-
-<!-- Templates for new items -->
-<template id="tpl-item">
-    <div class="bg-card border border-accent/50 rounded-xl p-3 shadow-[0_0_15px_rgba(244,63,94,0.1)]" data-entity="items" data-id="0">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="item_name" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="English Name">
-            <input type="text" data-field="item_name_bn" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Bangla Name">
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Sell Price</label>
-                <input type="number" data-field="selling_price" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm" value="0">
-            </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Cost Price</label>
-                <input type="number" data-field="cost_price" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm" value="0">
-            </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Min Stock</label>
-                <input type="number" data-field="min_stock_threshold" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm" value="0">
-            </div>
-        </div>
-        <div class="flex items-center justify-between mt-2">
-            <label class="flex items-center gap-2 text-sm text-text-muted">
-                <input type="checkbox" data-field="is_active" checked class="accent-accent"> Active
-            </label>
-            <button class="btn-save text-xs font-bold bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent-light"><i class="fas fa-save mr-1"></i> Save New</button>
-        </div>
-    </div>
-</template>
-
-<template id="tpl-raw">
-    <div class="bg-card border border-accent/50 rounded-xl p-3 shadow-[0_0_15px_rgba(244,63,94,0.1)]" data-entity="raw_inventory" data-id="0">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="item_name" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="English Name">
-            <input type="text" data-field="item_name_bn" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Bangla Name">
-        </div>
-        <div class="grid grid-cols-3 gap-2 mb-2">
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Unit</label>
-                <input type="text" data-field="unit" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-center" value="kg">
-            </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Avg Price</label>
-                <input type="number" data-field="avg_unit_price" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm" value="0">
-            </div>
-            <div>
-                <label class="block text-[0.6rem] text-text-muted font-bold uppercase mb-1">Min Stock</label>
-                <input type="number" data-field="min_stock_threshold" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm" value="0">
-            </div>
-        </div>
-        <div class="flex justify-end mt-2">
-            <button class="btn-save text-xs font-bold bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent-light"><i class="fas fa-save mr-1"></i> Save New</button>
-        </div>
-    </div>
-</template>
-
-<template id="tpl-fixed">
-    <div class="bg-card border border-accent/50 rounded-xl p-3 shadow-[0_0_15px_rgba(244,63,94,0.1)]" data-entity="fixed_daily_costs" data-id="0">
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" data-field="name" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Name">
-            <input type="number" data-field="daily_amount" class="bg-surface border border-border rounded-lg px-3 py-2 text-sm" placeholder="Daily Amount (৳)" value="0">
-        </div>
-        <div class="flex items-center justify-between mt-2">
-            <label class="flex items-center gap-2 text-sm text-text-muted">
-                <input type="checkbox" data-field="is_active" checked class="accent-accent"> Active
-            </label>
-            <button class="btn-save text-xs font-bold bg-accent text-white px-4 py-1.5 rounded-lg hover:bg-accent-light"><i class="fas fa-save mr-1"></i> Save New</button>
-        </div>
-    </div>
-</template>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -192,59 +140,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Add New logic
-    document.querySelectorAll('.btn-add-new').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tplId = btn.dataset.template;
-            const tpl = document.getElementById(tplId);
-            const clone = tpl.content.cloneNode(true);
-            btn.parentElement.insertBefore(clone, btn);
-        });
-    });
-
-    // Save Event Delegation
-    document.body.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-save');
-        if (!btn) return;
-
-        const container = btn.closest('[data-entity]');
-        const entity = container.dataset.entity;
-        const id = container.dataset.id;
+    const setupForm = (formId, btnSubmitId, editBtnClass, populateFn, getFieldsFn, entity) => {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const btnSubmit = document.getElementById(btnSubmitId);
         
-        const fields = {};
-        container.querySelectorAll('[data-field]').forEach(input => {
-            if (input.type === 'checkbox') {
-                fields[input.dataset.field] = input.checked ? 1 : 0;
-            } else {
-                const val = input.value;
-                fields[input.dataset.field] = input.type === 'number' ? (val === '' ? 0 : parseFloat(val)) : val;
-            }
+        document.querySelectorAll(editBtnClass).forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = JSON.parse(btn.dataset.item);
+                form.dataset.id = item.id;
+                populateFn(item);
+                btnSubmit.innerHTML = '<i class="fas fa-save mr-1"></i> <?= __("btn_update") ?? "Update" ?>';
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
         });
 
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const originalHtml = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnSubmit.disabled = true;
 
-        const res = await apiPost('?url=admin/saveEntity', { entity, id, fields });
-        
-        if (res.success) {
-            showToast('Saved successfully!', 'success');
-            if (id === "0") {
-                // Update ID for new items so subsequent saves act as updates
-                container.dataset.id = res.id;
-                container.classList.remove('border-accent/50', 'shadow-[0_0_15px_rgba(244,63,94,0.1)]');
-                container.classList.add('border-border');
-                btn.innerHTML = '<i class="fas fa-save mr-1"></i> Save';
-                btn.className = 'btn-save text-xs font-bold bg-accent/20 text-accent px-4 py-1.5 rounded-lg hover:bg-accent/30';
+            const fields = getFieldsFn();
+            const id = form.dataset.id;
+            const res = await apiPost('?url=admin/saveEntity', { entity, id, fields });
+
+            if (res.success) {
+                showToast(id === "0" ? 'Added successfully!' : '<?= __("update_success") ?? "Updated successfully." ?>', 'success');
+                setTimeout(() => window.location.reload(), 1000);
             } else {
-                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Saved';
-                setTimeout(() => btn.innerHTML = originalHtml, 2000);
+                showToast(res.error || 'Failed to save', 'error');
+                btnSubmit.innerHTML = originalHtml;
+                btnSubmit.disabled = false;
             }
-        } else {
-            showToast(res.error || 'Failed to save', 'error');
-            btn.innerHTML = originalHtml;
-        }
-        btn.disabled = false;
-    });
+        });
+    };
+
+    setupForm(
+        'form-items', 
+        'btn-submit-item', 
+        '.btn-edit-item', 
+        (item) => {
+            document.getElementById('it_name').value = item.item_name;
+            document.getElementById('it_name_bn').value = item.item_name_bn;
+            document.getElementById('it_sell').value = item.selling_price;
+            document.getElementById('it_cost').value = item.cost_price;
+            document.getElementById('it_min').value = item.min_stock_threshold;
+            document.getElementById('it_active').checked = item.is_active == 1;
+        },
+        () => ({
+            item_name: document.getElementById('it_name').value,
+            item_name_bn: document.getElementById('it_name_bn').value,
+            selling_price: parseFloat(document.getElementById('it_sell').value) || 0,
+            cost_price: parseFloat(document.getElementById('it_cost').value) || 0,
+            min_stock_threshold: parseFloat(document.getElementById('it_min').value) || 0,
+            is_active: document.getElementById('it_active').checked ? 1 : 0
+        }),
+        'items'
+    );
+
+    setupForm(
+        'form-raw', 
+        'btn-submit-raw', 
+        '.btn-edit-raw', 
+        (item) => {
+            document.getElementById('raw_name').value = item.item_name;
+            document.getElementById('raw_name_bn').value = item.item_name_bn;
+            document.getElementById('raw_unit').value = item.unit;
+            document.getElementById('raw_price').value = item.avg_unit_price;
+            document.getElementById('raw_min').value = item.min_stock_threshold;
+        },
+        () => ({
+            item_name: document.getElementById('raw_name').value,
+            item_name_bn: document.getElementById('raw_name_bn').value,
+            unit: document.getElementById('raw_unit').value,
+            avg_unit_price: parseFloat(document.getElementById('raw_price').value) || 0,
+            min_stock_threshold: parseFloat(document.getElementById('raw_min').value) || 0
+        }),
+        'raw_inventory'
+    );
 });
 </script>

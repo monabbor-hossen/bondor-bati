@@ -14,7 +14,7 @@
 <!-- 1. Daily Fixed Costs -->
 <div class="bg-card border border-border/50 rounded-xl p-5 mb-6 animate-slideUp stagger">
     <h3 class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-4"><?= __('daily_fixed_costs') ?></h3>
-    <form id="fixedCostForm" class="space-y-6">
+    <form id="fixedCostForm" data-id="0" class="space-y-6">
         <div class="relative">
             <input type="text" id="fcName" required class="peer w-full bg-transparent border-b border-border focus:border-cyan-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Name">
             <label for="fcName" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-cyan-400">
@@ -36,7 +36,7 @@
 <!-- 2. Capital Spread Costs -->
 <div class="bg-card border border-border/50 rounded-xl p-5 mb-6 animate-slideUp stagger" style="animation-delay: 0.1s">
     <h3 class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-4"><?= __('spread_costs_setup') ?></h3>
-    <form id="spreadCostForm" class="space-y-6">
+    <form id="spreadCostForm" data-id="0" class="space-y-6">
         <div class="relative">
             <input type="text" id="scName" required class="peer w-full bg-transparent border-b border-border focus:border-purple-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Asset Name">
             <label for="scName" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-purple-400">
@@ -74,8 +74,13 @@
         <div class="space-y-2">
             <?php foreach ($fixedCosts as $fc): ?>
             <div class="flex justify-between items-center py-2 px-3 bg-surface border border-border/50 rounded-lg">
-                <span class="text-sm font-semibold"><?= htmlspecialchars($fc['name']) ?></span>
-                <span class="text-sm font-black text-text-primary">৳<?= number_format($fc['daily_amount'], 2) ?></span>
+                <div class="flex-1">
+                    <span class="text-sm font-semibold block"><?= htmlspecialchars($fc['name']) ?></span>
+                    <span class="text-sm font-black text-text-primary">৳<?= number_format($fc['daily_amount'], 2) ?></span>
+                </div>
+                <button class="btn-edit-fc p-2 text-text-muted hover:text-cyan-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($fc), ENT_QUOTES, 'UTF-8') ?>'>
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
             </div>
             <?php endforeach; ?>
         </div>
@@ -88,11 +93,14 @@
         <div class="space-y-2">
             <?php foreach ($spreadCosts as $sc): ?>
             <div class="flex justify-between items-center py-2 px-3 bg-surface border border-border/50 rounded-lg">
-                <div>
+                <div class="flex-1">
                     <span class="text-sm font-semibold block"><?= htmlspecialchars($sc['asset_name']) ?></span>
                     <span class="text-[0.6rem] text-text-muted">Total: ৳<?= number_format($sc['total_cost'], 0) ?> / <?= $sc['spread_days'] ?> days</span>
+                    <div class="text-sm font-black text-purple-400">৳<?= number_format($sc['daily_deduction'], 2) ?> / day</div>
                 </div>
-                <span class="text-sm font-black text-purple-400">৳<?= number_format($sc['daily_deduction'], 2) ?></span>
+                <button class="btn-edit-sc p-2 text-text-muted hover:text-purple-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($sc), ENT_QUOTES, 'UTF-8') ?>'>
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
             </div>
             <?php endforeach; ?>
         </div>
@@ -119,21 +127,51 @@ document.addEventListener('DOMContentLoaded', () => {
     totalInput.addEventListener('input', updateCalc);
     daysInput.addEventListener('input', updateCalc);
 
+    // Edit Fixed Costs
+    document.querySelectorAll('.btn-edit-fc').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = JSON.parse(btn.dataset.item);
+            const form = document.getElementById('fixedCostForm');
+            form.dataset.id = item.id;
+            document.getElementById('fcName').value = item.name;
+            document.getElementById('fcAmount').value = item.daily_amount;
+            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save mr-1"></i> <?= __("btn_update") ?? "Update" ?>';
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
+    // Edit Spread Costs
+    document.querySelectorAll('.btn-edit-sc').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = JSON.parse(btn.dataset.item);
+            const form = document.getElementById('spreadCostForm');
+            form.dataset.id = item.id;
+            document.getElementById('scName').value = item.asset_name;
+            document.getElementById('scTotal').value = item.total_cost;
+            document.getElementById('scDays').value = item.spread_days;
+            updateCalc();
+            form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save mr-1"></i> <?= __("btn_update") ?? "Update" ?>';
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+
     // Fixed Cost Form
     document.getElementById('fixedCostForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button[type="submit"]');
+        const form = e.target;
+        const btn = form.querySelector('button[type="submit"]');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
         const res = await apiPost('?url=finance/addFixedCost', {
+            id: form.dataset.id || 0,
             name: document.getElementById('fcName').value,
             amount: document.getElementById('fcAmount').value
         });
         
         if (res.success) {
-            showToast('Fixed Cost Added', 'success');
+            showToast('Fixed Cost Saved', 'success');
             setTimeout(() => window.location.reload(), 1000);
         } else {
             showToast(res.error || 'Failed to add cost', 'error');
@@ -145,19 +183,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Spread Cost Form
     document.getElementById('spreadCostForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const btn = e.target.querySelector('button[type="submit"]');
+        const form = e.target;
+        const btn = form.querySelector('button[type="submit"]');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
         const res = await apiPost('?url=finance/addSpreadCost', {
+            id: form.dataset.id || 0,
             asset_name: document.getElementById('scName').value,
             total_cost: totalInput.value,
             spread_days: daysInput.value
         });
         
         if (res.success) {
-            showToast('Spread Cost Added', 'success');
+            showToast('Spread Cost Saved', 'success');
             setTimeout(() => window.location.reload(), 1000);
         } else {
             showToast(res.error || 'Failed to add cost', 'error');

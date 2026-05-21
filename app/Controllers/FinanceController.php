@@ -137,6 +137,7 @@ public function __construct() {
         $this->requireAdmin();
         $data = json_decode(file_get_contents('php://input'), true);
         
+        $id = (int)($data['id'] ?? 0);
         $name = trim($data['name'] ?? '');
         $amount = (float)($data['amount'] ?? 0);
         
@@ -144,8 +145,13 @@ public function __construct() {
             $this->json(['success' => false, 'error' => 'Invalid data']);
         }
 
-        $stmt = $this->db->prepare("INSERT INTO fixed_daily_costs (name, daily_amount, is_active) VALUES (:name, :amount, 1)");
-        $stmt->execute([':name' => $name, ':amount' => $amount]);
+        if ($id > 0) {
+            $stmt = $this->db->prepare("UPDATE fixed_daily_costs SET name = :name, daily_amount = :amount WHERE id = :id");
+            $stmt->execute([':name' => $name, ':amount' => $amount, ':id' => $id]);
+        } else {
+            $stmt = $this->db->prepare("INSERT INTO fixed_daily_costs (name, daily_amount, is_active) VALUES (:name, :amount, 1)");
+            $stmt->execute([':name' => $name, ':amount' => $amount]);
+        }
         
         $this->json(['success' => true]);
     }
@@ -154,6 +160,7 @@ public function __construct() {
         $this->requireAdmin();
         $data = json_decode(file_get_contents('php://input'), true);
         
+        $id = (int)($data['id'] ?? 0);
         $name = trim($data['asset_name'] ?? '');
         $total = (float)($data['total_cost'] ?? 0);
         $days = (int)($data['spread_days'] ?? 0);
@@ -164,13 +171,24 @@ public function __construct() {
         
         $daily = round($total / $days, 2);
 
-        $stmt = $this->db->prepare("INSERT INTO spread_costs (asset_name, total_cost, spread_days, daily_deduction) VALUES (:name, :total, :days, :daily)");
-        $stmt->execute([
-            ':name' => $name,
-            ':total' => $total,
-            ':days' => $days,
-            ':daily' => $daily
-        ]);
+        if ($id > 0) {
+            $stmt = $this->db->prepare("UPDATE spread_costs SET asset_name = :name, total_cost = :total, spread_days = :days, daily_deduction = :daily WHERE id = :id");
+            $stmt->execute([
+                ':name' => $name,
+                ':total' => $total,
+                ':days' => $days,
+                ':daily' => $daily,
+                ':id' => $id
+            ]);
+        } else {
+            $stmt = $this->db->prepare("INSERT INTO spread_costs (asset_name, total_cost, spread_days, daily_deduction) VALUES (:name, :total, :days, :daily)");
+            $stmt->execute([
+                ':name' => $name,
+                ':total' => $total,
+                ':days' => $days,
+                ':daily' => $daily
+            ]);
+        }
         
         $this->json(['success' => true]);
     }
