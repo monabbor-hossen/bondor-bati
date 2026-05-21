@@ -137,14 +137,49 @@ public function __construct() {
 
             foreach ($items as $item) {
                 if (empty($item['item_name'])) continue;
+                $boughtQty = (float)($item['bought_qty'] ?? 0);
+                $unitPrice = (float)($item['unit_price'] ?? 0);
+                $totalPrice = (float)($item['total_price'] ?? 0);
+                $unit = $item['unit'] ?? 'kg';
+
                 $itemStmt->execute([
                     ':lid'  => $ledgerId,
                     ':name' => $item['item_name'],
-                    ':qty'  => (float)($item['bought_qty'] ?? 0),
-                    ':unit' => $item['unit'] ?? 'kg',
-                    ':up'   => (float)($item['unit_price'] ?? 0),
-                    ':tp'   => (float)($item['total_price'] ?? 0),
+                    ':qty'  => $boughtQty,
+                    ':unit' => $unit,
+                    ':up'   => $unitPrice,
+                    ':tp'   => $totalPrice,
                 ]);
+
+                if ($boughtQty > 0) {
+                    $rawStmt = $this->db->prepare("SELECT current_qty, avg_unit_price FROM raw_inventory WHERE item_name = :name LIMIT 1");
+                    $rawStmt->execute([':name' => $item['item_name']]);
+                    $raw = $rawStmt->fetch();
+
+                    if ($raw) {
+                        $currQty = (float)$raw['current_qty'];
+                        $avgPrice = (float)$raw['avg_unit_price'];
+                        
+                        $newQty = $currQty + $boughtQty;
+                        $newAvgPrice = (($currQty * $avgPrice) + $totalPrice) / $newQty;
+                        
+                        $updRaw = $this->db->prepare("UPDATE raw_inventory SET current_qty = :qty, avg_unit_price = :avg WHERE item_name = :name");
+                        $updRaw->execute([
+                            ':qty' => $newQty,
+                            ':avg' => round($newAvgPrice, 2),
+                            ':name' => $item['item_name']
+                        ]);
+                    } else {
+                        $insRaw = $this->db->prepare("INSERT INTO raw_inventory (item_name, item_name_bn, unit, current_qty, avg_unit_price) VALUES (:name, :name_bn, :unit, :qty, :avg)");
+                        $insRaw->execute([
+                            ':name' => $item['item_name'],
+                            ':name_bn' => $item['item_name'],
+                            ':unit' => $unit,
+                            ':qty' => $boughtQty,
+                            ':avg' => $unitPrice
+                        ]);
+                    }
+                }
             }
 
             $this->db->commit();

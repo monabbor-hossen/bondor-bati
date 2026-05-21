@@ -127,8 +127,8 @@ public function __construct() {
      * Route: ?url=inventory/closeDayView
      */
     public function closeDayView() {
-        $date  = $_GET['date'] ?? date('Y-m-d');
-        $shift = $_GET['shift'] ?? $this->detectCurrentShift();
+        $date  = $this->getBusinessDate();
+        $shift = $this->getCurrentShift();
 
         $items = $this->db->query("SELECT * FROM items WHERE is_active = 1 ORDER BY sort_order, item_name")->fetchAll();
 
@@ -190,6 +190,7 @@ public function __construct() {
             'logDate'       => $date,
             'currentShift'  => $shift,
             'closedShifts'  => $closed,
+            'businessDate'  => $date,
         ]);
     }
 
@@ -203,8 +204,8 @@ public function __construct() {
         }
 
         $data    = json_decode(file_get_contents('php://input'), true);
-        $logDate = $data['log_date'] ?? date('Y-m-d');
-        $shift   = $data['shift'] ?? 'night';
+        $logDate = $this->getBusinessDate();
+        $shift   = $this->getCurrentShift();
         $items   = $data['items'] ?? [];
         $dues    = $data['dues'] ?? [];
 
@@ -302,11 +303,5 @@ public function __construct() {
         }
     }
 
-    // ── Helper: Detect current shift based on time ────────────
-    private function detectCurrentShift(): string {
-        $hour = (int)date('H');
-        if ($hour >= 6 && $hour < 14)  return 'morning';
-        if ($hour >= 14 && $hour < 20) return 'evening';
-        return 'night';
-    }
+    // Removed old detectCurrentShift helper as it's now in Core\Controller
 }

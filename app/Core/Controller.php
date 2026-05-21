@@ -112,4 +112,21 @@ class Controller {
             $this->redirect('?url=auth/login');
         }
     }
+
+    /**
+     * Get 4:00 AM to 4:00 AM Business Date
+     */
+    protected function getBusinessDate(): string {
+        return (int)date('H') < 4 ? date('Y-m-d', strtotime('-1 day')) : date('Y-m-d');
+    }
+
+    /**
+     * Get auto-detected Shift
+     */
+    protected function getCurrentShift(): string {
+        $h = (int)date('H');
+        if ($h >= 4 && $h < 12) return 'morning';
+        if ($h >= 12 && $h < 20) return 'evening';
+        return 'night';
+    }
 }

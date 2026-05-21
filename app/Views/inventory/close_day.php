@@ -13,27 +13,11 @@ $shifts = ['morning', 'evening', 'night'];
             <i class="fas fa-moon text-indigo-400 mr-1"></i> <?= __('shift_closing') ?>
         </h2>
         <span class="text-xs font-semibold text-text-muted bg-card border border-border px-2.5 py-1 rounded-full">
-            <?= date('D, d M', strtotime($logDate)) ?>
+            Date: <?= date('d M, Y', strtotime($businessDate)) ?>
         </span>
     </div>
 </div>
 
-<!-- Shift Selector -->
-<div class="flex gap-2 mb-4 animate-slideUp">
-    <?php foreach ($shifts as $s): ?>
-    <button class="shift-tab flex-1 text-center py-2.5 rounded-xl text-xs font-bold border transition-all duration-200
-                   <?= $s === $currentShift
-                       ? 'bg-accent/10 border-accent/40 text-accent'
-                       : (in_array($s, $closedShifts)
-                           ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                           : 'bg-card border-border text-text-muted hover:text-text-primary') ?>"
-            data-shift="<?= $s ?>"
-            onclick="window.location='?url=inventory/closeDayView&date=<?= $logDate ?>&shift=<?= $s ?>'">
-        <?= __($s) ?>
-        <?= in_array($s, $closedShifts) ? ' <i class="fas fa-check"></i>' : '' ?>
-    </button>
-    <?php endforeach; ?>
-</div>
 
 <!-- Current Shift Label -->
 <div class="flex items-center gap-2 mb-4 animate-slideUp">
