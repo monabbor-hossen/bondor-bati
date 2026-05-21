@@ -159,5 +159,11 @@
     "revoke_success": "সব ডিভাইস থেকে অ্যাক্সেস বাতিল করা হয়েছে।",
     "action_edit": "সম্পাদনা",
     "btn_update": "আপডেট করুন",
-    "update_success": "সফলভাবে আপডেট হয়েছে।"
+    "update_success": "সফলভাবে আপডেট হয়েছে।",
+    "assigned_staff": "নির্ধারিত স্টাফ",
+    "set_default": "ডিফল্ট হিসেবে সেট করুন",
+    "default_set_success": "ডিফল্ট স্টাফ আপডেট হয়েছে।",
+    "unit_kg": "কেজি",
+    "unit_l": "লিটার",
+    "unit_pcs": "পিস"
 }

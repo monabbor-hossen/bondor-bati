@@ -20,10 +20,17 @@ public function __construct() {
     public function index() {
         $date = $_GET['date'] ?? date('Y-m-d');
 
+        $s = $this->db->query("SELECT setting_value FROM app_settings WHERE setting_key = 'default_bazaar_staff_id'");
+        $defaultStaff = (int)($s->fetchColumn() ?: 0);
+
         // Get today's ledger if exists
         $stmt = $this->db->prepare("SELECT * FROM bazaar_ledgers WHERE log_date = :d");
         $stmt->execute([':d' => $date]);
         $ledger = $stmt->fetch();
+        
+        $assignedStaffId = $ledger ? (int)$ledger['assigned_staff_id'] : $defaultStaff;
+        
+        $staffList = $this->db->query("SELECT id, name FROM users WHERE role = 'staff' AND is_active = 1")->fetchAll();
 
         $bazaarItems = [];
         if ($ledger) {
@@ -47,6 +54,8 @@ public function __construct() {
             'ledger'        => $ledger,
             'bazaarItems'   => $bazaarItems,
             'yesterdayCF'   => $yesterdayCF,
+            'assignedStaffId' => $assignedStaffId,
+            'staffList'     => $staffList
         ]);
     }
 
@@ -62,8 +71,17 @@ public function __construct() {
         $data = json_decode(file_get_contents('php://input'), true);
         $logDate     = $data['log_date'] ?? date('Y-m-d');
         $advanceCash = (float)($data['advance_cash'] ?? 0);
+        $assignedStaffId = (int)($data['assigned_staff_id'] ?? 0);
         $items       = $data['items'] ?? [];
         $returnedCash = (float)($data['returned_cash'] ?? 0);
+
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $existing = $this->db->prepare("SELECT advance_cash, assigned_staff_id FROM bazaar_ledgers WHERE log_date = :d");
+            $existing->execute([':d' => $logDate]);
+            $row = $existing->fetch();
+            $advanceCash = $row ? (float)$row['advance_cash'] : 0;
+            $assignedStaffId = $row ? (int)$row['assigned_staff_id'] : $assignedStaffId;
+        }
 
         try {
             $this->db->beginTransaction();
@@ -83,10 +101,11 @@ public function __construct() {
 
             // Upsert ledger
             $stmt = $this->db->prepare("
-                INSERT INTO bazaar_ledgers (log_date, advance_cash, total_spent, returned_cash, carry_forward, staff_due, status)
-                VALUES (:log_date, :advance, :spent, :returned, :cf, :due, 'closed')
+                INSERT INTO bazaar_ledgers (log_date, advance_cash, assigned_staff_id, total_spent, returned_cash, carry_forward, staff_due, status)
+                VALUES (:log_date, :advance, :assigned, :spent, :returned, :cf, :due, 'closed')
                 ON DUPLICATE KEY UPDATE
                     advance_cash = VALUES(advance_cash),
+                    assigned_staff_id = VALUES(assigned_staff_id),
                     total_spent = VALUES(total_spent),
                     returned_cash = VALUES(returned_cash),
                     carry_forward = VALUES(carry_forward),
@@ -96,6 +115,7 @@ public function __construct() {
             $stmt->execute([
                 ':log_date'  => $logDate,
                 ':advance'   => $advanceCash,
+                ':assigned'  => $assignedStaffId,
                 ':spent'     => $totalSpent,
                 ':returned'  => $returnedCash,
                 ':cf'        => max(0, $carryForward),
@@ -139,5 +159,24 @@ public function __construct() {
             $this->db->rollBack();
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    public function setDefaultStaff() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->json(['success' => false, 'error' => 'Unauthorized']);
+        }
+        $data = json_decode(file_get_contents('php://input'), true);
+        $staffId = (int)($data['staff_id'] ?? 0);
+        
+        if ($staffId > 0) {
+            $stmt = $this->db->prepare("
+                INSERT INTO app_settings (setting_key, setting_value) 
+                VALUES ('default_bazaar_staff_id', :val)
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+            ");
+            $stmt->execute([':val' => (string)$staffId]);
+            $this->json(['success' => true]);
+        }
+        $this->json(['success' => false, 'error' => 'Invalid staff ID']);
     }
 }

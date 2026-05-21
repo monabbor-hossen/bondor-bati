@@ -157,5 +157,11 @@
     "revoke_success": "Access revoked from all devices.",
     "action_edit": "Edit",
     "btn_update": "Update",
-    "update_success": "Updated successfully."
+    "update_success": "Updated successfully.",
+    "assigned_staff": "Assigned Shopper",
+    "set_default": "Set as Default",
+    "default_set_success": "Default shopper updated.",
+    "unit_kg": "kg",
+    "unit_l": "L",
+    "unit_pcs": "pcs"
 }

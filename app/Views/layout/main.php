@@ -187,12 +187,15 @@
             <div class="flex items-stretch justify-around max-w-lg mx-auto">
                 <?php
                 $role = $_SESSION['role'] ?? 'staff';
-                $nav  = [
-                    ['url' => 'dashboard', 'key' => 'dashboard', 'icon' => 'fas fa-home',          'label' => 'nav_dashboard'],
-                    ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'nav_prep'],
-                    ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'nav_close'],
-                    ['url' => 'settings',  'key' => 'settings',  'icon' => 'fas fa-cog',           'label' => 'nav_settings'],
-                ];
+                $nav = [];
+                if ($role === 'admin') {
+                    $nav[] = ['url' => 'dashboard', 'key' => 'dashboard', 'icon' => 'fas fa-home',          'label' => 'nav_dashboard'];
+                }
+                $nav[] = ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'nav_prep'];
+                $nav[] = ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'nav_close'];
+                if ($role === 'admin') {
+                    $nav[] = ['url' => 'settings',  'key' => 'settings',  'icon' => 'fas fa-cog',           'label' => 'nav_settings'];
+                }
 
                 foreach ($nav as $item):
                     $isActive = ($activeNav ?? '') === $item['key'];
@@ -360,6 +363,21 @@
                 .then(reg => console.log('SW registered:', reg.scope))
                 .catch(err => console.log('SW failed:', err));
         }
+
+        <?php if (!empty($_SESSION['user_id'])): ?>
+        // ── Real-Time Kill Switch ─────────────────────────────
+        setInterval(async () => {
+            try {
+                const response = await fetch('?url=auth/checkStatus');
+                const result = await response.json();
+                if (result && result.active === false) {
+                    window.location.href = '?url=auth/login';
+                }
+            } catch (err) {
+                // Ignore network errors, only act on explicit false status
+            }
+        }, 10000);
+        <?php endif; ?>
     </script>
 </body>
 </html>

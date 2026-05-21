@@ -40,7 +40,15 @@ class Controller {
                 $_SESSION = [];
                 session_destroy();
                 setcookie('bb_token', '', time() - 3600, '/');
-                $this->redirect('?url=auth/login');
+
+                $isAjax = (!empty($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) || 
+                          $_SERVER['REQUEST_METHOD'] === 'POST' && file_get_contents('php://input');
+
+                if ($isAjax) {
+                    $this->json(['error' => 'Session expired', 'redirect' => '?url=auth/login'], 401);
+                } else {
+                    $this->redirect('?url=auth/login');
+                }
             }
         }
     }

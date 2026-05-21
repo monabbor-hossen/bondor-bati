@@ -41,7 +41,12 @@ public function __construct() {
                     $_SESSION['user_name'] = $user['name'];
                     $_SESSION['user_name_bn'] = $user['name_bn'] ?? $user['name'];
                     $_SESSION['role']      = $user['role'];
-                    $this->redirect('?url=dashboard');
+                    
+                    if ($_SESSION['role'] === 'staff') {
+                        $this->redirect('?url=bazaar');
+                    } else {
+                        $this->redirect('?url=dashboard');
+                    }
                 } else {
                     $error = 'Invalid credentials.';
                 }
@@ -114,7 +119,11 @@ public function __construct() {
         $_SESSION['role']         = $user['role'];
         $_SESSION['permissions']  = json_decode($user['permissions'] ?? '{}', true);
 
-        $this->redirect('?url=dashboard');
+        if ($_SESSION['role'] === 'staff') {
+            $this->redirect('?url=bazaar');
+        } else {
+            $this->redirect('?url=dashboard');
+        }
     }
 
     /**
@@ -215,5 +224,26 @@ public function __construct() {
         }
         session_destroy();
         $this->redirect('?url=auth/login');
+    }
+
+    /**
+     * Real-time Kill Switch Status Check
+     * Route: ?url=auth/checkStatus
+     */
+    public function checkStatus() {
+        if (empty($_SESSION['user_id'])) {
+            $this->json(['active' => false]);
+        }
+        $stmt = $this->db->prepare("SELECT is_active FROM users WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $_SESSION['user_id']]);
+        $isActive = $stmt->fetchColumn();
+
+        if (!$isActive) {
+            $_SESSION = [];
+            session_destroy();
+            setcookie('bb_token', '', time() - 3600, '/');
+            $this->json(['active' => false]);
+        }
+        $this->json(['active' => true]);
     }
 }

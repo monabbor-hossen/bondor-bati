@@ -14,6 +14,10 @@ public function __construct() {
     }
 
     public function index() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->redirect('?url=bazaar');
+        }
+
         $today = date('Y-m-d');
 
         $this->view('dashboard/index', [

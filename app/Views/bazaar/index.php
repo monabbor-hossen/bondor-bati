@@ -28,6 +28,27 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
 
 <form id="bazaar-form" class="space-y-4 stagger">
     <input type="hidden" id="bazaar-log-date" value="<?= $logDate ?>">
+    
+    <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+        <div class="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
+            <label class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
+                <i class="fas fa-user-tie text-accent"></i> <?= __('assigned_staff') ?>
+            </label>
+            <div class="flex items-center gap-3">
+                <select id="bazaar-assigned-staff" class="bg-surface border border-border rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:border-accent appearance-none cursor-pointer">
+                    <option value="0">-- Select --</option>
+                    <?php foreach ($staffList as $staff): ?>
+                        <option value="<?= $staff['id'] ?>" <?= $staff['id'] == $assignedStaffId ? 'selected' : '' ?>><?= htmlspecialchars($staff['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" id="btn-set-default" class="text-xs text-accent hover:underline font-bold bg-transparent border-none cursor-pointer">
+                    <?= __('set_default') ?>
+                </button>
+            </div>
+        </div>
+    <?php else: ?>
+        <input type="hidden" id="bazaar-assigned-staff" value="<?= $assignedStaffId ?>">
+    <?php endif; ?>
 
     <!-- Advance Cash -->
     <div class="bg-card border border-border rounded-xl p-4">
@@ -35,8 +56,8 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
             <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('advance') ?> (<?= __('tk') ?>)
         </label>
         <input type="number" id="bazaar-advance" step="1" min="0"
-               class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400"
-               value="<?= $advanceCash ?>" placeholder="0">
+               class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400 <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
+               value="<?= (empty($advanceCash) || $advanceCash == 0) ? '' : (float)$advanceCash ?>" placeholder="0" <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
     </div>
 
     <!-- Bazaar Items -->
@@ -56,14 +77,18 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                 <div class="bazaar-item bg-surface border border-border rounded-lg p-3">
                     <div class="grid grid-cols-3 gap-2 mb-2">
                         <input type="text" placeholder="<?= __('item') ?>" value="<?= htmlspecialchars($bi['item_name']) ?>"
-                               class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-                        <input type="text" placeholder="<?= __('unit') ?>" value="<?= htmlspecialchars($bi['unit']) ?>"
-                               class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center">
+                               class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
+                               <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
+                        <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
+                            <option value="kg" <?= $bi['unit'] === 'kg' ? 'selected' : '' ?>><?= __('unit_kg') ?? 'kg' ?></option>
+                            <option value="L" <?= $bi['unit'] === 'L' ? 'selected' : '' ?>><?= __('unit_l') ?? 'L' ?></option>
+                            <option value="pcs" <?= $bi['unit'] === 'pcs' ? 'selected' : '' ?>><?= __('unit_pcs') ?? 'pcs' ?></option>
+                        </select>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <input type="number" placeholder="<?= __('qty') ?>" value="<?= $bi['bought_qty'] ?>"
+                        <input type="number" placeholder="<?= __('qty') ?>" value="<?= (empty($bi['bought_qty']) || $bi['bought_qty'] == 0) ? '' : (float)$bi['bought_qty'] ?>"
                                class="bi-qty bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="0.5">
-                        <input type="number" placeholder="৳/<?= __('unit') ?>" value="<?= $bi['unit_price'] ?>"
+                        <input type="number" placeholder="৳/<?= __('unit') ?>" value="<?= (empty($bi['unit_price']) || $bi['unit_price'] == 0) ? '' : (float)$bi['unit_price'] ?>"
                                class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                         <div class="flex items-center gap-1">
                             <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳<?= number_format($bi['total_price']) ?></span>
@@ -79,13 +104,16 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                     <div class="grid grid-cols-3 gap-2 mb-2">
                         <input type="text" placeholder="<?= __('item') ?>"
                                class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-                        <input type="text" placeholder="<?= __('unit') ?>" value="kg"
-                               class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center">
+                        <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
+                            <option value="kg"><?= __('unit_kg') ?? 'kg' ?></option>
+                            <option value="L"><?= __('unit_l') ?? 'L' ?></option>
+                            <option value="pcs"><?= __('unit_pcs') ?? 'pcs' ?></option>
+                        </select>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <input type="number" placeholder="<?= __('qty') ?>"
+                        <input type="number" placeholder="<?= __('qty') ?>" value=""
                                class="bi-qty bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="0.5">
-                        <input type="number" placeholder="৳/<?= __('unit') ?>"
+                        <input type="number" placeholder="৳/<?= __('unit') ?>" value=""
                                class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                         <div class="flex items-center gap-1">
                             <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳0</span>
@@ -105,7 +133,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         </label>
         <input type="number" id="bazaar-returned" step="1" min="0"
                class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-base font-bold text-center focus:border-amber-400"
-               value="<?= $isExisting ? $ledger['returned_cash'] : 0 ?>" placeholder="0">
+               value="<?= (!empty($ledger['returned_cash']) && $ledger['returned_cash'] > 0) ? (float)$ledger['returned_cash'] : '' ?>" placeholder="0">
     </div>
 
     <!-- Balance Summary -->
@@ -153,12 +181,16 @@ document.addEventListener('DOMContentLoaded', () => {
         div.className = 'bazaar-item bg-surface border border-border rounded-lg p-3';
         div.innerHTML = `
             <div class="grid grid-cols-3 gap-2 mb-2">
-                <input type="text" placeholder="<?= __('item') ?>" class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
-                <input type="text" placeholder="<?= __('unit') ?>" value="kg" class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center">
+                <input type="text" placeholder="<?= __('item') ?>" class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none">
+                <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
+                    <option value="kg"><?= __('unit_kg') ?? 'kg' ?></option>
+                    <option value="L"><?= __('unit_l') ?? 'L' ?></option>
+                    <option value="pcs"><?= __('unit_pcs') ?? 'pcs' ?></option>
+                </select>
             </div>
             <div class="grid grid-cols-3 gap-2">
-                <input type="number" placeholder="<?= __('qty') ?>" class="bi-qty bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="0.5">
-                <input type="number" placeholder="৳/<?= __('unit') ?>" class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
+                <input type="number" placeholder="<?= __('qty') ?>" value="" class="bi-qty bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="0.5">
+                <input type="number" placeholder="৳/<?= __('unit') ?>" value="" class="bi-up bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center" step="1">
                 <div class="flex items-center gap-1">
                     <span class="bi-total text-sm font-bold text-accent flex-1 text-center">৳0</span>
                     <button type="button" onclick="this.closest('.bazaar-item').remove(); recalcBazaar();" class="text-red-400 text-xs p-1"><i class="fas fa-times"></i></button>
@@ -224,6 +256,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bazaar-returned').addEventListener('input', recalcBazaar);
     recalcBazaar();
 
+    // Set Default Staff
+    const btnSetDefault = document.getElementById('btn-set-default');
+    if (btnSetDefault) {
+        btnSetDefault.addEventListener('click', async () => {
+            const staffId = document.getElementById('bazaar-assigned-staff').value;
+            const res = await apiPost('?url=bazaar/setDefaultStaff', { staff_id: staffId });
+            if (res.success) {
+                showToast('<?= __("default_set_success") ?? "Default shopper updated." ?>', 'success');
+            } else {
+                showToast(res.error || 'Error', 'error');
+            }
+        });
+    }
+
     // ── Save ──────────────────────────────────────────────────
     document.getElementById('btn-save-bazaar').addEventListener('click', async () => {
         const btn = document.getElementById('btn-save-bazaar');
@@ -246,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await apiPost('?url=bazaar/save', {
             log_date: document.getElementById('bazaar-log-date').value,
             advance_cash: parseFloat(document.getElementById('bazaar-advance').value) || 0,
+            assigned_staff_id: parseInt(document.getElementById('bazaar-assigned-staff').value) || 0,
             returned_cash: parseFloat(document.getElementById('bazaar-returned').value) || 0,
             items: items,
         });
