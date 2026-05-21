@@ -26,6 +26,13 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
 </div>
 <?php endif; ?>
 
+<!-- Inventory Auto-Suggest Datalist -->
+<datalist id="inventory-list">
+    <?php foreach ($inventoryNames as $invName): ?>
+    <option value="<?= htmlspecialchars($invName) ?>">
+    <?php endforeach; ?>
+</datalist>
+
 <form id="bazaar-form" class="space-y-4 stagger">
     <input type="hidden" id="bazaar-log-date" value="<?= $logDate ?>">
     
@@ -76,7 +83,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                 <?php foreach ($bazaarItems as $bi): ?>
                 <div class="bazaar-item bg-surface border border-border rounded-lg p-3">
                     <div class="grid grid-cols-3 gap-2 mb-2">
-                        <input type="text" placeholder="<?= __('item') ?>" value="<?= htmlspecialchars($bi['item_name']) ?>"
+                        <input type="text" placeholder="<?= __('item') ?>" value="<?= htmlspecialchars($bi['item_name']) ?>" list="inventory-list"
                                class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
                                <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
                         <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
@@ -102,7 +109,7 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
                 <!-- Default empty row -->
                 <div class="bazaar-item bg-surface border border-border rounded-lg p-3">
                     <div class="grid grid-cols-3 gap-2 mb-2">
-                        <input type="text" placeholder="<?= __('item') ?>"
+                        <input type="text" placeholder="<?= __('item') ?>" list="inventory-list"
                                class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary">
                         <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
                             <option value="kg"><?= __('unit_kg') ?? 'kg' ?></option>
@@ -181,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         div.className = 'bazaar-item bg-surface border border-border rounded-lg p-3';
         div.innerHTML = `
             <div class="grid grid-cols-3 gap-2 mb-2">
-                <input type="text" placeholder="<?= __('item') ?>" class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none">
+                <input type="text" placeholder="<?= __('item') ?>" list="inventory-list" class="bi-name col-span-2 bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none">
                 <select class="bi-unit bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary text-center appearance-none cursor-pointer focus:border-accent focus:outline-none">
                     <option value="kg"><?= __('unit_kg') ?? 'kg' ?></option>
                     <option value="L"><?= __('unit_l') ?? 'L' ?></option>

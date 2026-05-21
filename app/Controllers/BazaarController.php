@@ -47,15 +47,19 @@ public function __construct() {
         $cfStmt->execute([':d' => $date]);
         $yesterdayCF = (float)($cfStmt->fetchColumn() ?: 0);
 
+        // Fetch raw inventory names for datalist auto-suggest
+        $inventoryNames = $this->db->query("SELECT item_name FROM raw_inventory ORDER BY item_name")->fetchAll(PDO::FETCH_COLUMN);
+
         $this->view('bazaar/index', [
-            'pageTitle'     => __('bazaar'),
-            'activeNav'     => 'bazaar',
-            'logDate'       => $date,
-            'ledger'        => $ledger,
-            'bazaarItems'   => $bazaarItems,
-            'yesterdayCF'   => $yesterdayCF,
+            'pageTitle'       => __('bazaar'),
+            'activeNav'       => 'bazaar',
+            'logDate'         => $date,
+            'ledger'          => $ledger,
+            'bazaarItems'     => $bazaarItems,
+            'yesterdayCF'     => $yesterdayCF,
             'assignedStaffId' => $assignedStaffId,
-            'staffList'     => $staffList
+            'staffList'       => $staffList,
+            'inventoryNames'  => $inventoryNames
         ]);
     }
 

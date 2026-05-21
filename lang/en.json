@@ -163,5 +163,8 @@
     "default_set_success": "Default shopper updated.",
     "unit_kg": "kg",
     "unit_l": "L",
-    "unit_pcs": "pcs"
+    "unit_pcs": "pcs",
+    "action_delete_item": "Delete Item",
+    "opening_current_stock": "Opening / Current Stock (Qty)",
+    "confirm_delete": "Are you sure you want to delete this? This action cannot be undone."
 }

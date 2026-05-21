@@ -119,4 +119,32 @@ public function __construct() {
         }
         $this->json(['success' => false, 'error' => 'Invalid user']);
     }
+
+    /**
+     * Delete an entity by ID (AJAX)
+     * Route: ?url=admin/deleteEntity
+     */
+    public function deleteEntity() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data   = json_decode(file_get_contents('php://input'), true);
+        $entity = $data['entity'] ?? '';
+        $id     = (int)($data['id'] ?? 0);
+
+        $allowed = ['items', 'raw_inventory'];
+        if (!in_array($entity, $allowed) || $id <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid entity or ID']);
+        }
+
+        try {
+            $stmt = $this->db->prepare("DELETE FROM `$entity` WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
 }

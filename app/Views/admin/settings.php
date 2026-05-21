@@ -65,9 +65,14 @@
                     Min: <?= $item['min_stock_threshold'] ?>
                 </div>
             </div>
-            <button class="btn-edit-item p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($item), ENT_QUOTES, 'UTF-8') ?>'>
-                <i class="fas fa-pencil-alt"></i>
-            </button>
+            <div class="flex items-center gap-1">
+                <button class="btn-edit-item p-2 text-text-muted hover:text-accent transition-colors" data-item='<?= htmlspecialchars(json_encode($item), ENT_QUOTES, 'UTF-8') ?>'>
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <button class="btn-delete-item p-2 text-text-muted hover:text-red-400 transition-colors" data-id="<?= $item['id'] ?>" data-name="<?= htmlspecialchars($item['item_name']) ?>">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
         </div>
         <?php endforeach; ?>
     </div>
@@ -101,6 +106,12 @@
                     <label for="raw_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
                 </div>
             </div>
+            <div class="pt-2">
+                <div class="relative">
+                    <input type="number" id="raw_qty" step="0.01" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="<?= __('opening_current_stock') ?>">
+                    <label for="raw_qty" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent"><?= __('opening_current_stock') ?></label>
+                </div>
+            </div>
             <div class="flex justify-end pt-2">
                 <button type="submit" id="btn-submit-raw" class="text-xs font-bold bg-accent/20 text-accent px-4 py-2 rounded-lg hover:bg-accent/30 transition-colors"><i class="fas fa-plus mr-1"></i> <?= __('add') ?></button>
             </div>
@@ -113,7 +124,8 @@
             <div>
                 <div class="text-sm font-bold"><?= htmlspecialchars($raw['item_name']) ?> <span class="text-xs font-normal text-text-muted">(<?= htmlspecialchars($raw['item_name_bn']) ?>)</span></div>
                 <div class="text-[0.65rem] text-text-muted mt-1 uppercase tracking-wider">
-                    Avg Price: <span class="text-accent font-bold">৳<?= $raw['avg_unit_price'] ?></span> / <?= htmlspecialchars($raw['unit']) ?> | 
+                    Avg Price: <span class="text-accent font-bold">৳<?= $raw['avg_unit_price'] ?></span> / <?= htmlspecialchars($raw['unit']) ?> |
+                    Qty: <span class="text-emerald-400 font-bold"><?= $raw['current_qty'] ?? 0 ?></span> |
                     Min: <?= $raw['min_stock_threshold'] ?>
                 </div>
             </div>
@@ -209,15 +221,34 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('raw_unit').value = item.unit;
             document.getElementById('raw_price').value = item.avg_unit_price;
             document.getElementById('raw_min').value = item.min_stock_threshold;
+            document.getElementById('raw_qty').value = item.current_qty;
         },
         () => ({
             item_name: document.getElementById('raw_name').value,
             item_name_bn: document.getElementById('raw_name_bn').value,
             unit: document.getElementById('raw_unit').value,
             avg_unit_price: parseFloat(document.getElementById('raw_price').value) || 0,
-            min_stock_threshold: parseFloat(document.getElementById('raw_min').value) || 0
+            min_stock_threshold: parseFloat(document.getElementById('raw_min').value) || 0,
+            current_qty: parseFloat(document.getElementById('raw_qty').value) || 0
         }),
         'raw_inventory'
     );
+
+    // ── Delete Menu Items ──────────────────────────────────────
+    document.querySelectorAll('.btn-delete-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const name = btn.dataset.name;
+            if (!confirm(`<?= __('confirm_delete') ?>`)) return;
+
+            const res = await apiPost('?url=admin/deleteEntity', { entity: 'items', id });
+            if (res.success) {
+                btn.closest('.flex.justify-between').remove();
+                showToast(name + ' deleted!', 'success');
+            } else {
+                showToast(res.error || '<?= __("error") ?>', 'error');
+            }
+        });
+    });
 });
 </script>
