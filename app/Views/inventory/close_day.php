@@ -124,57 +124,72 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════ -->
-<!--  SECTION 3: Customer Dues (Baki)                          -->
+<!--  SECTION 3: Customer Dues (Baki) Modal Trigger            -->
 <!-- ══════════════════════════════════════════════════════════ -->
-<div class="bg-card border border-amber-500/20 rounded-xl p-4 mb-4 animate-slideUp">
-    <p class="text-[0.65rem] font-bold text-amber-400 uppercase tracking-widest mb-3">
-        <i class="fas fa-hand-holding-dollar mr-1"></i> <?= __('customer_dues') ?>
-    </p>
+<button type="button" onclick="document.getElementById('dues-modal').style.display='flex'"
+        class="w-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold py-3.5 rounded-xl mb-4
+               hover:bg-amber-500/20 transition-all active:scale-[0.97] text-sm animate-slideUp">
+    <i class="fas fa-hand-holding-dollar mr-2"></i> <?= __('customer_dues_baki') ?>
+</button>
 
-    <!-- Add Due Form -->
-    <div class="space-y-2 mb-4">
-        <input type="text" id="due-name" placeholder="<?= __('customer_name_req') ?>"
-               class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
-        <div class="flex gap-2">
-            <input type="number" id="due-amount" step="1" min="1" placeholder="<?= __('due_amount_req') ?>"
-                   class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
-            <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
-                   class="w-28 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+<!-- Dues Modal -->
+<div id="dues-modal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:px-4" style="display:none;">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="this.parentElement.style.display='none'"></div>
+    <div class="relative bg-card border border-amber-500/20 rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-lg max-h-[85vh] overflow-y-auto z-10 animate-slideUp">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-black text-amber-400">
+                <i class="fas fa-hand-holding-dollar mr-1"></i> <?= __('customer_dues_baki') ?>
+            </h3>
+            <button type="button" onclick="document.getElementById('dues-modal').style.display='none'" class="text-text-muted hover:text-white transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-        <div class="flex gap-2">
-            <select id="due-item-id" class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400 appearance-none cursor-pointer">
-                <option value="">(Optional) Select Item...</option>
-                <?php foreach ($menuItems as $mi): ?>
-                    <option value="<?= $mi['id'] ?>">
-                        <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
-                   class="w-20 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-amber-400">
-        </div>
-        <button type="button" id="btn-add-due"
-                class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg
-                       hover:bg-amber-500/20 transition-all mt-1">
-            <i class="fas fa-plus mr-1"></i> <?= __('add_due') ?>
-        </button>
-    </div>
 
-    <!-- Today's Dues List -->
-    <div id="dues-list" class="space-y-2">
-        <?php if (!empty($todayDues)): ?>
-            <?php foreach ($todayDues as $due): ?>
-            <div class="flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row" data-due-id="<?= $due['id'] ?>">
-                <div>
-                    <span class="text-sm font-semibold"><?= htmlspecialchars($due['customer_name']) ?></span>
-                    <?php if (!empty($due['phone'])): ?>
-                        <span class="text-[0.6rem] text-text-muted ml-1"><?= htmlspecialchars($due['phone']) ?></span>
-                    <?php endif; ?>
-                </div>
-                <span class="text-sm font-bold text-amber-400">৳<?= number_format($due['due_amount']) ?></span>
+        <!-- Add Due Form -->
+        <div class="space-y-2 mb-6">
+            <input type="text" id="due-name" placeholder="<?= __('customer_name_req') ?>"
+                   class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+            <div class="flex gap-2">
+                <input type="number" id="due-amount" step="1" min="1" placeholder="<?= __('due_amount_req') ?>"
+                       class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+                <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
+                       class="w-28 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
             </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+            <div class="flex gap-2">
+                <select id="due-item-id" class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400 appearance-none cursor-pointer">
+                    <option value="">(Optional) Select Item...</option>
+                    <?php foreach ($menuItems as $mi): ?>
+                        <option value="<?= $mi['id'] ?>">
+                            <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
+                       class="w-20 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-amber-400">
+            </div>
+            <button type="button" id="btn-add-due"
+                    class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg
+                           hover:bg-amber-500/20 transition-all mt-1">
+                <i class="fas fa-plus mr-1"></i> <?= __('add_due') ?>
+            </button>
+        </div>
+
+        <!-- Today's Dues List -->
+        <div id="dues-list" class="space-y-2">
+            <?php if (!empty($todayDues)): ?>
+                <?php foreach ($todayDues as $due): ?>
+                <div class="flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row" data-due-id="<?= $due['id'] ?>">
+                    <div>
+                        <span class="text-sm font-semibold"><?= htmlspecialchars($due['customer_name']) ?></span>
+                        <?php if (!empty($due['phone'])): ?>
+                            <span class="text-[0.6rem] text-text-muted ml-1"><?= htmlspecialchars($due['phone']) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <span class="text-sm font-bold text-amber-400">৳<?= number_format($due['due_amount']) ?></span>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
