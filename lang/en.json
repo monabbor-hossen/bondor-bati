@@ -191,5 +191,7 @@
     "absence_saved": "Absence logged successfully.",
     "net_payable": "Payable This Month",
     "base": "Base",
-    "cut": "Cut"
+    "cut": "Cut",
+    "end_date_optional": "End Date (Optional for multiple days)",
+    "multi_day_leave": "Multi-Day Leave"
 }

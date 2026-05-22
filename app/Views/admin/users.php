@@ -147,6 +147,13 @@
                 </label>
             </div>
 
+            <div class="relative pt-2">
+                <input type="date" id="absentEndDate" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent">
+                <label for="absentEndDate" class="absolute left-1 -top-1.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-1.5 peer-focus:text-xs peer-focus:text-accent">
+                    <?= __('end_date_optional') ?>
+                </label>
+            </div>
+
             <div class="flex items-center justify-between pt-2">
                 <span class="text-sm text-text-muted"><?= __('deduct_salary') ?></span>
                 <label class="relative inline-flex items-center cursor-pointer">
@@ -253,6 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const userId = document.getElementById('absentUserId').value;
         const absentDate = document.getElementById('absentDate').value;
+        const absentEndDate = document.getElementById('absentEndDate').value;
         const isDeducted = document.getElementById('deductSalary').checked ? 1 : 0;
         const note = document.getElementById('absenceNote').value;
         
@@ -261,7 +269,13 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
-        const res = await apiPost('?url=admin/logAbsence', { user_id: userId, absent_date: absentDate, is_deducted: isDeducted, note });
+        const res = await apiPost('?url=admin/logAbsence', { 
+            user_id: userId, 
+            absent_date: absentDate, 
+            end_date: absentEndDate,
+            is_deducted: isDeducted, 
+            note: note 
+        });
         
         if (res.success) {
             showToast('<?= __("absence_saved") ?>', 'success');

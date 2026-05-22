@@ -107,8 +107,21 @@ public function __construct() {
         $isActive = (int)($data['is_active'] ?? 0);
         
         if ($userId) {
+            // 1. Toggle App Access
             $stmt = $this->db->prepare("UPDATE users SET is_active = :is_active WHERE id = :id");
             $stmt->execute([':is_active' => $isActive, ':id' => $userId]);
+            
+            // 2. Toggle Payroll Clock
+            if ($isActive === 0) {
+                // Staff left or was fired -> Stop their pay as of today
+                $sal = $this->db->prepare("UPDATE staff_salaries SET end_date = CURDATE() WHERE user_id = :id AND end_date IS NULL");
+                $sal->execute([':id' => $userId]);
+            } else {
+                // Staff came back -> Resume their pay
+                $sal = $this->db->prepare("UPDATE staff_salaries SET end_date = NULL WHERE user_id = :id ORDER BY id DESC LIMIT 1");
+                $sal->execute([':id' => $userId]);
+            }
+
             $this->json(['success' => true]);
         }
         $this->json(['success' => false, 'error' => 'Invalid user']);
@@ -237,11 +250,14 @@ public function __construct() {
 
         $data = json_decode(file_get_contents('php://input'), true);
         $userId = (int)($data['user_id'] ?? 0);
-        $absentDate = $data['absent_date'] ?? date('Y-m-d');
+        
+        $startDateStr = $data['absent_date'] ?? date('Y-m-d');
+        $endDateStr   = !empty($data['end_date']) ? $data['end_date'] : $startDateStr;
+        
         $isDeducted = !empty($data['is_deducted']);
         $note = trim($data['note'] ?? '');
 
-        if ($userId <= 0 || empty($absentDate)) {
+        if ($userId <= 0 || empty($startDateStr)) {
             $this->json(['success' => false, 'error' => 'Invalid data']);
         }
 
@@ -251,20 +267,29 @@ public function __construct() {
             $dailyRate = (float)$sal->fetchColumn();
 
             $deduction = $isDeducted ? $dailyRate : 0.00;
+            
+            $begin = new \DateTime($startDateStr);
+            $end   = new \DateTime($endDateStr);
+            $end->modify('+1 day'); // Make inclusive for DatePeriod
+            
+            $period = new \DatePeriod($begin, new \DateInterval('P1D'), $end);
 
             $stmt = $this->db->prepare("
                 INSERT INTO attendance_logs (user_id, absent_date, deduct_salary, note)
-                VALUES (:uid, :ad, :ds, :nt)
+                VALUES (:uid, :d, :deduct, :note)
                 ON DUPLICATE KEY UPDATE 
                 deduct_salary = VALUES(deduct_salary),
                 note = VALUES(note)
             ");
-            $stmt->execute([
-                ':uid' => $userId,
-                ':ad' => $absentDate,
-                ':ds' => $deduction,
-                ':nt' => $note
-            ]);
+            
+            foreach ($period as $dt) {
+                $stmt->execute([
+                    ':uid'    => $userId,
+                    ':d'      => $dt->format('Y-m-d'),
+                    ':deduct' => $deduction,
+                    ':note'   => $note
+                ]);
+            }
 
             $this->json(['success' => true]);
         } catch (\Exception $e) {
