@@ -70,22 +70,32 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         <input type="hidden" id="bazaar-assigned-staff" value="<?= $assignedStaffId ?>">
     <?php endif; ?>
 
-    <!-- Advance Cash -->
+    <!-- Extra Cash & Budget Summary -->
     <div class="bg-card border border-border rounded-xl p-4">
-        <div class="flex items-center justify-between mb-2">
-            <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest">
-                <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('advance') ?> (<?= __('tk') ?>)
-            </label>
-            <?php if (($_SESSION['role'] ?? '') === 'admin' && $pastCarryForward > 0): ?>
-                <div class="text-[0.65rem] font-bold text-indigo-400 flex items-center gap-2">
-                    <?= __('past_carry_forward') ?>: <?= number_format($pastCarryForward) ?> 
-                    <button type="button" id="btn-apply-cf" data-val="<?= $pastCarryForward ?>" class="px-2 py-0.5 border border-indigo-400/50 rounded hover:bg-indigo-400/20 transition-all">[ <?= __('apply') ?> ]</button>
+        <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-border/50">
+                <span class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest"><?= __('floating_cash') ?>:</span>
+                <div>
+                    <span id="floatingCashAmt" class="text-indigo-400 font-bold"><?= (float)$pastCarryForward ?></span> <span class="text-xs text-indigo-400">Tk</span>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
+        
+        <input type="hidden" id="bazaar-past-cf" value="<?= (float)$pastCarryForward ?>">
+
+        <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
+            <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('new_extra_cash') ?> (<?= __('tk') ?>)
+        </label>
         <input type="number" id="bazaar-advance" step="1" min="0"
                class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400 <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
                value="<?= (empty($advanceCash) || $advanceCash == 0) ? '' : (float)$advanceCash ?>" placeholder="0" <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
+               
+        <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+            <div class="text-center mt-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-2">
+                <span class="text-[0.65rem] font-bold text-emerald-500 uppercase tracking-widest"><?= __('total_budget') ?>:</span>
+                <span id="totalBudgetAmt" class="text-emerald-400 font-black tracking-wider text-lg ml-1">0</span> <span class="text-xs font-bold text-emerald-400">Tk</span>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Bazaar Items -->
@@ -222,15 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Apply Carry Forward ───────────────────────────────────
-    const btnApplyCf = document.getElementById('btn-apply-cf');
-    if (btnApplyCf) {
-        btnApplyCf.addEventListener('click', () => {
-            document.getElementById('bazaar-advance').value = btnApplyCf.dataset.val;
-            recalcBazaar();
-        });
-    }
-
     // ── Add Item Row ──────────────────────────────────────────
     document.getElementById('btn-add-bazaar-item').addEventListener('click', () => {
         const div = document.createElement('div');
@@ -292,6 +293,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.recalcBazaar = function() {
         const advance = parseFloat(document.getElementById('bazaar-advance').value) || 0;
+        const pastCf  = parseFloat(document.getElementById('bazaar-past-cf').value) || 0;
+        
+        const totalBudget = advance + pastCf;
+        const totalBudgetEl = document.getElementById('totalBudgetAmt');
+        if (totalBudgetEl) {
+            totalBudgetEl.textContent = totalBudget.toLocaleString('en-IN');
+        }
+
         const returned = parseFloat(document.getElementById('bazaar-returned').value) || 0;
 
         let totalSpent = 0;

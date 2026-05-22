@@ -35,17 +35,17 @@ public function __construct() {
         $a->execute([':d' => $date]);
         $advanceReceived = (float)$a->fetchColumn();
 
-        // Cash bazaar spent
-        $b = $this->db->prepare("SELECT COALESCE(SUM(total_spent), 0) FROM bazaar_ledgers WHERE log_date = :d");
+        // Cash bazaar advance given today (this is what physically leaves the drawer)
+        $b = $this->db->prepare("SELECT COALESCE(SUM(advance_cash), 0) FROM bazaar_ledgers WHERE log_date = :d");
         $b->execute([':d' => $date]);
-        $bazaarSpent = (float)$b->fetchColumn();
+        $bazaarDrawerDeduction = (float)$b->fetchColumn();
 
         // Direct (non-spread) expenses
         $e = $this->db->prepare("SELECT COALESCE(SUM(total_amount), 0) FROM expenses WHERE expense_date = :d AND is_spread = 0");
         $e->execute([':d' => $date]);
         $directExpenses = (float)$e->fetchColumn();
 
-        return ($totalSales - $dueSales) + $advanceReceived - $bazaarSpent - $directExpenses;
+        return ($totalSales - $dueSales) + $advanceReceived - $bazaarDrawerDeduction - $directExpenses;
     }
 
     /**

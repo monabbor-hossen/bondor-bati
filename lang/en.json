@@ -197,5 +197,8 @@
     "bazaar_list": "List",
     "new_list": "New List",
     "past_carry_forward": "Past Carry Forward",
-    "apply": "Apply"
+    "apply": "Apply",
+    "floating_cash": "Floating Cash (Past)",
+    "new_extra_cash": "New Advance (Extra Cash)",
+    "total_budget": "Total Shopping Budget"
 }
