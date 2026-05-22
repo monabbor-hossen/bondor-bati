@@ -36,9 +36,16 @@ public function __construct() {
         $this->requireAdmin();
 
         $users = $this->db->query("
-            SELECT id, name, name_bn, username, role, is_active 
-            FROM users 
-            ORDER BY role, name
+            SELECT u.id, u.name, u.name_bn, u.username, u.role, u.is_active, 
+                   s.monthly_salary, s.daily_rate,
+                   (SELECT COALESCE(SUM(deduct_salary), 0) FROM attendance_logs 
+                    WHERE user_id = u.id 
+                      AND MONTH(absent_date) = MONTH(CURRENT_DATE()) 
+                      AND YEAR(absent_date) = YEAR(CURRENT_DATE())
+                   ) as month_deductions
+            FROM users u 
+            LEFT JOIN staff_salaries s ON u.id = s.user_id 
+            ORDER BY u.role, u.name
         ")->fetchAll();
 
         $this->view('admin/users', [
@@ -120,10 +127,6 @@ public function __construct() {
         $this->json(['success' => false, 'error' => 'Invalid user']);
     }
 
-    /**
-     * Delete an entity by ID (AJAX)
-     * Route: ?url=admin/deleteEntity
-     */
     public function deleteEntity() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'error' => 'POST required']);
@@ -141,6 +144,111 @@ public function __construct() {
         try {
             $stmt = $this->db->prepare("DELETE FROM `$entity` WHERE id = :id");
             $stmt->execute([':id' => $id]);
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function saveStaff() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($data['user_id'] ?? 0);
+        $name = trim($data['name'] ?? '');
+        $nameBn = trim($data['name_bn'] ?? '');
+        $phone = trim($data['phone'] ?? '');
+        $role = trim($data['role'] ?? 'staff');
+        $monthlySalary = (float)($data['monthly_salary'] ?? 0);
+        
+        if (empty($name) || empty($phone)) {
+            $this->json(['success' => false, 'error' => 'Name and Phone are required']);
+        }
+        
+        try {
+            $this->db->beginTransaction();
+            
+            if ($userId > 0) {
+                // Update
+                $stmt = $this->db->prepare("UPDATE users SET name = :name, name_bn = :name_bn, username = :username, role = :role WHERE id = :id");
+                $stmt->execute([':name' => $name, ':name_bn' => $nameBn, ':username' => $phone, ':role' => $role, ':id' => $userId]);
+            } else {
+                // Insert
+                $stmt = $this->db->prepare("INSERT INTO users (name, name_bn, username, password, role) VALUES (:name, :name_bn, :username, :password, :role)");
+                $stmt->execute([
+                    ':name' => $name,
+                    ':name_bn' => $nameBn,
+                    ':username' => $phone,
+                    ':password' => password_hash('123456', PASSWORD_DEFAULT),
+                    ':role' => $role
+                ]);
+                $userId = $this->db->lastInsertId();
+            }
+            
+            // Salary calculation
+            $dailyRate = round($monthlySalary / 30, 2);
+            
+            $salStmt = $this->db->prepare("
+                INSERT INTO staff_salaries (user_id, monthly_salary, daily_rate, start_date) 
+                VALUES (:uid, :ms, :dr, CURDATE())
+                ON DUPLICATE KEY UPDATE 
+                monthly_salary = VALUES(monthly_salary),
+                daily_rate = VALUES(daily_rate)
+            ");
+            $salStmt->execute([
+                ':uid' => $userId,
+                ':ms' => $monthlySalary,
+                ':dr' => $dailyRate
+            ]);
+            
+            $this->db->commit();
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    public function logAbsence() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $userId = (int)($data['user_id'] ?? 0);
+        $absentDate = $data['absent_date'] ?? date('Y-m-d');
+        $isDeducted = !empty($data['is_deducted']);
+        $note = trim($data['note'] ?? '');
+
+        if ($userId <= 0 || empty($absentDate)) {
+            $this->json(['success' => false, 'error' => 'Invalid data']);
+        }
+
+        try {
+            $sal = $this->db->prepare("SELECT daily_rate FROM staff_salaries WHERE user_id = :uid ORDER BY start_date DESC LIMIT 1");
+            $sal->execute([':uid' => $userId]);
+            $dailyRate = (float)$sal->fetchColumn();
+
+            $deduction = $isDeducted ? $dailyRate : 0.00;
+
+            $stmt = $this->db->prepare("
+                INSERT INTO attendance_logs (user_id, absent_date, deduct_salary, note)
+                VALUES (:uid, :ad, :ds, :nt)
+                ON DUPLICATE KEY UPDATE 
+                deduct_salary = VALUES(deduct_salary),
+                note = VALUES(note)
+            ");
+            $stmt->execute([
+                ':uid' => $userId,
+                ':ad' => $absentDate,
+                ':ds' => $deduction,
+                ':nt' => $note
+            ]);
+
             $this->json(['success' => true]);
         } catch (\Exception $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()]);

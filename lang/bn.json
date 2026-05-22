@@ -182,5 +182,16 @@
     "remaining_balance": "অবশিষ্ট",
     "mark_finished": "শেষ চিহ্নিত করুন",
     "confirm_finish": "আপনি কি নিশ্চিত? অবশিষ্ট ব্যালেন্স আজকের খরচ হিসেবে যুক্ত হবে।",
-    "nav_costs": "খরচ"
+    "nav_costs": "খরচ",
+    "monthly_salary": "মাসিক বেতন",
+    "daily_rate": "দৈনিক বেতন",
+    "log_absence": "অনুপস্থিতি যোগ করুন",
+    "absent_date": "অনুপস্থিতির তারিখ",
+    "deduct_salary": "বেতন কাটা হবে?",
+    "absence_note": "কারণ / নোট",
+    "save_staff": "স্টাফ সেভ করুন",
+    "absence_saved": "অনুপস্থিতি সফলভাবে সেভ হয়েছে।",
+    "net_payable": "এই মাসের প্রদেয়",
+    "base": "মূল",
+    "cut": "কাটা"
 }

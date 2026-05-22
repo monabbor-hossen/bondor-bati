@@ -87,7 +87,13 @@ public function __construct() {
             WHERE start_date <= :d AND (end_date IS NULL OR end_date >= :d)
         ");
         $sal->execute([':d' => $date]);
-        $salaryCost = (float)$sal->fetchColumn();
+        $baseSalaryCost = (float)$sal->fetchColumn();
+
+        $abs = $this->db->prepare("SELECT COALESCE(SUM(deduct_salary), 0) FROM attendance_logs WHERE absent_date = :d");
+        $abs->execute([':d' => $date]);
+        $deductedSalary = (float)$abs->fetchColumn();
+
+        $salaryCost = $baseSalaryCost - $deductedSalary;
 
         // 6. Wastage + Complimentary cost (at cost price)
         $gc = $this->db->prepare("

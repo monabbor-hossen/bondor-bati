@@ -15,6 +15,7 @@
 <div class="bg-card border border-border rounded-xl p-5 mb-6 animate-slideUp">
     <h3 class="text-sm font-bold text-text-muted mb-4 uppercase tracking-wider"><?= __('add_new_staff') ?></h3>
     <form id="addStaffForm" class="space-y-6">
+        <input type="hidden" id="staffId" value="">
         
         <div class="relative">
             <input type="text" id="staffName" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Name">
@@ -24,9 +25,16 @@
         </div>
 
         <div class="relative">
-            <input type="text" id="staffPhone" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Phone">
+            <input type="tel" id="staffPhone" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Phone">
             <label for="staffPhone" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">
                 <?= __('whatsapp_number') ?>
+            </label>
+        </div>
+
+        <div class="relative">
+            <input type="text" id="staffNameBn" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Name (BN)">
+            <label for="staffNameBn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">
+                Name (BN)
             </label>
         </div>
 
@@ -41,8 +49,15 @@
             <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
         </div>
 
-        <button type="submit" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-3 rounded-xl transition-colors mt-2 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-            <i class="fas fa-plus mr-1"></i> <?= __('submit') ?>
+        <div class="relative">
+            <input type="number" step="0.01" id="staffMonthlySalary" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Monthly Salary">
+            <label for="staffMonthlySalary" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">
+                <?= __('monthly_salary') ?>
+            </label>
+        </div>
+
+        <button type="submit" id="btnSubmitStaff" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-3 rounded-xl transition-colors mt-2 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+            <i class="fas fa-save mr-1"></i> <?= __('save_staff') ?>
         </button>
     </form>
 </div>
@@ -52,15 +67,27 @@
     <?php foreach ($users as $user): ?>
     <div class="bg-card border border-border/50 rounded-xl p-4 flex items-center justify-between" id="user-row-<?= $user['id'] ?>">
         <div>
+            <?php $base = (float)($user['monthly_salary'] ?? 0); $deduct = (float)($user['month_deductions'] ?? 0); $net = $base - $deduct; ?>
             <h4 class="font-bold text-sm mb-0.5 <?= !$user['is_active'] ? 'line-through text-text-muted' : '' ?>" id="user-name-<?= $user['id'] ?>">
                 <?= htmlspecialchars($user['name' . (currentLang() === 'bn' ? '_bn' : '')] ?? $user['name']) ?>
             </h4>
-            <div class="text-xs text-text-muted flex items-center gap-2">
+            <div class="text-xs text-text-muted flex items-center gap-2 mb-1">
                 <span class="px-2 py-0.5 rounded text-[0.6rem] font-bold <?= $user['role'] === 'admin' ? 'bg-info/10 text-info border border-info/30' : 'bg-surface border border-border' ?> uppercase">
                     <?= __('role_' . $user['role']) ?>
                 </span>
-                <span class="<?= !$user['is_active'] ? 'opacity-50' : '' ?>" id="user-phone-<?= $user['id'] ?>"><i class="fab fa-whatsapp text-success"></i> <?= htmlspecialchars($user['username']) ?></span>
+                <span class="<?= !$user['is_active'] ? 'opacity-50' : '' ?>" id="user-phone-<?= $user['id'] ?>">
+                    <a href="tel:<?= htmlspecialchars($user['username']) ?>" class="hover:text-accent transition-colors flex items-center gap-1">
+                        <i class="fas fa-phone-alt text-success"></i> <?= htmlspecialchars($user['username']) ?>
+                    </a>
+                </span>
             </div>
+            <?php if ($base > 0): ?>
+            <div class="text-[0.65rem] text-text-muted flex items-center gap-2 mt-1">
+                <span><i class="fas fa-money-bill-wave text-accent/70 mr-1"></i> ৳<?= number_format($base) ?>/mo</span>
+                <span>(৳<?= number_format((float)($user['daily_rate'] ?? 0)) ?>/day)</span>
+            </div>
+            <div class="text-xs text-text-muted mt-1"><?= __('net_payable') ?>: <strong class="text-success"><?= $net ?></strong> (<?= __('base') ?>: <?= $base ?> - <?= __('cut') ?>: <?= $deduct ?>)</div>
+            <?php endif; ?>
         </div>
         <div class="flex items-center gap-3">
             <!-- Line-art Toggle Switch -->
@@ -74,6 +101,23 @@
                 <i class="fas fa-link"></i>
             </button>
 
+            <!-- Edit Staff -->
+            <button class="btn-edit-staff text-text-muted hover:text-amber-400 hover:drop-shadow-[0_0_5px_rgba(251,191,36,0.5)] transition-all flex-shrink-0" 
+                    data-id="<?= $user['id'] ?>" 
+                    data-name="<?= htmlspecialchars($user['name'] ?? '') ?>" 
+                    data-namebn="<?= htmlspecialchars($user['name_bn'] ?? '') ?>" 
+                    data-phone="<?= htmlspecialchars($user['username'] ?? '') ?>" 
+                    data-role="<?= $user['role'] ?>" 
+                    data-salary="<?= $base ?>" 
+                    title="Edit">
+                <i class="fas fa-pencil-alt"></i>
+            </button>
+
+            <!-- Log Absence -->
+            <button class="btn-log-absence text-text-muted hover:text-red-400 hover:drop-shadow-[0_0_5px_rgba(248,113,113,0.5)] transition-all flex-shrink-0" data-id="<?= $user['id'] ?>" title="<?= __('log_absence') ?>">
+                <i class="fas fa-calendar-minus"></i>
+            </button>
+
             <!-- Delete Button -->
             <button class="btn-delete-user text-text-muted hover:text-red-400 hover:drop-shadow-[0_0_5px_rgba(248,113,113,0.5)] transition-all flex-shrink-0" data-id="<?= $user['id'] ?>" title="<?= __('action_delete') ?>">
                 <i class="fas fa-trash-alt"></i>
@@ -83,43 +127,118 @@
     <?php endforeach; ?>
 </div>
 
+<!-- Log Absence Modal (Line-art style) -->
+<div id="absence-modal" class="fixed inset-0 z-[100] flex items-center justify-center px-4" style="display:none;">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="document.getElementById('absence-modal').style.display='none'"></div>
+    <div class="relative bg-card border border-border rounded-2xl p-6 w-full max-w-sm z-10">
+        <h3 class="text-sm font-bold mb-4 uppercase tracking-wider text-text-muted"><i class="fas fa-calendar-minus text-accent mr-1"></i> <?= __('log_absence') ?></h3>
+        <form id="absenceForm" class="space-y-4">
+            <input type="hidden" id="absentUserId" value="">
+            
+            <div class="relative">
+                <input type="date" id="absentDate" required value="<?= date('Y-m-d') ?>" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none">
+                <label for="absentDate" class="absolute left-1 -top-3.5 text-xs text-accent">
+                    <?= __('absent_date') ?>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <span class="text-sm text-text-muted"><?= __('deduct_salary') ?></span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="deductSalary" class="sr-only peer toggle-user" checked>
+                    <div class="w-8 h-4 bg-transparent border border-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-text-muted peer-checked:after:bg-accent after:border-transparent after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:border-accent/50"></div>
+                </label>
+            </div>
+
+            <div class="relative pt-2">
+                <input type="text" id="absenceNote" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Note">
+                <label for="absenceNote" class="absolute left-1 -top-1.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-1.5 peer-focus:text-xs peer-focus:text-accent">
+                    <?= __('absence_note') ?>
+                </label>
+            </div>
+
+            <button type="submit" id="btnSubmitAbsence" class="w-full bg-transparent border border-accent hover:bg-accent/10 text-accent font-bold py-2 rounded-xl transition-colors mt-2">
+                <?= __('submit') ?>
+            </button>
+        </form>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Add Staff Submit
+    // Add / Edit Staff Submit
     document.getElementById('addStaffForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const userId = document.getElementById('staffId').value;
         const name = document.getElementById('staffName').value;
+        const nameBn = document.getElementById('staffNameBn').value;
         const phone = document.getElementById('staffPhone').value;
         const role = document.getElementById('staffRole').value;
+        const monthlySalary = document.getElementById('staffMonthlySalary').value;
         
-        const btn = e.target.querySelector('button[type="submit"]');
+        const btn = document.getElementById('btnSubmitStaff');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
-        const res = await apiPost('?url=auth/addStaff', { name, phone, role });
+        const res = await apiPost('?url=admin/saveStaff', { user_id: userId, name, name_bn: nameBn, phone, role, monthly_salary: monthlySalary });
         
         if (res.success) {
-            if (res.offline) {
-                showToast(res.message, 'warning');
-            } else {
-                showToast('Staff added successfully!', 'success');
-                // Copy link to clipboard
-                if (res.magic_link) {
-                    navigator.clipboard.writeText(res.magic_link).then(() => {
-                        showToast('<?= __("link_copied") ?>', 'info');
-                    }).catch(() => {
-                        // fallback if clipboard api fails
-                    });
-                }
-                setTimeout(() => window.location.reload(), 1500);
-            }
-            e.target.reset();
+            showToast('Staff saved successfully!', 'success');
+            setTimeout(() => window.location.reload(), 1500);
         } else {
-            showToast(res.error || 'Failed to add staff', 'error');
+            showToast(res.error || 'Failed to save staff', 'error');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
         }
+    });
+
+    // Edit Staff Button Click
+    document.querySelectorAll('.btn-edit-staff').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('staffId').value = btn.dataset.id;
+            document.getElementById('staffName').value = btn.dataset.name;
+            document.getElementById('staffNameBn').value = btn.dataset.namebn;
+            document.getElementById('staffPhone').value = btn.dataset.phone;
+            document.getElementById('staffRole').value = btn.dataset.role;
+            document.getElementById('staffMonthlySalary').value = btn.dataset.salary;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // Log Absence Button Click
+    document.querySelectorAll('.btn-log-absence').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('absentUserId').value = btn.dataset.id;
+            document.getElementById('absenceForm').reset();
+            document.getElementById('absentDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('absence-modal').style.display = 'flex';
+        });
+    });
+
+    // Submit Absence Form
+    document.getElementById('absenceForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
         
+        const userId = document.getElementById('absentUserId').value;
+        const absentDate = document.getElementById('absentDate').value;
+        const isDeducted = document.getElementById('deductSalary').checked ? 1 : 0;
+        const note = document.getElementById('absenceNote').value;
+        
+        const btn = document.getElementById('btnSubmitAbsence');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const res = await apiPost('?url=admin/logAbsence', { user_id: userId, absent_date: absentDate, is_deducted: isDeducted, note });
+        
+        if (res.success) {
+            showToast('<?= __("absence_saved") ?>', 'success');
+            document.getElementById('absence-modal').style.display = 'none';
+        } else {
+            showToast(res.error || 'Failed to log absence', 'error');
+        }
         btn.innerHTML = originalHtml;
         btn.disabled = false;
     });
