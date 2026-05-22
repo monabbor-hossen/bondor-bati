@@ -157,27 +157,50 @@ public function __construct() {
         }
         
         $data = json_decode(file_get_contents('php://input'), true);
-        $userId = (int)($data['user_id'] ?? 0);
+        
+        // STRICT INTEGER CASTING
+        $userId = isset($data['user_id']) ? (int)$data['user_id'] : 0;
         $name = trim($data['name'] ?? '');
         $nameBn = trim($data['name_bn'] ?? '');
         $phone = trim($data['phone'] ?? '');
         $role = trim($data['role'] ?? 'staff');
         $monthlySalary = (float)($data['monthly_salary'] ?? 0);
+        $dailyRate = round($monthlySalary / 30, 2);
         
         if (empty($name) || empty($phone)) {
-            $this->json(['success' => false, 'error' => 'Name and Phone are required']);
+            $this->json(['success' => false, 'error' => 'Name and phone are required.']);
         }
         
         try {
             $this->db->beginTransaction();
             
             if ($userId > 0) {
-                // Update
+                // UPDATE EXISTING USER
                 $stmt = $this->db->prepare("UPDATE users SET name = :name, name_bn = :name_bn, username = :username, role = :role WHERE id = :id");
                 $stmt->execute([':name' => $name, ':name_bn' => $nameBn, ':username' => $phone, ':role' => $role, ':id' => $userId]);
+                
+                $salStmt = $this->db->prepare("
+                    INSERT INTO staff_salaries (user_id, monthly_salary, daily_rate, start_date) 
+                    VALUES (:uid, :ms, :dr, CURDATE())
+                    ON DUPLICATE KEY UPDATE 
+                    monthly_salary = VALUES(monthly_salary),
+                    daily_rate = VALUES(daily_rate)
+                ");
+                $salStmt->execute([
+                    ':uid' => $userId,
+                    ':ms' => $monthlySalary,
+                    ':dr' => $dailyRate
+                ]);
             } else {
-                // Insert
-                $stmt = $this->db->prepare("INSERT INTO users (name, name_bn, username, password, role) VALUES (:name, :name_bn, :username, :password, :role)");
+                // INSERT BRAND NEW USER
+                $chk = $this->db->prepare("SELECT id FROM users WHERE username = :phone");
+                $chk->execute([':phone' => $phone]);
+                if ($chk->fetch()) {
+                    $this->db->rollBack();
+                    $this->json(['success' => false, 'error' => 'Phone number already exists.']);
+                }
+
+                $stmt = $this->db->prepare("INSERT INTO users (name, name_bn, username, password, role, is_active) VALUES (:name, :name_bn, :username, :password, :role, 1)");
                 $stmt->execute([
                     ':name' => $name,
                     ':name_bn' => $nameBn,
@@ -186,23 +209,17 @@ public function __construct() {
                     ':role' => $role
                 ]);
                 $userId = $this->db->lastInsertId();
+                
+                $salStmt = $this->db->prepare("
+                    INSERT INTO staff_salaries (user_id, monthly_salary, daily_rate, start_date) 
+                    VALUES (:uid, :ms, :dr, CURDATE())
+                ");
+                $salStmt->execute([
+                    ':uid' => $userId,
+                    ':ms' => $monthlySalary,
+                    ':dr' => $dailyRate
+                ]);
             }
-            
-            // Salary calculation
-            $dailyRate = round($monthlySalary / 30, 2);
-            
-            $salStmt = $this->db->prepare("
-                INSERT INTO staff_salaries (user_id, monthly_salary, daily_rate, start_date) 
-                VALUES (:uid, :ms, :dr, CURDATE())
-                ON DUPLICATE KEY UPDATE 
-                monthly_salary = VALUES(monthly_salary),
-                daily_rate = VALUES(daily_rate)
-            ");
-            $salStmt->execute([
-                ':uid' => $userId,
-                ':ms' => $monthlySalary,
-                ':dr' => $dailyRate
-            ]);
             
             $this->db->commit();
             $this->json(['success' => true]);

@@ -15,7 +15,7 @@
 <div class="bg-card border border-border rounded-xl p-5 mb-6 animate-slideUp">
     <h3 class="text-sm font-bold text-text-muted mb-4 uppercase tracking-wider"><?= __('add_new_staff') ?></h3>
     <form id="addStaffForm" class="space-y-6">
-        <input type="hidden" id="staffId" value="">
+        <input type="hidden" id="editUserId" value="0">
         
         <div class="relative">
             <input type="text" id="staffName" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Name">
@@ -50,15 +50,20 @@
         </div>
 
         <div class="relative">
-            <input type="number" step="0.01" id="staffMonthlySalary" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Monthly Salary">
-            <label for="staffMonthlySalary" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">
+            <input type="number" step="0.01" id="staffSalary" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Monthly Salary">
+            <label for="staffSalary" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">
                 <?= __('monthly_salary') ?>
             </label>
         </div>
 
-        <button type="submit" id="btnSubmitStaff" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-3 rounded-xl transition-colors mt-2 shadow-[0_0_15px_rgba(244,63,94,0.3)]">
-            <i class="fas fa-save mr-1"></i> <?= __('save_staff') ?>
-        </button>
+        <div class="flex gap-2 mt-4">
+            <button type="submit" id="submitStaffBtn" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-3 rounded-xl transition-colors shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                <i class="fas fa-save mr-1"></i> <?= __('save_staff') ?>
+            </button>
+            <button type="button" id="cancelEditBtn" class="hidden w-1/3 bg-surface border border-border text-text-muted hover:text-text-primary font-bold py-3 rounded-xl transition-colors">
+                Cancel
+            </button>
+        </div>
     </form>
 </div>
 
@@ -102,7 +107,7 @@
             </button>
 
             <!-- Edit Staff -->
-            <button class="btn-edit-staff text-text-muted hover:text-amber-400 hover:drop-shadow-[0_0_5px_rgba(251,191,36,0.5)] transition-all flex-shrink-0" 
+            <button class="btn-edit-user text-text-muted hover:text-amber-400 hover:drop-shadow-[0_0_5px_rgba(251,191,36,0.5)] transition-all flex-shrink-0" 
                     data-id="<?= $user['id'] ?>" 
                     data-name="<?= htmlspecialchars($user['name'] ?? '') ?>" 
                     data-namebn="<?= htmlspecialchars($user['name_bn'] ?? '') ?>" 
@@ -166,45 +171,70 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Add / Edit Staff Submit
+    // 1. Edit Button Logic
+    document.querySelectorAll('.btn-edit-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('editUserId').value  = btn.dataset.id;
+            document.getElementById('staffName').value   = btn.dataset.name   || '';
+            document.getElementById('staffPhone').value  = btn.dataset.phone  || '';
+            document.getElementById('staffRole').value   = btn.dataset.role   || 'staff';
+            document.getElementById('staffSalary').value = btn.dataset.salary || '';
+
+            document.getElementById('submitStaffBtn').innerHTML = '<i class="fas fa-edit mr-1"></i> Update';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+
+    // 2. Cancel Edit Logic
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+        document.getElementById('editUserId').value = '0';
+        document.getElementById('addStaffForm').reset();
+        document.getElementById('submitStaffBtn').innerHTML = '<i class="fas fa-save mr-1"></i> <?= __("save_staff") ?>';
+        document.getElementById('cancelEditBtn').classList.add('hidden');
+    });
+
+    // 3. Submit Logic (No DOM manipulation — strict reload)
     document.getElementById('addStaffForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const userId = document.getElementById('staffId').value;
-        const name = document.getElementById('staffName').value;
-        const nameBn = document.getElementById('staffNameBn').value;
-        const phone = document.getElementById('staffPhone').value;
-        const role = document.getElementById('staffRole').value;
-        const monthlySalary = document.getElementById('staffMonthlySalary').value;
-        
-        const btn = document.getElementById('btnSubmitStaff');
+
+        // Force integer parse to prevent string '0' issues
+        const userId = parseInt(document.getElementById('editUserId').value) || 0;
+        const name   = document.getElementById('staffName').value.trim();
+        const nameBn = document.getElementById('staffNameBn').value.trim();
+        const phone  = document.getElementById('staffPhone').value.trim();
+        const role   = document.getElementById('staffRole').value;
+        const salary = document.getElementById('staffSalary').value;
+
+        if (!name || !phone) {
+            showToast('Name and phone are required.', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('submitStaffBtn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
-        const res = await apiPost('?url=admin/saveStaff', { user_id: userId, name, name_bn: nameBn, phone, role, monthly_salary: monthlySalary });
-        
+        // CRITICAL: Must hit admin/saveStaff
+        const res = await apiPost('?url=admin/saveStaff', {
+            user_id: userId,
+            name: name,
+            name_bn: nameBn,
+            phone: phone,
+            role: role,
+            monthly_salary: salary
+        });
+
         if (res.success) {
             showToast('Staff saved successfully!', 'success');
-            setTimeout(() => window.location.reload(), 1500);
+            // STRICT RELOAD: Prevents ghost duplicates on screen
+            setTimeout(() => window.location.reload(), 500);
         } else {
             showToast(res.error || 'Failed to save staff', 'error');
             btn.innerHTML = originalHtml;
             btn.disabled = false;
         }
-    });
-
-    // Edit Staff Button Click
-    document.querySelectorAll('.btn-edit-staff').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.getElementById('staffId').value = btn.dataset.id;
-            document.getElementById('staffName').value = btn.dataset.name;
-            document.getElementById('staffNameBn').value = btn.dataset.namebn;
-            document.getElementById('staffPhone').value = btn.dataset.phone;
-            document.getElementById('staffRole').value = btn.dataset.role;
-            document.getElementById('staffMonthlySalary').value = btn.dataset.salary;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
     });
 
     // Log Absence Button Click
