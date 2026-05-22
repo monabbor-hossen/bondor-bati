@@ -33,8 +33,21 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
     <?php endforeach; ?>
 </datalist>
 
+<!-- Multi-Ledger Tabs -->
+<div class="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar animate-slideUp">
+    <?php $listCount = 1; foreach ($ledgers as $l): ?>
+        <a href="?url=bazaar&ledger_id=<?= $l['id'] ?>" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border <?= $l['id'] == $activeLedgerId ? 'bg-accent/10 border-accent/50 text-accent' : 'bg-surface border-border text-text-muted hover:text-text-primary' ?>">
+            <?= __('bazaar_list') ?> #<?= $listCount++ ?>
+        </a>
+    <?php endforeach; ?>
+    <button type="button" id="btn-new-ledger" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 whitespace-nowrap">
+        <i class="fas fa-plus mr-1"></i> <?= __('new_list') ?>
+    </button>
+</div>
+
 <form id="bazaar-form" class="space-y-4 stagger">
     <input type="hidden" id="bazaar-log-date" value="<?= $logDate ?>">
+    <input type="hidden" id="bazaar-ledger-id" value="<?= $activeLedgerId ?>">
     
     <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
         <div class="bg-card border border-border rounded-xl p-4 flex items-center justify-between">
@@ -59,9 +72,17 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
 
     <!-- Advance Cash -->
     <div class="bg-card border border-border rounded-xl p-4">
-        <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
-            <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('advance') ?> (<?= __('tk') ?>)
-        </label>
+        <div class="flex items-center justify-between mb-2">
+            <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest">
+                <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('advance') ?> (<?= __('tk') ?>)
+            </label>
+            <?php if (($_SESSION['role'] ?? '') === 'admin' && $pastCarryForward > 0): ?>
+                <div class="text-[0.65rem] font-bold text-indigo-400 flex items-center gap-2">
+                    <?= __('past_carry_forward') ?>: <?= number_format($pastCarryForward) ?> 
+                    <button type="button" id="btn-apply-cf" data-val="<?= $pastCarryForward ?>" class="px-2 py-0.5 border border-indigo-400/50 rounded hover:bg-indigo-400/20 transition-all">[ <?= __('apply') ?> ]</button>
+                </div>
+            <?php endif; ?>
+        </div>
         <input type="number" id="bazaar-advance" step="1" min="0"
                class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400 <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
                value="<?= (empty($advanceCash) || $advanceCash == 0) ? '' : (float)$advanceCash ?>" placeholder="0" <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
@@ -181,6 +202,34 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const itemsList = document.getElementById('bazaar-items-list');
+
+    // ── Create New Ledger ─────────────────────────────────────
+    const btnNewLedger = document.getElementById('btn-new-ledger');
+    if (btnNewLedger) {
+        btnNewLedger.addEventListener('click', async () => {
+            const originalHtml = btnNewLedger.innerHTML;
+            btnNewLedger.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnNewLedger.disabled = true;
+
+            const res = await apiPost('?url=bazaar/createNewLedger', {});
+            if (res.success) {
+                window.location.href = '?url=bazaar&ledger_id=' + res.ledger_id;
+            } else {
+                showToast(res.error || 'Error creating list', 'error');
+                btnNewLedger.innerHTML = originalHtml;
+                btnNewLedger.disabled = false;
+            }
+        });
+    }
+
+    // ── Apply Carry Forward ───────────────────────────────────
+    const btnApplyCf = document.getElementById('btn-apply-cf');
+    if (btnApplyCf) {
+        btnApplyCf.addEventListener('click', () => {
+            document.getElementById('bazaar-advance').value = btnApplyCf.dataset.val;
+            recalcBazaar();
+        });
+    }
 
     // ── Add Item Row ──────────────────────────────────────────
     document.getElementById('btn-add-bazaar-item').addEventListener('click', () => {
@@ -313,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const res = await apiPost('?url=bazaar/save', {
+            ledger_id: parseInt(document.getElementById('bazaar-ledger-id').value) || 0,
             log_date: document.getElementById('bazaar-log-date').value,
             advance_cash: parseFloat(document.getElementById('bazaar-advance').value) || 0,
             assigned_staff_id: parseInt(document.getElementById('bazaar-assigned-staff').value) || 0,

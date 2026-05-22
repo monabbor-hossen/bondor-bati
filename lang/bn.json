@@ -195,5 +195,9 @@
     "base": "মূল",
     "cut": "কাটা",
     "end_date_optional": "শেষ তারিখ (একাধিক দিনের জন্য ঐচ্ছিক)",
-    "multi_day_leave": "একাধিক দিনের ছুটি"
+    "multi_day_leave": "একাধিক দিনের ছুটি",
+    "bazaar_list": "তালিকা",
+    "new_list": "নতুন তালিকা",
+    "past_carry_forward": "পূর্বের অবশিষ্ট ক্যাশ",
+    "apply": "প্রয়োগ করুন"
 }

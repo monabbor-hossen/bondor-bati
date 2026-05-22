@@ -20,16 +20,39 @@ public function __construct() {
     public function index() {
         $date = $_GET['date'] ?? date('Y-m-d');
 
+        try { $this->db->exec("ALTER TABLE bazaar_ledgers DROP INDEX log_date"); } catch (\Exception $e) {}
+
         $s = $this->db->query("SELECT setting_value FROM app_settings WHERE setting_key = 'default_bazaar_staff_id'");
         $defaultStaff = (int)($s->fetchColumn() ?: 0);
 
-        // Get today's ledger if exists
-        $stmt = $this->db->prepare("SELECT * FROM bazaar_ledgers WHERE log_date = :d");
+        // Fetch ALL ledgers for today
+        $stmt = $this->db->prepare("SELECT * FROM bazaar_ledgers WHERE log_date = :d ORDER BY id ASC");
         $stmt->execute([':d' => $date]);
-        $ledger = $stmt->fetch();
+        $ledgers = $stmt->fetchAll();
         
+        if (empty($ledgers)) {
+            $ins = $this->db->prepare("INSERT INTO bazaar_ledgers (log_date, status) VALUES (:d, 'open')");
+            $ins->execute([':d' => $date]);
+            $stmt->execute([':d' => $date]);
+            $ledgers = $stmt->fetchAll();
+        }
+
+        $activeLedgerId = (int)($_GET['ledger_id'] ?? $ledgers[0]['id']);
+        
+        $ledger = null;
+        foreach ($ledgers as $l) {
+            if ($l['id'] == $activeLedgerId) {
+                $ledger = $l;
+                break;
+            }
+        }
+        if (!$ledger) {
+            $ledger = $ledgers[0];
+            $activeLedgerId = $ledger['id'];
+        }
+
         $assignedStaffId = $ledger ? (int)$ledger['assigned_staff_id'] : $defaultStaff;
-        
+
         $staffList = $this->db->query("SELECT id, name, role FROM users WHERE is_active = 1 ORDER BY role DESC, name ASC")->fetchAll();
 
         $bazaarItems = [];
@@ -39,28 +62,40 @@ public function __construct() {
             $bazaarItems = $itemStmt->fetchAll();
         }
 
-        // Get carry forward from yesterday
-        $cfStmt = $this->db->prepare("
-            SELECT carry_forward FROM bazaar_ledgers
-            WHERE log_date < :d ORDER BY log_date DESC LIMIT 1
-        ");
-        $cfStmt->execute([':d' => $date]);
-        $yesterdayCF = (float)($cfStmt->fetchColumn() ?: 0);
+        // Calculate past carry forward
+        $cf = $this->db->prepare("SELECT COALESCE(SUM(advance_cash) - SUM(total_spent), 0) FROM bazaar_ledgers WHERE log_date < :today");
+        $cf->execute([':today' => $date]);
+        $pastCarryForward = (float)$cf->fetchColumn();
 
         // Fetch raw inventory names for datalist auto-suggest
         $inventoryNames = $this->db->query("SELECT item_name FROM raw_inventory ORDER BY item_name")->fetchAll(PDO::FETCH_COLUMN);
 
         $this->view('bazaar/index', [
-            'pageTitle'       => __('bazaar'),
-            'activeNav'       => 'bazaar',
-            'logDate'         => $date,
-            'ledger'          => $ledger,
-            'bazaarItems'     => $bazaarItems,
-            'yesterdayCF'     => $yesterdayCF,
-            'assignedStaffId' => $assignedStaffId,
-            'staffList'       => $staffList,
-            'inventoryNames'  => $inventoryNames
+            'pageTitle'        => __('bazaar'),
+            'activeNav'        => 'bazaar',
+            'logDate'          => $date,
+            'ledgers'          => $ledgers,
+            'activeLedgerId'   => $activeLedgerId,
+            'ledger'           => $ledger,
+            'bazaarItems'      => $bazaarItems,
+            'pastCarryForward' => max(0, $pastCarryForward),
+            'assignedStaffId'  => $assignedStaffId,
+            'staffList'        => $staffList,
+            'inventoryNames'   => $inventoryNames
         ]);
+    }
+
+    public function createNewLedger() {
+        $this->requireAdmin();
+        $date = date('Y-m-d');
+        try {
+            $ins = $this->db->prepare("INSERT INTO bazaar_ledgers (log_date, status) VALUES (:d, 'open')");
+            $ins->execute([':d' => $date]);
+            $newId = $this->db->lastInsertId();
+            $this->json(['success' => true, 'ledger_id' => $newId]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -73,15 +108,20 @@ public function __construct() {
         }
 
         $data = json_decode(file_get_contents('php://input'), true);
+        $ledgerId    = (int)($data['ledger_id'] ?? 0);
         $logDate     = $data['log_date'] ?? date('Y-m-d');
         $advanceCash = (float)($data['advance_cash'] ?? 0);
         $assignedStaffId = (int)($data['assigned_staff_id'] ?? 0);
         $items       = $data['items'] ?? [];
         $returnedCash = (float)($data['returned_cash'] ?? 0);
+        
+        if ($ledgerId <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid ledger ID']);
+        }
 
         if (($_SESSION['role'] ?? '') !== 'admin') {
-            $existing = $this->db->prepare("SELECT advance_cash, assigned_staff_id FROM bazaar_ledgers WHERE log_date = :d");
-            $existing->execute([':d' => $logDate]);
+            $existing = $this->db->prepare("SELECT advance_cash, assigned_staff_id FROM bazaar_ledgers WHERE id = :id");
+            $existing->execute([':id' => $ledgerId]);
             $row = $existing->fetch();
             $advanceCash = $row ? (float)$row['advance_cash'] : 0;
             $assignedStaffId = $row ? (int)$row['assigned_staff_id'] : $assignedStaffId;
@@ -103,33 +143,27 @@ public function __construct() {
             $staffDue     = $balance < 0 ? abs($balance) : 0;
             $carryForward = $balance > 0 ? ($balance - $returnedCash) : 0;
 
-            // Upsert ledger
+            // Update ledger by ID
             $stmt = $this->db->prepare("
-                INSERT INTO bazaar_ledgers (log_date, advance_cash, assigned_staff_id, total_spent, returned_cash, carry_forward, staff_due, status)
-                VALUES (:log_date, :advance, :assigned, :spent, :returned, :cf, :due, 'closed')
-                ON DUPLICATE KEY UPDATE
-                    advance_cash = VALUES(advance_cash),
-                    assigned_staff_id = VALUES(assigned_staff_id),
-                    total_spent = VALUES(total_spent),
-                    returned_cash = VALUES(returned_cash),
-                    carry_forward = VALUES(carry_forward),
-                    staff_due = VALUES(staff_due),
+                UPDATE bazaar_ledgers SET
+                    advance_cash = :advance,
+                    assigned_staff_id = :assigned,
+                    total_spent = :spent,
+                    returned_cash = :returned,
+                    carry_forward = :cf,
+                    staff_due = :due,
                     status = 'closed'
+                WHERE id = :id
             ");
             $stmt->execute([
-                ':log_date'  => $logDate,
                 ':advance'   => $advanceCash,
                 ':assigned'  => $assignedStaffId,
                 ':spent'     => $totalSpent,
                 ':returned'  => $returnedCash,
                 ':cf'        => max(0, $carryForward),
                 ':due'       => $staffDue,
+                ':id'        => $ledgerId
             ]);
-
-            // Get ledger ID
-            $ledgerIdStmt = $this->db->prepare("SELECT id FROM bazaar_ledgers WHERE log_date = :d");
-            $ledgerIdStmt->execute([':d' => $logDate]);
-            $ledgerId = (int)$ledgerIdStmt->fetchColumn();
 
             // Delete old items and re-insert
             $this->db->prepare("DELETE FROM bazaar_items WHERE ledger_id = :id")->execute([':id' => $ledgerId]);
