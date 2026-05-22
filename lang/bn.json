@@ -204,5 +204,6 @@
     "new_extra_cash": "নতুন অগ্রিম (অতিরিক্ত ক্যাশ)",
     "total_budget": "মোট শপিং বাজেট",
     "total_spent": "মোট শপিং খরচ",
-    "final_carry_forward": "অবশিষ্ট ক্যাশ (ফেরতযোগ্য)"
+    "final_carry_forward": "অবশিষ্ট ক্যাশ (ফেরতযোগ্য)",
+    "returned_cash": "অ্যাডমিনকে ফেরত দেওয়া ক্যাশ"
 }

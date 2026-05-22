@@ -62,9 +62,9 @@ public function __construct() {
             $bazaarItems = $itemStmt->fetchAll();
         }
 
-        // Calculate past carry forward
-        $cf = $this->db->prepare("SELECT COALESCE(SUM(advance_cash) - SUM(total_spent), 0) FROM bazaar_ledgers WHERE log_date < :today");
-        $cf->execute([':today' => $date]);
+        // Calculate past carry forward up to this exact ledger
+        $cf = $this->db->prepare("SELECT COALESCE(SUM(advance_cash) - SUM(total_spent) - SUM(returned_cash), 0) FROM bazaar_ledgers WHERE id < :activeId");
+        $cf->execute([':activeId' => $activeLedgerId]);
         $pastCarryForward = (float)$cf->fetchColumn();
 
         // Fetch raw inventory names for datalist auto-suggest

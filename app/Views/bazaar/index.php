@@ -83,12 +83,25 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         
         <input type="hidden" id="bazaar-past-cf" value="<?= (float)$pastCarryForward ?>">
 
-        <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
-            <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('new_extra_cash') ?> (<?= __('tk') ?>)
-        </label>
-        <input type="number" id="bazaar-advance" step="1" min="0"
-               class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400 <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
-               value="<?= (empty($advanceCash) || $advanceCash == 0) ? '' : (float)$advanceCash ?>" placeholder="0" <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
+                    <i class="fas fa-money-bill-wave text-emerald-400 mr-1"></i> <?= __('new_extra_cash') ?>
+                </label>
+                <input type="number" id="bazaar-advance" name="advance_cash" step="1" min="0"
+                       class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center text-emerald-400 focus:border-emerald-400 <?= ($_SESSION['role'] ?? '') === 'staff' ? 'opacity-50 pointer-events-none' : '' ?>"
+                       value="<?= (empty($advanceCash) || $advanceCash == 0) ? '' : (float)$advanceCash ?>" placeholder="0" <?= ($_SESSION['role'] ?? '') === 'staff' ? 'readonly' : '' ?>>
+            </div>
+            
+            <div>
+                <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
+                    <i class="fas fa-rotate-left text-amber-400 mr-1"></i> <?= __('returned_cash') ?>
+                </label>
+                <input type="number" id="bazaar-returned" name="returned_cash" step="1" min="0"
+                       class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-xl font-black text-center focus:border-amber-400"
+                       value="<?= (!empty($ledger['returned_cash']) && $ledger['returned_cash'] > 0) ? (float)$ledger['returned_cash'] : '' ?>" placeholder="0">
+            </div>
+        </div>
                
         <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
             <div class="text-center mt-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-2">
@@ -164,15 +177,6 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         </div>
     </div>
 
-    <!-- Returned Cash -->
-    <div class="bg-card border border-border rounded-xl p-4">
-        <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">
-            <i class="fas fa-rotate-left text-amber-400 mr-1"></i> <?= __('returned') ?> (<?= __('tk') ?>)
-        </label>
-        <input type="number" id="bazaar-returned" step="1" min="0"
-               class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-base font-bold text-center focus:border-amber-400"
-               value="<?= (!empty($ledger['returned_cash']) && $ledger['returned_cash'] > 0) ? (float)$ledger['returned_cash'] : '' ?>" placeholder="0">
-    </div>
 
     <!-- Balance Summary -->
     <div class="bg-card border border-border rounded-xl p-4">
@@ -286,9 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.recalcBazaar = function() {
         const advance = parseFloat(document.getElementById('bazaar-advance').value) || 0;
         const pastCf  = parseFloat(document.getElementById('bazaar-past-cf').value) || 0;
+        const returned = parseFloat(document.getElementById('bazaar-returned').value) || 0;
         
         // 1. Calculate Budget
-        const totalBudget = advance + pastCf;
+        const totalBudget = pastCf + advance - returned;
 
         // 2. Calculate Total Spent
         let totalSpent = 0;
@@ -297,8 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 3. Calculate Final Carry Forward
-        const returned = parseFloat(document.getElementById('bazaar-returned').value) || 0;
-        const finalCarryForward = totalBudget - totalSpent - returned;
+        const finalCarryForward = totalBudget - totalSpent;
 
         // 4. Update UI (Top and Bottom)
         const topBudgetEl = document.getElementById('totalBudgetAmt');

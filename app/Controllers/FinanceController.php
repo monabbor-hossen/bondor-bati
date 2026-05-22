@@ -36,7 +36,7 @@ public function __construct() {
         $advanceReceived = (float)$a->fetchColumn();
 
         // Cash bazaar advance given today (this is what physically leaves the drawer)
-        $b = $this->db->prepare("SELECT COALESCE(SUM(advance_cash), 0) FROM bazaar_ledgers WHERE log_date = :d");
+        $b = $this->db->prepare("SELECT COALESCE(SUM(advance_cash) - SUM(returned_cash), 0) FROM bazaar_ledgers WHERE log_date = :d");
         $b->execute([':d' => $date]);
         $bazaarDrawerDeduction = (float)$b->fetchColumn();
 
