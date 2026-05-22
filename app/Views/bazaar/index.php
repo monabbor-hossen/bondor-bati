@@ -179,24 +179,16 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         <p class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-3"><?= __('balance') ?></p>
         <div class="space-y-2">
             <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('advance') ?></span>
-                <span class="font-bold" id="bal-advance">৳0</span>
+                <span class="text-text-muted"><?= __('total_budget') ?></span>
+                <span><span id="bottomTotalBudget" class="text-indigo-400 font-bold">0</span> Tk</span>
             </div>
             <div class="flex justify-between text-sm">
-                <span class="text-text-muted"><?= __('spent') ?></span>
-                <span class="font-bold text-accent" id="bal-spent">৳0</span>
+                <span class="text-text-muted"><?= __('total_spent') ?></span>
+                <span><span id="bottomTotalSpent" class="text-accent font-bold">0</span> Tk</span>
             </div>
             <div class="flex justify-between text-sm border-t border-border pt-2">
-                <span class="text-text-muted"><?= __('balance') ?></span>
-                <span class="font-bold text-lg" id="bal-balance">৳0</span>
-            </div>
-            <div class="flex justify-between text-sm" id="bal-due-row" style="display:none;">
-                <span class="text-amber-400"><?= __('due_to_staff') ?></span>
-                <span class="font-bold text-amber-400" id="bal-due">৳0</span>
-            </div>
-            <div class="flex justify-between text-sm" id="bal-cf-row" style="display:none;">
-                <span class="text-indigo-400"><?= __('carry_forward') ?></span>
-                <span class="font-bold text-indigo-400" id="bal-cf">৳0</span>
+                <span class="text-text-muted"><?= __('final_carry_forward') ?></span>
+                <span><span id="bottomCarryForward" class="text-emerald-400 font-black text-lg tracking-wider">0</span> Tk</span>
             </div>
         </div>
     </div>
@@ -295,41 +287,41 @@ document.addEventListener('DOMContentLoaded', () => {
         const advance = parseFloat(document.getElementById('bazaar-advance').value) || 0;
         const pastCf  = parseFloat(document.getElementById('bazaar-past-cf').value) || 0;
         
+        // 1. Calculate Budget
         const totalBudget = advance + pastCf;
-        const totalBudgetEl = document.getElementById('totalBudgetAmt');
-        if (totalBudgetEl) {
-            totalBudgetEl.textContent = totalBudget.toLocaleString('en-IN');
-        }
 
-        const returned = parseFloat(document.getElementById('bazaar-returned').value) || 0;
-
+        // 2. Calculate Total Spent
         let totalSpent = 0;
-        document.querySelectorAll('.bazaar-item').forEach(row => {
-            const t = parseFloat(row.querySelector('.bi-total').value) || 0;
-            totalSpent += t;
+        document.querySelectorAll('.bi-total').forEach(input => {
+            totalSpent += parseFloat(input.value) || 0;
         });
 
-        const balance = advance - totalSpent;
+        // 3. Calculate Final Carry Forward
+        const returned = parseFloat(document.getElementById('bazaar-returned').value) || 0;
+        const finalCarryForward = totalBudget - totalSpent - returned;
 
-        document.getElementById('bal-advance').textContent = '৳' + advance.toLocaleString('en-IN');
-        document.getElementById('bal-spent').textContent = '৳' + totalSpent.toLocaleString('en-IN');
+        // 4. Update UI (Top and Bottom)
+        const topBudgetEl = document.getElementById('totalBudgetAmt');
+        if (topBudgetEl) topBudgetEl.innerText = totalBudget.toLocaleString('en-IN');
 
-        const balEl = document.getElementById('bal-balance');
-        balEl.textContent = '৳' + Math.abs(balance).toLocaleString('en-IN');
-        balEl.className = 'font-bold text-lg ' + (balance >= 0 ? 'text-emerald-400' : 'text-red-400');
-
-        const dueRow = document.getElementById('bal-due-row');
-        const cfRow  = document.getElementById('bal-cf-row');
-
-        if (balance < 0) {
-            dueRow.style.display = 'flex';
-            cfRow.style.display = 'none';
-            document.getElementById('bal-due').textContent = '৳' + Math.abs(balance).toLocaleString('en-IN');
-        } else {
-            dueRow.style.display = 'none';
-            const cf = Math.max(0, balance - returned);
-            cfRow.style.display = cf > 0 ? 'flex' : 'none';
-            document.getElementById('bal-cf').textContent = '৳' + cf.toLocaleString('en-IN');
+        const botTotalBudget = document.getElementById('bottomTotalBudget');
+        if (botTotalBudget) botTotalBudget.innerText = totalBudget.toLocaleString('en-IN');
+        
+        const botTotalSpent = document.getElementById('bottomTotalSpent');
+        if (botTotalSpent) botTotalSpent.innerText = totalSpent.toLocaleString('en-IN');
+        
+        const carryForwardEl = document.getElementById('bottomCarryForward');
+        if (carryForwardEl) {
+            carryForwardEl.innerText = finalCarryForward.toLocaleString('en-IN');
+            
+            // Visual warning if they overspent
+            if (finalCarryForward < 0) {
+                carryForwardEl.classList.remove('text-emerald-400');
+                carryForwardEl.classList.add('text-red-400');
+            } else {
+                carryForwardEl.classList.remove('text-red-400');
+                carryForwardEl.classList.add('text-emerald-400');
+            }
         }
     };
 

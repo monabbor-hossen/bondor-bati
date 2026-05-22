@@ -200,5 +200,7 @@
     "apply": "Apply",
     "floating_cash": "Floating Cash (Past)",
     "new_extra_cash": "New Advance (Extra Cash)",
-    "total_budget": "Total Shopping Budget"
+    "total_budget": "Total Shopping Budget",
+    "total_spent": "Total Spent",
+    "final_carry_forward": "Final Remaining Cash"
 }
