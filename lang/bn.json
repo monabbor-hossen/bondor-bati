@@ -120,7 +120,6 @@
     "pending": "মুলতুবি",
     "paid": "পরিশোধিত",
     "settle": "নিষ্পত্তি",
-
     "staff_management": "স্টাফ ম্যানেজমেন্ট",
     "add_new_staff": "নতুন স্টাফ যোগ করুন",
     "staff_name": "পুরো নাম",
@@ -154,7 +153,6 @@
     "asset_name": "সম্পদের নাম (যেমন: ফ্রিজার)",
     "total_cost": "মোট খরচ",
     "spread_days": "কত দিনের জন্য",
-    "daily_deduction": "দৈনিক কর্তন",
     "add_cost": "খরচ যোগ করুন",
     "revoke_success": "সব ডিভাইস থেকে অ্যাক্সেস বাতিল করা হয়েছে।",
     "action_edit": "সম্পাদনা",
@@ -205,5 +203,12 @@
     "total_budget": "মোট শপিং বাজেট",
     "total_spent": "মোট শপিং খরচ",
     "final_carry_forward": "অবশিষ্ট ক্যাশ (ফেরতযোগ্য)",
-    "returned_cash": "অ্যাডমিনকে ফেরত দেওয়া ক্যাশ"
+    "returned_cash": "অ্যাডমিনকে ফেরত দেওয়া ক্যাশ",
+    "price_calculator": "মূল্য ক্যালকুলেটর",
+    "select_raw_item": "কাঁচামাল নির্বাচন করুন",
+    "select_category": "ক্যাটাগরি",
+    "cat_fish": "মাছ / সাদা মাংস",
+    "cat_red_meat": "লাল মাংস (গরু/খাসি)",
+    "current_raw_cost": "বর্তমান কাঁচামাল খরচ",
+    "suggested_selling_price": "প্রস্তাবিত বিক্রয় মূল্য"
 }

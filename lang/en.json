@@ -203,5 +203,12 @@
     "total_budget": "Total Shopping Budget",
     "total_spent": "Total Spent",
     "final_carry_forward": "Final Remaining Cash",
-    "returned_cash": "Cash Returned to Admin"
+    "returned_cash": "Cash Returned to Admin",
+    "price_calculator": "Pricing Calculator",
+    "select_raw_item": "Select Raw Material",
+    "select_category": "Protein Category",
+    "cat_fish": "Fish / White Meat",
+    "cat_red_meat": "Red Meat (Beef/Mutton)",
+    "current_raw_cost": "Current Raw Cost",
+    "suggested_selling_price": "Suggested Selling Price"
 }

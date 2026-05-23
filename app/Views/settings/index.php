@@ -28,9 +28,16 @@ $role = $_SESSION['role'] ?? 'staff';
             <a href="?url=admin/settings" class="flex items-center justify-between py-4 px-2 border-b border-border/50 hover:bg-surface/50 transition-colors group">
                 <div class="flex items-center gap-4">
                     <i class="fas fa-sliders-h text-lg text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)] group-hover:scale-110 transition-transform"></i>
-                    <span class="text-sm font-semibold text-text-primary">Configuration & Permissions</span>
+                    <span class="text-sm font-semibold text-text-primary">Configuration &amp; Permissions</span>
                 </div>
                 <i class="fas fa-chevron-right text-xs text-text-muted group-hover:text-emerald-400 transition-colors"></i>
+            </a>
+            <a href="?url=settings/priceCalculator" class="flex items-center justify-between py-4 px-2 border-b border-border/50 hover:bg-surface/50 transition-colors group">
+                <div class="flex items-center gap-4">
+                    <i class="fas fa-calculator text-lg text-rose-400 drop-shadow-[0_0_8px_rgba(251,113,133,0.5)] group-hover:scale-110 transition-transform"></i>
+                    <span class="text-sm font-semibold text-text-primary"><?= __('price_calculator') ?></span>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-text-muted group-hover:text-rose-400 transition-colors"></i>
             </a>
         </div>
     </div>
