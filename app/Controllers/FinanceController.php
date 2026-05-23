@@ -20,6 +20,16 @@ class FinanceController extends Controller {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY idx_log_fc (log_date, fixed_cost_id)
         )");
+
+        // Auto-create daily consumable logs table
+        $this->db->exec("CREATE TABLE IF NOT EXISTS daily_consumable_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            item_name VARCHAR(100),
+            used_qty DECIMAL(10,2),
+            unit_cost DECIMAL(10,2),
+            log_date DATE,
+            UNIQUE KEY (item_name, log_date)
+        )");
     }
 
     /**
@@ -142,7 +152,12 @@ class FinanceController extends Controller {
         $cc->execute([':d' => $date]);
         $compCost = (float)$cc->fetch()['comp_cost'];
 
-        $totalCosts = $bazaarCost + $fixedCosts + $spreadCosts + $salaryCost + $wastageCost + $compCost;
+        // 7. Daily Consumable Cost (e.g. Coal)
+        $c = $this->db->prepare("SELECT COALESCE(SUM(used_qty * unit_cost), 0) FROM daily_consumable_logs WHERE log_date = :d");
+        $c->execute([':d' => $date]);
+        $consumableCost = (float)$c->fetchColumn();
+
+        $totalCosts = $bazaarCost + $fixedCosts + $spreadCosts + $salaryCost + $wastageCost + $compCost + $consumableCost;
 
         return $totalRevenue - $totalCosts;
     }

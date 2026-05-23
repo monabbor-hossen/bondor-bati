@@ -80,6 +80,56 @@
     </button>
 </form>
 
+<!-- ── Daily Consumables (e.g. Coal) ────────────────────────── -->
+<div class="mt-8 mb-4 animate-slideUp" style="animation-delay: 0.1s">
+    <h2 class="text-lg font-black">
+        <i class="fas fa-fire text-orange-500 mr-1"></i> Daily Consumables
+    </h2>
+    <p class="text-text-muted text-xs">Log daily usage for coal, ice, etc.</p>
+</div>
+
+<div class="bg-card border border-border rounded-xl p-4 stagger" style="animation-delay: 0.2s">
+    <div class="space-y-3">
+        <!-- New Consumable Form -->
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1">Item</label>
+                <div class="relative">
+                    <select id="consumable-name" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm font-semibold text-text-primary focus:border-accent appearance-none">
+                        <option value="">Select Item...</option>
+                        <?php foreach ($rawItems ?? [] as $rawName): ?>
+                            <option value="<?= htmlspecialchars($rawName) ?>"><?= htmlspecialchars($rawName) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-muted pointer-events-none"></i>
+                </div>
+            </div>
+            <div>
+                <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1">Used Qty</label>
+                <div class="flex items-center gap-2">
+                    <input type="number" id="consumable-qty" step="0.5" min="0" placeholder="e.g. 2.5" class="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm font-semibold text-text-primary focus:border-accent">
+                    <button type="button" id="btn-save-consumable" class="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 font-bold px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Consumable Logs -->
+        <?php if (!empty($todayConsumables)): ?>
+            <div class="mt-4 pt-4 border-t border-border/50 space-y-2">
+                <h3 class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-2">Today's Usage</h3>
+                <?php foreach ($todayConsumables as $con): ?>
+                <div class="flex justify-between items-center bg-surface/50 px-3 py-2 rounded-lg border border-border/30">
+                    <span class="text-sm font-bold"><?= htmlspecialchars($con['item_name']) ?></span>
+                    <span class="text-sm font-black text-orange-400"><?= (float)$con['used_qty'] ?> <span class="text-xs font-normal text-text-muted">qty</span></span>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const rows = document.querySelectorAll('.item-row');
@@ -132,5 +182,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         btn.disabled = false;
     });
+
+    // Save Consumable
+    const btnConsumable = document.getElementById('btn-save-consumable');
+    if (btnConsumable) {
+        btnConsumable.addEventListener('click', async () => {
+            const name = document.getElementById('consumable-name').value;
+            const qty = parseFloat(document.getElementById('consumable-qty').value) || 0;
+            const logDate = document.getElementById('prep-log-date').value;
+
+            if (!name || qty <= 0) {
+                showToast('Please select item and enter quantity', 'error');
+                return;
+            }
+
+            const originalHtml = btnConsumable.innerHTML;
+            btnConsumable.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnConsumable.disabled = true;
+
+            const res = await apiPost('?url=inventory/saveConsumableLog', {
+                item_name: name,
+                used_qty: qty,
+                log_date: logDate
+            });
+
+            if (res.success) {
+                showToast('Consumable logged!', 'success');
+                setTimeout(() => window.location.reload(), 600);
+            } else {
+                showToast(res.error || 'Error logging consumable', 'error');
+                btnConsumable.innerHTML = originalHtml;
+                btnConsumable.disabled = false;
+            }
+        });
+    }
 });
 </script>

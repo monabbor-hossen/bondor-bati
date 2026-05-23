@@ -71,11 +71,19 @@ public function __construct() {
             ];
         }
 
+        $rawItems = $this->db->query("SELECT item_name FROM raw_inventory ORDER BY item_name")->fetchAll(\PDO::FETCH_COLUMN);
+        
+        $conStmt = $this->db->prepare("SELECT * FROM daily_consumable_logs WHERE log_date = :date");
+        $conStmt->execute([':date' => $date]);
+        $todayConsumables = $conStmt->fetchAll();
+
         $this->view('inventory/daily_prep', [
-            'pageTitle'   => __('morning_prep'),
-            'activeNav'   => 'stock',
-            'prepData'    => $prepData,
-            'logDate'     => $date,
+            'pageTitle'        => __('morning_prep'),
+            'activeNav'        => 'stock',
+            'prepData'         => $prepData,
+            'logDate'          => $date,
+            'rawItems'         => $rawItems,
+            'todayConsumables' => $todayConsumables,
         ]);
     }
 
@@ -501,6 +509,63 @@ public function __construct() {
                 'net_profit'    => $netProfit,
                 'shift'         => $shift,
             ]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+    /**
+     * Save Daily Consumable Log (AJAX)
+     * Route: ?url=inventory/saveConsumableLog
+     */
+    public function saveConsumableLog() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data    = json_decode(file_get_contents('php://input'), true);
+        $itemName = trim($data['item_name'] ?? '');
+        $usedQty  = (float)($data['used_qty'] ?? 0);
+        $logDate  = $data['log_date'] ?? $this->getBusinessDate();
+
+        if (empty($itemName) || $usedQty <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid data provided']);
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Fetch the current avg_unit_price from raw_inventory
+            $costStmt = $this->db->prepare("SELECT avg_unit_price FROM raw_inventory WHERE LOWER(item_name) = LOWER(:name)");
+            $costStmt->execute([':name' => $itemName]);
+            $unitCost = (float)$costStmt->fetchColumn();
+
+            // Ensure schema exists (silent migration)
+            try {
+                $this->db->exec("CREATE TABLE IF NOT EXISTS daily_consumable_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    item_name VARCHAR(100),
+                    used_qty DECIMAL(10,2),
+                    unit_cost DECIMAL(10,2),
+                    log_date DATE,
+                    UNIQUE KEY (item_name, log_date)
+                )");
+            } catch (\Exception $e) {}
+
+            $stmt = $this->db->prepare("
+                INSERT INTO daily_consumable_logs (item_name, used_qty, unit_cost, log_date) 
+                VALUES (:name, :qty, :cost, :date) 
+                ON DUPLICATE KEY UPDATE used_qty = VALUES(used_qty), unit_cost = VALUES(unit_cost)
+            ");
+            $stmt->execute([
+                ':name' => $itemName,
+                ':qty'  => $usedQty,
+                ':cost' => $unitCost,
+                ':date' => $logDate
+            ]);
+
+            $this->db->commit();
+            $this->json(['success' => true]);
         } catch (\Exception $e) {
             $this->db->rollBack();
             $this->json(['success' => false, 'error' => $e->getMessage()]);
