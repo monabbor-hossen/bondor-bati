@@ -64,7 +64,12 @@ class FinanceController extends Controller {
         $e->execute([':d' => $date]);
         $directExpenses = (float)$e->fetchColumn();
 
-        return ($totalSales - $dueSales) + $advanceReceived - $bazaarDrawerDeduction - $directExpenses;
+        // Online platform gross sales — cash is with platform, NOT in physical drawer
+        $onlG = $this->db->prepare("SELECT COALESCE(SUM(gross_amount), 0) FROM online_sales_logs WHERE log_date = :d");
+        $onlG->execute([':d' => $date]);
+        $onlineGrossSales = (float)$onlG->fetchColumn();
+
+        return ($totalSales - $dueSales) + $advanceReceived - $bazaarDrawerDeduction - $directExpenses - $onlineGrossSales;
     }
 
     /**
@@ -156,6 +161,12 @@ class FinanceController extends Controller {
         $c = $this->db->prepare("SELECT COALESCE(SUM(used_qty * unit_cost), 0) FROM daily_consumable_logs WHERE log_date = :d");
         $c->execute([':d' => $date]);
         $consumableCost = (float)$c->fetchColumn();
+
+        // 8. Online platform net sales (adds to revenue — money owed from platform)
+        $onl = $this->db->prepare("SELECT COALESCE(SUM(net_amount), 0) FROM online_sales_logs WHERE log_date = :d");
+        $onl->execute([':d' => $date]);
+        $onlineNetSales = (float)$onl->fetchColumn();
+        $totalRevenue += $onlineNetSales;
 
         $totalCosts = $bazaarCost + $fixedCosts + $spreadCosts + $salaryCost + $wastageCost + $compCost + $consumableCost;
 

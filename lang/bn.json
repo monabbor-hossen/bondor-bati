@@ -215,5 +215,13 @@
     "recent_price_logs": "সাম্প্রতিক মূল্যের লগ",
     "raw_cost": "কাঁচামাল খরচ",
     "final_price": "চূড়ান্ত মূল্য",
-    "link_raw_ingredient": "সংযুক্ত কাঁচামাল (ঐচ্ছিক)"
+    "link_raw_ingredient": "সংযুক্ত কাঁচামাল (ঐচ্ছিক)",
+    "online_platforms": "অনলাইন ডেলিভারি",
+    "platform_balance": "বকেয়া ব্যালেন্স",
+    "log_online_sale": "দৈনিক সেল যোগ করুন",
+    "log_payout": "পেমেন্ট গ্রহণ",
+    "gross_sales": "মোট সেলস",
+    "platform_commission": "প্লাটফর্ম কমিশন",
+    "net_receivable": "নেট প্রাপ্য",
+    "payout_amount": "প্রাপ্ত পরিমাণ"
 }

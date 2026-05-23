@@ -183,30 +183,111 @@
         <!-- ═══════════════════════════════════════════════════════
              BOTTOM NAVIGATION BAR
         ════════════════════════════════════════════════════════ -->
-        <nav class="fixed bottom-0 inset-x-0 z-50 glass border-t border-border">
-            <div class="flex items-stretch justify-around max-w-lg mx-auto">
-                <?php
-                $role = $_SESSION['role'] ?? 'staff';
-                $nav = [];
-                if ($role === 'admin') {
-                    $nav[] = ['url' => 'dashboard', 'key' => 'dashboard', 'icon' => 'fas fa-home',          'label' => 'nav_dashboard'];
-                }
-                $nav[] = ['url' => 'bazaar',    'key' => 'bazaar',    'icon' => 'fas fa-cart-shopping',  'label' => 'nav_prep'];
-                $nav[] = ['url' => 'inventory/closeDayView', 'key' => 'close', 'icon' => 'fas fa-moon',     'label' => 'nav_close'];
-                if ($role === 'admin') {
-                    $nav[] = ['url' => 'settings',  'key' => 'settings',  'icon' => 'fas fa-cog',           'label' => 'nav_settings'];
-                }
+        <?php
+        $role      = $_SESSION['role'] ?? 'staff';
+        $activeNav = $activeNav ?? '';
+        $isMoreActive = in_array($activeNav, ['online', 'settings', 'costs', 'analytics']);
+        ?>
 
-                foreach ($nav as $item):
-                    $isActive = ($activeNav ?? '') === $item['key'];
-                ?>
-                <a href="?url=<?= $item['url'] ?>"
+        <!-- ── More Sheet Backdrop ────────────────────────────────── -->
+        <div id="more-backdrop"
+             class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden"
+             onclick="closeMoreSheet()"></div>
+
+        <!-- ── More Slide-Up Sheet ────────────────────────────────── -->
+        <div id="more-sheet"
+             class="fixed bottom-0 inset-x-0 z-50 glass border-t border-border rounded-t-3xl
+                    transform translate-y-full transition-transform duration-300 ease-out max-w-lg mx-auto">
+
+            <!-- drag handle -->
+            <div class="flex justify-center pt-3 pb-1">
+                <div class="w-10 h-1 rounded-full bg-border"></div>
+            </div>
+            <div class="px-4 pb-4 pt-2">
+                <p class="text-[0.6rem] font-bold text-text-muted uppercase tracking-widest mb-3 text-center">Quick Access</p>
+                <div class="grid grid-cols-3 gap-3">
+                    <?php
+                    $moreLinks = [
+                        ['url' => 'onlineSales',      'key' => 'online',    'icon' => 'fa-motorcycle',      'label' => 'online_platforms', 'color' => 'indigo'],
+                        ['url' => 'finance/spreadCosts','key' => 'costs',   'icon' => 'fa-fire-flame-curved','label' => 'link_spread_costs','color' => 'orange'],
+                        ['url' => 'analytics',         'key' => 'analytics','icon' => 'fa-chart-bar',        'label' => 'link_analytics',  'color' => 'purple'],
+                        ['url' => 'admin/staff',       'key' => 'staff',    'icon' => 'fa-users',            'label' => 'link_staff',      'color' => 'cyan'],
+                        ['url' => 'bazaar',            'key' => 'bazaar',   'icon' => 'fa-cart-shopping',    'label' => 'bazaar',          'color' => 'emerald'],
+                        ['url' => 'settings',          'key' => 'settings', 'icon' => 'fa-cog',              'label' => 'nav_settings',    'color' => 'slate'],
+                    ];
+                    $colorMap = [
+                        'indigo'  => ['bg' => 'bg-indigo-500/10',  'border' => 'border-indigo-500/30',  'text' => 'text-indigo-400'],
+                        'orange'  => ['bg' => 'bg-orange-500/10',  'border' => 'border-orange-500/30',  'text' => 'text-orange-400'],
+                        'purple'  => ['bg' => 'bg-purple-500/10',  'border' => 'border-purple-500/30',  'text' => 'text-purple-400'],
+                        'cyan'    => ['bg' => 'bg-cyan-500/10',    'border' => 'border-cyan-500/30',    'text' => 'text-cyan-400'],
+                        'emerald' => ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/30', 'text' => 'text-emerald-400'],
+                        'slate'   => ['bg' => 'bg-slate-500/10',   'border' => 'border-slate-500/30',   'text' => 'text-slate-400'],
+                    ];
+                    foreach ($moreLinks as $ml):
+                        $mc = $colorMap[$ml['color']];
+                        $mlActive = $activeNav === $ml['key'];
+                    ?>
+                    <a href="?url=<?= $ml['url'] ?>"
+                       onclick="closeMoreSheet()"
+                       class="flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all duration-150
+                              <?= $mlActive
+                                  ? $mc['bg'].' '.$mc['border'].' ring-1 ring-inset '.$mc['text']
+                                  : 'bg-surface border-border/50 text-text-muted hover:'.$mc['text'] ?>">
+                        <i class="fas <?= $ml['icon'] ?> text-xl <?= $mlActive ? $mc['text'] : '' ?>"></i>
+                        <span class="text-[0.6rem] font-bold uppercase tracking-wide leading-tight text-center px-1">
+                            <?= __($ml['label']) ?>
+                        </span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <!-- safe area spacer -->
+            <div class="h-safe-area-inset-bottom pb-2"></div>
+        </div>
+
+        <!-- ── Primary Tab Bar (always 4 items max) ───────────────── -->
+        <nav id="bottom-nav" class="fixed bottom-0 inset-x-0 z-40 glass border-t border-border">
+            <div class="flex items-stretch justify-around max-w-lg mx-auto">
+                <?php if ($role === 'admin'): ?>
+                <!-- Home -->
+                <a href="?url=dashboard"
                    class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
-                          <?= $isActive ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
-                    <i class="<?= $item['icon'] ?> text-lg mb-0.5 <?= $isActive ? 'text-accent' : '' ?>"></i>
-                    <?= __($item['label']) ?>
+                          <?= $activeNav === 'dashboard' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
+                    <i class="fas fa-home text-lg mb-0.5 <?= $activeNav === 'dashboard' ? 'text-accent' : '' ?>"></i>
+                    <?= __('nav_dashboard') ?>
                 </a>
-                <?php endforeach; ?>
+                <?php endif; ?>
+
+                <!-- Bazaar -->
+                <a href="?url=bazaar"
+                   class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
+                          <?= $activeNav === 'bazaar' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
+                    <i class="fas fa-cart-shopping text-lg mb-0.5 <?= $activeNav === 'bazaar' ? 'text-accent' : '' ?>"></i>
+                    <?= __('nav_prep') ?>
+                </a>
+
+                <!-- Close / Ledger -->
+                <a href="?url=inventory/closeDayView"
+                   class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
+                          <?= $activeNav === 'close' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
+                    <i class="fas fa-moon text-lg mb-0.5 <?= $activeNav === 'close' ? 'text-accent' : '' ?>"></i>
+                    <?= __('nav_close') ?>
+                </a>
+
+                <!-- More ··· (admin only) -->
+                <?php if ($role === 'admin'): ?>
+                <button id="more-btn"
+                        onclick="openMoreSheet()"
+                        class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200 relative
+                               <?= $isMoreActive ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
+                    <!-- active dot when a "more" section is open -->
+                    <?php if ($isMoreActive): ?>
+                    <span class="absolute top-2 right-4 w-1.5 h-1.5 rounded-full bg-accent"></span>
+                    <?php endif; ?>
+                    <i class="fas fa-grip-dots text-lg mb-0.5 <?= $isMoreActive ? 'text-accent' : '' ?>"></i>
+                    More
+                </button>
+                <?php endif; ?>
             </div>
         </nav>
     </div>
@@ -378,6 +459,46 @@
             }
         }, 10000);
         <?php endif; ?>
+    </script>
+
+    <!-- ── More Sheet JS ──────────────────────────────────────── -->
+    <script>
+    (function () {
+        const sheet    = document.getElementById('more-sheet');
+        const backdrop = document.getElementById('more-backdrop');
+        if (!sheet) return; // staff role — no sheet rendered
+
+        function openMoreSheet() {
+            backdrop.classList.remove('hidden');
+            // Force reflow then animate in
+            requestAnimationFrame(() => {
+                sheet.style.transform = 'translateY(0)';
+            });
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMoreSheet() {
+            sheet.style.transform = '';
+            backdrop.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        window.openMoreSheet  = openMoreSheet;
+        window.closeMoreSheet = closeMoreSheet;
+
+        // Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeMoreSheet();
+        });
+
+        // Swipe-down-to-close on the sheet
+        let startY = 0;
+        sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+        sheet.addEventListener('touchend', e => {
+            const dy = e.changedTouches[0].clientY - startY;
+            if (dy > 60) closeMoreSheet();
+        }, { passive: true });
+    })();
     </script>
 </body>
 </html>

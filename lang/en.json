@@ -215,5 +215,13 @@
     "recent_price_logs": "Recent Price Logs",
     "raw_cost": "Raw Cost",
     "final_price": "Final Price",
-    "link_raw_ingredient": "Linked Raw Ingredient (Optional)"
+    "link_raw_ingredient": "Linked Raw Ingredient (Optional)",
+    "online_platforms": "Online Delivery",
+    "platform_balance": "Pending Balance",
+    "log_online_sale": "Log Daily Sale",
+    "log_payout": "Log Payout",
+    "gross_sales": "Gross Sales",
+    "platform_commission": "Platform Commission",
+    "net_receivable": "Net Receivable",
+    "payout_amount": "Amount Received"
 }
