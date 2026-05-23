@@ -165,6 +165,40 @@ public function __construct() {
                 ':id'        => $ledgerId
             ]);
 
+            // Revert old items from raw inventory to prevent double-counting on multiple saves
+            $oldItemsStmt = $this->db->prepare("SELECT item_name, bought_qty, total_price FROM bazaar_items WHERE ledger_id = :id");
+            $oldItemsStmt->execute([':id' => $ledgerId]);
+            $oldItems = $oldItemsStmt->fetchAll();
+
+            foreach ($oldItems as $old) {
+                if ((float)$old['bought_qty'] > 0) {
+                    $rawStmt = $this->db->prepare("SELECT current_qty, avg_unit_price FROM raw_inventory WHERE item_name = :name LIMIT 1");
+                    $rawStmt->execute([':name' => $old['item_name']]);
+                    $raw = $rawStmt->fetch();
+
+                    if ($raw) {
+                        $currQty = (float)$raw['current_qty'];
+                        $avgPrice = (float)$raw['avg_unit_price'];
+                        
+                        $revertedQty = $currQty - (float)$old['bought_qty'];
+                        if ($revertedQty > 0) {
+                            $revertedTotalVal = ($currQty * $avgPrice) - (float)$old['total_price'];
+                            $newAvgPrice = max(0, $revertedTotalVal) / $revertedQty;
+                        } else {
+                            $revertedQty = 0;
+                            $newAvgPrice = 0;
+                        }
+                        
+                        $updRaw = $this->db->prepare("UPDATE raw_inventory SET current_qty = :qty, avg_unit_price = :avg WHERE item_name = :name");
+                        $updRaw->execute([
+                            ':qty' => $revertedQty,
+                            ':avg' => round($newAvgPrice, 2),
+                            ':name' => $old['item_name']
+                        ]);
+                    }
+                }
+            }
+
             // Delete old items and re-insert
             $this->db->prepare("DELETE FROM bazaar_items WHERE ledger_id = :id")->execute([':id' => $ledgerId]);
 
@@ -251,5 +285,68 @@ public function __construct() {
             $this->json(['success' => true]);
         }
         $this->json(['success' => false, 'error' => 'Invalid staff ID']);
+    }
+
+    public function deleteLedger() {
+        if (($_SESSION['role'] ?? '') !== 'admin') {
+            $this->json(['success' => false, 'error' => 'Unauthorized']);
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $ledgerId = (int)($data['ledger_id'] ?? 0);
+        
+        if ($ledgerId <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid ledger ID']);
+        }
+        
+        try {
+            $this->db->beginTransaction();
+
+            // 1. Revert inventory
+            $oldItemsStmt = $this->db->prepare("SELECT item_name, bought_qty, total_price FROM bazaar_items WHERE ledger_id = :id");
+            $oldItemsStmt->execute([':id' => $ledgerId]);
+            $oldItems = $oldItemsStmt->fetchAll();
+
+            foreach ($oldItems as $old) {
+                if ((float)$old['bought_qty'] > 0) {
+                    $rawStmt = $this->db->prepare("SELECT current_qty, avg_unit_price FROM raw_inventory WHERE item_name = :name LIMIT 1");
+                    $rawStmt->execute([':name' => $old['item_name']]);
+                    $raw = $rawStmt->fetch();
+
+                    if ($raw) {
+                        $currQty = (float)$raw['current_qty'];
+                        $avgPrice = (float)$raw['avg_unit_price'];
+                        
+                        $revertedQty = $currQty - (float)$old['bought_qty'];
+                        if ($revertedQty > 0) {
+                            $revertedTotalVal = ($currQty * $avgPrice) - (float)$old['total_price'];
+                            $newAvgPrice = max(0, $revertedTotalVal) / $revertedQty;
+                        } else {
+                            $revertedQty = 0;
+                            $newAvgPrice = 0;
+                        }
+                        
+                        $updRaw = $this->db->prepare("UPDATE raw_inventory SET current_qty = :qty, avg_unit_price = :avg WHERE item_name = :name");
+                        $updRaw->execute([
+                            ':qty' => $revertedQty,
+                            ':avg' => round($newAvgPrice, 2),
+                            ':name' => $old['item_name']
+                        ]);
+                    }
+                }
+            }
+
+            // 2. Delete items
+            $this->db->prepare("DELETE FROM bazaar_items WHERE ledger_id = :id")->execute([':id' => $ledgerId]);
+            
+            // 3. Delete ledger
+            $this->db->prepare("DELETE FROM bazaar_ledgers WHERE id = :id")->execute([':id' => $ledgerId]);
+
+            $this->db->commit();
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 }

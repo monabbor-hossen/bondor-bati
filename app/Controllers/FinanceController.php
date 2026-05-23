@@ -9,8 +9,17 @@ use PDO;
  * Finance Controller — Cash Drawer, Net Profit, Daily P&L formulas
  */
 class FinanceController extends Controller {
-public function __construct() {
+    public function __construct() {
         $this->db = (new Database())->getConnection();
+        
+        // Auto-create fixed cost skips table if it doesn't exist
+        $this->db->exec("CREATE TABLE IF NOT EXISTS fixed_cost_skips (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            log_date DATE NOT NULL,
+            fixed_cost_id INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_log_fc (log_date, fixed_cost_id)
+        )");
     }
 
     /**
@@ -70,8 +79,25 @@ public function __construct() {
         $bazaarCost = (float)$b->fetchColumn();
 
         // 3. Fixed daily costs (rent, etc.)
-        $f = $this->db->query("SELECT COALESCE(SUM(daily_amount), 0) FROM fixed_daily_costs WHERE is_active = 1");
-        $fixedCosts = (float)$f->fetchColumn();
+        // Check if ALL fixed costs are skipped today (Store Shut Down)
+        $skipAllStmt = $this->db->prepare("SELECT 1 FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id IS NULL");
+        $skipAllStmt->execute([':d' => $date]);
+        $skipAll = (bool)$skipAllStmt->fetchColumn();
+
+        $fixedCosts = 0;
+        if (!$skipAll) {
+            $f = $this->db->prepare("
+                SELECT COALESCE(SUM(daily_amount), 0) 
+                FROM fixed_daily_costs fdc
+                WHERE is_active = 1 
+                AND NOT EXISTS (
+                    SELECT 1 FROM fixed_cost_skips fcs 
+                    WHERE fcs.log_date = :d AND fcs.fixed_cost_id = fdc.id
+                )
+            ");
+            $f->execute([':d' => $date]);
+            $fixedCosts = (float)$f->fetchColumn();
+        }
 
         // 4. Spread costs (gas daily deduction)
         $sp = $this->db->prepare("
@@ -126,14 +152,26 @@ public function __construct() {
     // ══════════════════════════════════════════════════════════════
 
     public function spreadCosts() {
+        $date = date('Y-m-d');
         $fixedCosts = $this->db->query("SELECT * FROM fixed_daily_costs ORDER BY name")->fetchAll();
         $spreadCosts = $this->db->query("SELECT * FROM expenses WHERE is_spread = 1 AND is_active = 1 ORDER BY expense_date DESC")->fetchAll();
+
+        // Get skips for today
+        $skipsStmt = $this->db->prepare("SELECT fixed_cost_id FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id IS NOT NULL");
+        $skipsStmt->execute([':d' => $date]);
+        $skippedCosts = $skipsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $skipAllStmt = $this->db->prepare("SELECT 1 FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id IS NULL");
+        $skipAllStmt->execute([':d' => $date]);
+        $skipAll = (bool)$skipAllStmt->fetchColumn();
 
         $this->view('finance/spread_costs', [
             'pageTitle' => __('link_spread_costs'),
             'activeNav' => 'costs',
             'fixedCosts' => $fixedCosts,
-            'spreadCosts' => $spreadCosts
+            'spreadCosts' => $spreadCosts,
+            'skippedCosts' => $skippedCosts,
+            'skipAll' => $skipAll
         ]);
     }
 
@@ -232,5 +270,39 @@ public function __construct() {
             $this->db->rollBack();
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    public function toggleFixedCostSkip() {
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = isset($data['id']) ? $data['id'] : null; // if 'all', id will be 'all'
+        $date = $data['date'] ?? date('Y-m-d');
+        
+        if ($id === 'all') {
+            $check = $this->db->prepare("SELECT 1 FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id IS NULL");
+            $check->execute([':d' => $date]);
+            $isSkipped = (bool)$check->fetchColumn();
+            
+            if ($isSkipped) {
+                $this->db->prepare("DELETE FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id IS NULL")->execute([':d' => $date]);
+            } else {
+                $this->db->prepare("INSERT IGNORE INTO fixed_cost_skips (log_date, fixed_cost_id) VALUES (:d, NULL)")->execute([':d' => $date]);
+            }
+        } else {
+            $id = (int)$id;
+            if ($id <= 0) {
+                $this->json(['success' => false, 'error' => 'Invalid ID']);
+                return;
+            }
+            $check = $this->db->prepare("SELECT 1 FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id = :id");
+            $check->execute([':d' => $date, ':id' => $id]);
+            $isSkipped = (bool)$check->fetchColumn();
+            
+            if ($isSkipped) {
+                $this->db->prepare("DELETE FROM fixed_cost_skips WHERE log_date = :d AND fixed_cost_id = :id")->execute([':d' => $date, ':id' => $id]);
+            } else {
+                $this->db->prepare("INSERT IGNORE INTO fixed_cost_skips (log_date, fixed_cost_id) VALUES (:d, :id)")->execute([':d' => $date, ':id' => $id]);
+            }
+        }
+        $this->json(['success' => true]);
     }
 }

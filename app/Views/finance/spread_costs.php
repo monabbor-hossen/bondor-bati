@@ -77,15 +77,25 @@
 <div class="space-y-4 animate-slideUp stagger" style="animation-delay: 0.2s">
     <?php if (!empty($fixedCosts)): ?>
     <div>
-        <h4 class="text-xs font-bold text-cyan-400 mb-2 uppercase tracking-wide"><?= __('daily_fixed_costs') ?></h4>
+        <div class="flex items-center justify-between mb-2">
+            <h4 class="text-xs font-bold text-cyan-400 uppercase tracking-wide"><?= __('daily_fixed_costs') ?></h4>
+            <button class="btn-skip-fc text-[0.65rem] font-bold px-2 py-1 rounded border <?= $skipAll ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'bg-surface text-text-muted border-border hover:text-red-400 hover:border-red-500/50' ?> transition-all" data-id="all">
+                <i class="fas fa-store-slash mr-1"></i> Store Closed Today
+            </button>
+        </div>
         <div class="space-y-2">
-            <?php foreach ($fixedCosts as $fc): ?>
-            <div class="flex justify-between items-center py-2 px-3 bg-surface border border-border/50 rounded-lg">
+            <?php foreach ($fixedCosts as $fc): 
+                $isSkipped = in_array($fc['id'], $skippedCosts) || $skipAll;
+            ?>
+            <div class="flex justify-between items-center py-2 px-3 bg-surface border <?= $isSkipped ? 'border-red-500/30 opacity-60' : 'border-border/50' ?> rounded-lg transition-all">
                 <div class="flex-1">
-                    <span class="text-sm font-semibold block"><?= htmlspecialchars($fc['name']) ?></span>
-                    <span class="text-sm font-black text-text-primary">৳<?= number_format($fc['daily_amount'], 2) ?></span>
+                    <span class="text-sm font-semibold block <?= $isSkipped ? 'line-through text-red-400' : '' ?>"><?= htmlspecialchars($fc['name']) ?></span>
+                    <span class="text-sm font-black text-text-primary <?= $isSkipped ? 'line-through opacity-50' : '' ?>">৳<?= number_format($fc['daily_amount'], 2) ?></span>
                 </div>
                 <div class="flex items-center gap-1">
+                    <button class="btn-skip-fc p-2 <?= $isSkipped ? 'text-red-400' : 'text-text-muted hover:text-orange-400' ?> transition-colors" data-id="<?= $fc['id'] ?>" title="<?= $isSkipped ? 'Unskip' : 'Skip Today' ?>">
+                        <i class="fas fa-ban"></i>
+                    </button>
                     <button class="btn-edit-fc p-2 text-text-muted hover:text-cyan-400 transition-colors" data-item='<?= htmlspecialchars(json_encode($fc), ENT_QUOTES, 'UTF-8') ?>'>
                         <i class="fas fa-pencil-alt"></i>
                     </button>
@@ -282,6 +292,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(name + ' deleted!', 'success');
             } else {
                 showToast(res.error || '<?= __("error") ?>', 'error');
+            }
+        });
+    });
+
+    // Skip Toggles
+    document.querySelectorAll('.btn-skip-fc').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const res = await apiPost('?url=finance/toggleFixedCostSkip', { id: id });
+            if (res.success) {
+                window.location.reload();
+            } else {
+                showToast(res.error || 'Error toggling skip', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             }
         });
     });

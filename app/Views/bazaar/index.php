@@ -43,6 +43,11 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
     <button type="button" id="btn-new-ledger" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 whitespace-nowrap">
         <i class="fas fa-plus mr-1"></i> <?= __('new_list') ?>
     </button>
+    <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+    <button type="button" id="btn-delete-ledger" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 whitespace-nowrap ml-auto">
+        <i class="fas fa-trash-alt"></i>
+    </button>
+    <?php endif; ?>
 </div>
 
 <form id="bazaar-form" class="space-y-4 stagger">
@@ -224,6 +229,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(res.error || 'Error creating list', 'error');
                 btnNewLedger.innerHTML = originalHtml;
                 btnNewLedger.disabled = false;
+            }
+        });
+    }
+
+    // ── Delete Ledger ─────────────────────────────────────────
+    const btnDeleteLedger = document.getElementById('btn-delete-ledger');
+    if (btnDeleteLedger) {
+        btnDeleteLedger.addEventListener('click', async () => {
+            if (!confirm('<?= __("confirm_delete") ?? "Are you sure you want to delete this list?" ?>')) return;
+            
+            const originalHtml = btnDeleteLedger.innerHTML;
+            btnDeleteLedger.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnDeleteLedger.disabled = true;
+
+            const ledgerId = document.getElementById('bazaar-ledger-id').value;
+            const res = await apiPost('?url=bazaar/deleteLedger', { ledger_id: ledgerId });
+            
+            if (res.success) {
+                showToast('List deleted', 'success');
+                setTimeout(() => window.location.href = '?url=bazaar', 1000);
+            } else {
+                showToast(res.error || 'Error deleting list', 'error');
+                btnDeleteLedger.innerHTML = originalHtml;
+                btnDeleteLedger.disabled = false;
             }
         });
     }
