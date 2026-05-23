@@ -72,6 +72,12 @@ public function __construct() {
         }
         
         try {
+            if ($entity === 'items') {
+                try {
+                    $this->db->exec("ALTER TABLE items ADD COLUMN linked_raw_item VARCHAR(100) NULL AFTER item_name");
+                } catch (\Exception $e) {} // Ignore if column exists
+            }
+
             if ($id > 0) {
                 // Update
                 $setSql = [];

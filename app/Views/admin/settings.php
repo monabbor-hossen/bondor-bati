@@ -17,6 +17,13 @@
     <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-raw">Raw Inventory</button>
 </div>
 
+<!-- Datalist for Raw Items -->
+<datalist id="raw-items-list">
+    <?php foreach ($rawInventory as $raw): ?>
+        <option value="<?= htmlspecialchars($raw['item_name']) ?>">
+    <?php endforeach; ?>
+</datalist>
+
 <!-- Tab: Menu Items -->
 <div id="tab-items" class="settings-pane block space-y-4 stagger">
     <div class="bg-card border border-border/50 rounded-xl p-4">
@@ -45,6 +52,10 @@
                     <label for="it_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
                 </div>
             </div>
+            <div class="mt-2">
+                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1"><?= __('link_raw_ingredient') ?></label>
+                <input type="text" id="it_linked_raw" list="raw-items-list" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none" placeholder="<?= __('select_raw_item') ?>...">
+            </div>
             <div class="flex items-center justify-between pt-2">
                 <label class="flex items-center gap-2 text-sm text-text-muted">
                     <input type="checkbox" id="it_active" checked class="accent-accent"> Active
@@ -63,6 +74,9 @@
                     Sell: <span class="text-accent font-bold">৳<?= $item['selling_price'] ?></span> | 
                     Cost: <span class="text-orange-400 font-bold">৳<?= $item['cost_price'] ?></span> | 
                     Min: <?= $item['min_stock_threshold'] ?>
+                    <?php if (!empty($item['linked_raw_item'])): ?>
+                    <br><span class="text-blue-400"><i class="fas fa-link"></i> <?= htmlspecialchars($item['linked_raw_item']) ?></span>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="flex items-center gap-1">
@@ -204,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('it_cost').value = item.cost_price;
             document.getElementById('it_min').value = item.min_stock_threshold;
             document.getElementById('it_active').checked = item.is_active == 1;
+            document.getElementById('it_linked_raw').value = item.linked_raw_item || '';
         },
         () => ({
             item_name: document.getElementById('it_name').value,
@@ -211,7 +226,8 @@ document.addEventListener('DOMContentLoaded', () => {
             selling_price: parseFloat(document.getElementById('it_sell').value) || 0,
             cost_price: parseFloat(document.getElementById('it_cost').value) || 0,
             min_stock_threshold: parseFloat(document.getElementById('it_min').value) || 0,
-            is_active: document.getElementById('it_active').checked ? 1 : 0
+            is_active: document.getElementById('it_active').checked ? 1 : 0,
+            linked_raw_item: document.getElementById('it_linked_raw').value.trim()
         }),
         'items'
     );

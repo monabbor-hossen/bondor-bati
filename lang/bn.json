@@ -205,10 +205,15 @@
     "final_carry_forward": "অবশিষ্ট ক্যাশ (ফেরতযোগ্য)",
     "returned_cash": "অ্যাডমিনকে ফেরত দেওয়া ক্যাশ",
     "price_calculator": "মূল্য ক্যালকুলেটর",
-    "select_raw_item": "কাঁচামাল নির্বাচন করুন",
+    "select_raw_item": "কাঁচামাল খুঁজুন",
     "select_category": "ক্যাটাগরি",
     "cat_fish": "মাছ / সাদা মাংস",
     "cat_red_meat": "লাল মাংস (গরু/খাসি)",
     "current_raw_cost": "বর্তমান কাঁচামাল খরচ",
-    "suggested_selling_price": "প্রস্তাবিত বিক্রয় মূল্য"
+    "suggested_selling_price": "প্রস্তাবিত বিক্রয় মূল্য",
+    "save_todays_price": "আজকের মূল্য সেভ করুন",
+    "recent_price_logs": "সাম্প্রতিক মূল্যের লগ",
+    "raw_cost": "কাঁচামাল খরচ",
+    "final_price": "চূড়ান্ত মূল্য",
+    "link_raw_ingredient": "সংযুক্ত কাঁচামাল (ঐচ্ছিক)"
 }

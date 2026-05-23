@@ -205,10 +205,15 @@
     "final_carry_forward": "Final Remaining Cash",
     "returned_cash": "Cash Returned to Admin",
     "price_calculator": "Pricing Calculator",
-    "select_raw_item": "Select Raw Material",
+    "select_raw_item": "Search raw inventory",
     "select_category": "Protein Category",
     "cat_fish": "Fish / White Meat",
     "cat_red_meat": "Red Meat (Beef/Mutton)",
     "current_raw_cost": "Current Raw Cost",
-    "suggested_selling_price": "Suggested Selling Price"
+    "suggested_selling_price": "Suggested Selling Price",
+    "save_todays_price": "Save Today's Price",
+    "recent_price_logs": "Recent Price Logs",
+    "raw_cost": "Raw Cost",
+    "final_price": "Final Price",
+    "link_raw_ingredient": "Linked Raw Ingredient (Optional)"
 }
