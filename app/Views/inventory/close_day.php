@@ -33,7 +33,7 @@
                 class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent appearance-none cursor-pointer">
             <option value=""><?= __('select_menu_item') ?></option>
             <?php foreach ($menuItems as $mi): ?>
-                <option value="<?= $mi['id'] ?>" data-price="<?= $mi['selling_price'] ?>">
+                <option value="<?= $mi['id'] ?>" data-price="<?= $mi['selling_price'] ?>" data-raw-qty="<?= (float)$mi['raw_qty'] ?>">
                     <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?> — ৳<?= $mi['selling_price'] ?>
                 </option>
             <?php endforeach; ?>
@@ -255,14 +255,26 @@ document.addEventListener('DOMContentLoaded', () => {
     recalcAll();
 
     // ── Add Item to Day ───────────────────────────────────────
+    const addItemSelect  = document.getElementById('add-item-select');
+    const addItemOpening = document.getElementById('add-item-opening');
+
+    // Auto-fill opening qty from raw_inventory when item is selected
+    addItemSelect.addEventListener('change', () => {
+        const opt = addItemSelect.options[addItemSelect.selectedIndex];
+        if (opt && opt.value) {
+            const rawQty = parseFloat(opt.dataset.rawQty) || 0;
+            addItemOpening.value = rawQty > 0 ? rawQty : '';
+            addItemOpening.focus();
+        } else {
+            addItemOpening.value = '';
+        }
+    });
+
     document.getElementById('btn-add-day-item').addEventListener('click', async () => {
-        const sel = document.getElementById('add-item-select');
-        const openingInput = document.getElementById('add-item-opening');
-        const itemId = sel.value;
-        const openingQty = parseFloat(openingInput.value) || 0;
+        const itemId    = addItemSelect.value;
+        const openingQty = parseFloat(addItemOpening.value) || 0;
 
         if (!itemId) return showToast('<?= __("select_menu_item") ?>', 'error');
-        if (openingQty <= 0) return showToast('<?= __("opening_qty") ?> required', 'error');
 
         // Check if already on the list
         if (document.querySelector(`.day-item[data-item-id="${itemId}"]`)) {

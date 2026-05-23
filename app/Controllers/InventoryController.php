@@ -35,7 +35,22 @@ public function __construct() {
                 LIMIT 1
             ");
             $cfStmt->execute([':id' => $item['id'], ':date' => $date]);
-            $carryForward = (float)($cfStmt->fetchColumn() ?: 0);
+            $prevClosing = $cfStmt->fetchColumn();
+
+            if ($prevClosing !== false) {
+                // Use yesterday's closing stock as carry-forward
+                $carryForward = (float)$prevClosing;
+            } else {
+                // No prior closing — seed opening from raw_inventory.current_qty
+                $rawStmt = $this->db->prepare("
+                    SELECT current_qty FROM raw_inventory
+                    WHERE LOWER(item_name) = LOWER(:name)
+                    LIMIT 1
+                ");
+                $rawStmt->execute([':name' => $item['item_name']]);
+                $rawQty = $rawStmt->fetchColumn();
+                $carryForward = $rawQty !== false ? (float)$rawQty : 0;
+            }
 
             // Get existing prep data for today
             $existStmt = $this->db->prepare("
@@ -131,7 +146,15 @@ public function __construct() {
         $shift = $this->getCurrentShift();
 
         // All active menu items for the "Add to Today" dropdown
-        $menuItems = $this->db->query("SELECT id, item_name, item_name_bn, selling_price, cost_price FROM items WHERE is_active = 1 ORDER BY sort_order, item_name")->fetchAll();
+        // LEFT JOIN raw_inventory to get current raw stock for auto-fill
+        $menuItems = $this->db->query("
+            SELECT i.id, i.item_name, i.item_name_bn, i.selling_price, i.cost_price,
+                   COALESCE(r.current_qty, 0) AS raw_qty
+            FROM items i
+            LEFT JOIN raw_inventory r ON LOWER(r.item_name) = LOWER(i.item_name)
+            WHERE i.is_active = 1
+            ORDER BY i.sort_order, i.item_name
+        ")->fetchAll();
 
         // Items already tracked today (from daily_stocks joined with shift_closings)
         $todayStmt = $this->db->prepare("
@@ -190,6 +213,13 @@ public function __construct() {
         try {
             $this->db->beginTransaction();
 
+            // Check for an existing daily_stocks record (to know if this is an insert or update)
+            $existStmt = $this->db->prepare("
+                SELECT opening_qty FROM daily_stocks WHERE item_id = :item_id AND log_date = :date
+            ");
+            $existStmt->execute([':item_id' => $itemId, ':date' => $logDate]);
+            $existingOpening = $existStmt->fetchColumn(); // false = no record
+
             // Upsert into daily_stocks (opening)
             $dsStmt = $this->db->prepare("
                 INSERT INTO daily_stocks (item_id, log_date, opening_qty)
@@ -202,6 +232,31 @@ public function __construct() {
                 ':date'    => $logDate,
                 ':opening' => $openingQty,
             ]);
+
+            // Deduct from raw_inventory (matched by item_name)
+            // On first add: deduct full openingQty
+            // On edit:      deduct only the difference (new - old)
+            $itemNameStmt = $this->db->prepare("SELECT item_name FROM items WHERE id = :id");
+            $itemNameStmt->execute([':id' => $itemId]);
+            $itemName = $itemNameStmt->fetchColumn();
+
+            if ($itemName) {
+                if ($existingOpening === false) {
+                    // New entry — deduct full opening qty
+                    $deduct = $openingQty;
+                } else {
+                    // Update — deduct only the delta
+                    $deduct = $openingQty - (float)$existingOpening;
+                }
+
+                if ($deduct != 0) {
+                    $this->db->prepare("
+                        UPDATE raw_inventory
+                        SET current_qty = GREATEST(0, current_qty - :deduct)
+                        WHERE LOWER(item_name) = LOWER(:name)
+                    ")->execute([':deduct' => $deduct, ':name' => $itemName]);
+                }
+            }
 
             // Get selling price for revenue calc
             $priceStmt = $this->db->prepare("SELECT selling_price FROM items WHERE id = :id");
