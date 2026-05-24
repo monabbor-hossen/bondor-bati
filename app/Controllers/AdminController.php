@@ -84,6 +84,9 @@ public function __construct() {
                 try {
                     $this->db->exec("ALTER TABLE items ADD COLUMN additional_cost DECIMAL(10,2) DEFAULT 0 AFTER cost_price");
                 } catch (\Exception $e) {} // Ignore if column exists
+                try {
+                    $this->db->exec("ALTER TABLE items ADD COLUMN online_price DECIMAL(10,2) DEFAULT 0 AFTER selling_price");
+                } catch (\Exception $e) {} // Ignore if column exists
             }
 
             if ($id > 0) {

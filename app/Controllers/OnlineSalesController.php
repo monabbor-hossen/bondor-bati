@@ -94,7 +94,7 @@ class OnlineSalesController extends Controller {
         $payoutLogs = $payStmt->fetchAll();
 
         $menuItems = $this->db->query(
-            "SELECT id, item_name AS name, selling_price AS price FROM items WHERE is_active = 1 ORDER BY item_name"
+            "SELECT id, item_name AS name, selling_price AS price, online_price FROM items WHERE is_active = 1 ORDER BY item_name"
         )->fetchAll();
 
         // Today's opening stock from close/prep page (daily_stocks)

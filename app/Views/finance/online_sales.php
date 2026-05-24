@@ -11,7 +11,10 @@ $platformMeta = [
 $today = date('Y-m-d');
 // Build JS menu item map: { "Item Name": price, ... }
 $menuMap = [];
-foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
+foreach ($menuItems as $mi) { 
+    $price = (float)($mi['online_price'] ?? 0) > 0 ? (float)$mi['online_price'] : (float)$mi['price'];
+    $menuMap[$mi['name']] = $price; 
+}
 // $stockMap is passed from controller: { "Item Name": opening_qty }
 $stockMap = $stockMap ?? [];
 ?>

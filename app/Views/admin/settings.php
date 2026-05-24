@@ -33,10 +33,14 @@
                     <label for="it_name_bn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Bangla Name</label>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-x-3">
+            <div class="grid grid-cols-2 gap-x-3 gap-y-4">
                 <div class="relative">
                     <input type="number" id="it_sell" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Sell Price">
                     <label for="it_sell" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Sell Price</label>
+                </div>
+                <div class="relative">
+                    <input type="number" id="it_online_price" step="0.01" class="peer w-full bg-transparent border-b border-border focus:border-indigo-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Online Price">
+                    <label for="it_online_price" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-indigo-400">Online Price</label>
                 </div>
                 <div class="relative">
                     <input type="number" id="it_cost" step="0.01" readonly class="peer w-full bg-transparent border-b border-border text-orange-400 font-bold py-2 px-1 text-sm transition-colors focus:outline-none placeholder-transparent cursor-not-allowed" placeholder="Cost Price">
@@ -79,6 +83,7 @@
                         }
                     ?>
                     Sell: <span class="text-accent font-bold">৳<?= $item['selling_price'] ?></span> | 
+                    Online: <span class="text-indigo-400 font-bold">৳<?= $item['online_price'] ?? 0 ?></span> | 
                     Total Cost: <span class="text-orange-400 font-bold">৳<?= number_format($displayCost, 2, '.', '') ?></span> | 
                     Add. Cost: ৳<?= $item['additional_cost'] ?? 0 ?>
                     <?php if (!empty($item['linked_raw_item'])): ?>
@@ -236,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('it_name').value = item.item_name;
             document.getElementById('it_name_bn').value = item.item_name_bn;
             document.getElementById('it_sell').value = item.selling_price;
+            document.getElementById('it_online_price').value = item.online_price || 0;
             document.getElementById('it_cost').value = item.cost_price;
             document.getElementById('it_additional_cost').value = item.additional_cost || 0;
             document.getElementById('it_active').checked = item.is_active == 1;
@@ -246,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             item_name: document.getElementById('it_name').value,
             item_name_bn: document.getElementById('it_name_bn').value,
             selling_price: parseFloat(document.getElementById('it_sell').value) || 0,
+            online_price: parseFloat(document.getElementById('it_online_price').value) || 0,
             cost_price: parseFloat(document.getElementById('it_cost').value) || 0,
             additional_cost: parseFloat(document.getElementById('it_additional_cost').value) || 0,
             is_active: document.getElementById('it_active').checked ? 1 : 0,
