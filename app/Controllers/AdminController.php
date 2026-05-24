@@ -24,8 +24,8 @@ public function __construct() {
         ")->fetchAll();
 
         $this->view('admin/settings', [
-            'pageTitle'    => 'Settings',
-            'activeNav'    => 'settings',
+            'pageTitle'    => 'Configuration & Permissions',
+            'activeNav'    => 'admin_settings',
             'items'        => $items,
             'rawInventory' => $rawInventory,
             'users'        => $users

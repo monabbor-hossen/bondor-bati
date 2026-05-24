@@ -97,6 +97,23 @@ class OnlineSalesController extends Controller {
             "SELECT id, item_name AS name, selling_price AS price FROM items WHERE is_active = 1 ORDER BY item_name"
         )->fetchAll();
 
+        // Today's opening stock from close/prep page (daily_stocks)
+        $today = date('Y-m-d');
+        $stockStmt = $this->db->prepare("
+            SELECT i.item_name, COALESCE(ds.opening_qty, 0) AS opening_qty
+            FROM items i
+            LEFT JOIN daily_stocks ds ON ds.item_id = i.id AND ds.log_date = :today
+            WHERE i.is_active = 1
+        ");
+        $stockStmt->execute([':today' => $today]);
+        $stockRows = $stockStmt->fetchAll();
+
+        // Build stockMap: { "Item Name": opening_qty }
+        $stockMap = [];
+        foreach ($stockRows as $sr) {
+            $stockMap[$sr['item_name']] = (float)$sr['opening_qty'];
+        }
+
         $this->view('finance/online_sales', [
             'pageTitle'  => __('online_platforms'),
             'activeNav'  => 'online',
@@ -104,6 +121,7 @@ class OnlineSalesController extends Controller {
             'salesLogs'  => $salesLogs,
             'payoutLogs' => $payoutLogs,
             'menuItems'  => $menuItems,
+            'stockMap'   => $stockMap,
         ]);
     }
 

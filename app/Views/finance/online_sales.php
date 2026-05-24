@@ -12,6 +12,8 @@ $today = date('Y-m-d');
 // Build JS menu item map: { "Item Name": price, ... }
 $menuMap = [];
 foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
+// $stockMap is passed from controller: { "Item Name": opening_qty }
+$stockMap = $stockMap ?? [];
 ?>
 
 <!-- Page Title -->
@@ -114,12 +116,19 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
                     <span class="col-span-2 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-right pr-1"><?= __('total') ?></span>
                 </div>
 
-                <div id="onlineItemsContainer" class="space-y-2"></div>
+            <div id="onlineItemsContainer" class="space-y-2"></div>
 
                 <!-- Empty state hint -->
                 <div id="itemsEmptyHint" class="text-center py-4 text-text-muted border border-dashed border-border/50 rounded-xl">
                     <i class="fas fa-layer-group text-xl mb-1 block opacity-30"></i>
                     <span class="text-xs"><?= __('add_item') ?></span>
+                </div>
+
+                <!-- No stock warning -->
+                <div id="noStockWarning" class="hidden text-center py-4 border border-dashed border-amber-500/40 bg-amber-500/5 rounded-xl">
+                    <i class="fas fa-box-open text-xl mb-1 block text-amber-400 opacity-60"></i>
+                    <span class="text-xs font-bold text-amber-400">No opening stock set today</span>
+                    <p class="text-[0.6rem] text-text-muted mt-0.5">Please set items on the Close Day page first.</p>
                 </div>
             </div>
 
@@ -361,7 +370,11 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
 (function () {
     // ── Menu item price map (PHP → JS) ───────────────────────
     const MENU_PRICES = <?= json_encode($menuMap, JSON_UNESCAPED_UNICODE) ?>;
-    const MENU_NAMES  = Object.keys(MENU_PRICES).sort();
+    const STOCK_MAP   = <?= json_encode($stockMap, JSON_UNESCAPED_UNICODE) ?>;  // opening_qty per item
+    // Only items with opening_qty > 0 can be ordered
+    const MENU_NAMES  = Object.keys(MENU_PRICES)
+        .filter(n => (STOCK_MAP[n] ?? 0) > 0)
+        .sort();
     const PLATFORM_STATS = <?= json_encode($balances) ?>;
 
     // ── Payout Hint Logic ─────────────────────────────────────
@@ -407,17 +420,25 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
 
     // ── Add item row ──────────────────────────────────────────
     function addOnlineItemRow(name = '', qty = 1, price = '') {
+        // Guard: if no in-stock items available and this is a fresh add (not edit restore)
+        if (!name && MENU_NAMES.length === 0) {
+            document.getElementById('noStockWarning').classList.remove('hidden');
+            document.getElementById('itemsEmptyHint').classList.add('hidden');
+            return;
+        }
+
         rowCount++;
         const id = rowCount;
         document.getElementById('itemsEmptyHint').classList.add('hidden');
+        document.getElementById('noStockWarning').classList.add('hidden');
 
         const row = document.createElement('div');
         row.id = 'item-row-' + id;
         row.className = 'grid grid-cols-12 gap-1 items-center bg-surface border border-border/50 rounded-xl px-2 py-2';
 
-        // Build datalist options
+        // Build datalist options — only in-stock items
         const dlId = 'dl-' + id;
-        const opts = MENU_NAMES.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`).join('');
+        const opts = MENU_NAMES.map(n => `<option value="${n.replace(/"/g,'&quot;')}">`) .join('');
 
         row.innerHTML = `
             <datalist id="${dlId}">${opts}</datalist>
@@ -439,9 +460,21 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
 
         document.getElementById('onlineItemsContainer').appendChild(row);
 
-        // Auto-fill price when name matches menu
+        // Auto-fill price when name matches menu; validate stock
         row.querySelector('.item-name').addEventListener('change', function () {
-            const p = MENU_PRICES[this.value];
+            const selectedName = this.value.trim();
+            // If item typed is not in MENU_NAMES (no opening stock), reject it
+            if (selectedName && !MENU_NAMES.includes(selectedName)) {
+                const stockQty = STOCK_MAP[selectedName] ?? 0;
+                if (stockQty <= 0) {
+                    showToast('No opening stock for "' + selectedName + '" today', 'warning');
+                    this.value = '';
+                    row.querySelector('.item-price').value = '';
+                    calculateOnlineTotals();
+                    return;
+                }
+            }
+            const p = MENU_PRICES[selectedName];
             if (p !== undefined) row.querySelector('.item-price').value = p;
             calculateOnlineTotals();
         });
@@ -531,9 +564,14 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
     }
     document.getElementById('sale-platform').addEventListener('change', loadPlatformPreferences);
 
-    // Init preferences FIRST, then add row
+    // Init preferences FIRST, then add row (only if stock exists)
     loadPlatformPreferences();
-    addOnlineItemRow();
+    if (MENU_NAMES.length > 0) {
+        addOnlineItemRow();
+    } else {
+        document.getElementById('noStockWarning').classList.remove('hidden');
+        document.getElementById('itemsEmptyHint').classList.add('hidden');
+    }
 
     // ── Sale Form submit ──────────────────────────────────────
     document.getElementById('saleForm').addEventListener('submit', async (e) => {
@@ -604,8 +642,14 @@ foreach ($menuItems as $mi) { $menuMap[$mi['name']] = (float)$mi['price']; }
         document.getElementById('sale-edit-banner').classList.add('hidden');
         document.getElementById('onlineItemsContainer').innerHTML = '';
         document.getElementById('itemsEmptyHint').classList.remove('hidden');
+        document.getElementById('noStockWarning').classList.add('hidden');
         loadPlatformPreferences();
-        addOnlineItemRow();
+        if (MENU_NAMES.length > 0) {
+            addOnlineItemRow();
+        } else {
+            document.getElementById('noStockWarning').classList.remove('hidden');
+            document.getElementById('itemsEmptyHint').classList.add('hidden');
+        }
     }
     window.resetSaleForm = resetSaleForm;
 

@@ -275,7 +275,7 @@
         <?php
         $role = $_SESSION['role'] ?? 'staff';
         $activeNav = $activeNav ?? '';
-        $isMoreActive = in_array($activeNav, ['online', 'settings', 'costs', 'analytics']);
+        $isMoreActive = in_array($activeNav, ['online', 'settings', 'costs', 'analytics', 'admin_settings', 'staff']);
         ?>
 
         <!-- ── More Sheet Backdrop ────────────────────────────────── -->
@@ -296,11 +296,12 @@
                 <div class="grid grid-cols-3 gap-3">
                     <?php
                     $moreLinks = [
-                        ['url' => 'onlineSales', 'key' => 'online', 'icon' => 'fa-motorcycle', 'label' => 'online_platforms', 'color' => 'indigo'],
-                        ['url' => 'finance/spreadCosts', 'key' => 'costs', 'icon' => 'fa-fire-flame-curved', 'label' => 'link_spread_costs', 'color' => 'orange'],
-                        ['url' => 'analytics', 'key' => 'analytics', 'icon' => 'fa-chart-bar', 'label' => 'link_analytics', 'color' => 'purple'],
-                        ['url' => 'admin/users', 'key' => 'staff', 'icon' => 'fa-users', 'label' => 'link_staff', 'color' => 'cyan'],
-                        ['url' => 'settings', 'key' => 'settings', 'icon' => 'fa-cog', 'label' => 'nav_settings', 'color' => 'slate'],
+                        ['url' => 'onlineSales',         'key' => 'online',         'icon' => 'fa-motorcycle',      'label' => 'online_platforms',    'color' => 'indigo'],
+                        ['url' => 'finance/spreadCosts', 'key' => 'costs',          'icon' => 'fa-fire-flame-curved','label' => 'link_spread_costs',   'color' => 'orange'],
+                        ['url' => 'analytics',           'key' => 'analytics',      'icon' => 'fa-chart-bar',       'label' => 'link_analytics',      'color' => 'purple'],
+                        ['url' => 'admin/users',         'key' => 'staff',          'icon' => 'fa-users',           'label' => 'link_staff',          'color' => 'cyan'],
+                        ['url' => 'admin/settings',      'key' => 'admin_settings', 'icon' => 'fa-sliders-h',       'label' => 'link_config_perms',   'color' => 'emerald'],
+                        ['url' => 'settings',            'key' => 'settings',       'icon' => 'fa-cog',             'label' => 'nav_settings',        'color' => 'slate'],
                     ];
                     $colorMap = [
                         'indigo' => ['bg' => 'bg-indigo-500/10', 'border' => 'border-indigo-500/30', 'text' => 'text-indigo-400'],
