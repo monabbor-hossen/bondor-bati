@@ -28,21 +28,27 @@
     <p class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-3">
         <i class="fas fa-plus-circle text-accent mr-1"></i> <?= __('add_to_day') ?>
     </p>
-    <div class="flex gap-2">
-        <select id="add-item-select"
-                class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent appearance-none cursor-pointer">
-            <option value=""><?= __('select_menu_item') ?></option>
-            <?php foreach ($menuItems as $mi): ?>
-                <option value="<?= $mi['id'] ?>" data-price="<?= $mi['selling_price'] ?>" data-raw-qty="<?= (float)$mi['raw_qty'] ?>">
-                    <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?> — ৳<?= $mi['selling_price'] ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <input type="number" id="add-item-opening" step="0.5" min="0" placeholder="<?= __('opening_qty') ?>"
-               class="w-24 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-accent">
+    <div class="flex gap-3 items-center pt-2">
+        <div class="relative flex-1 min-w-0">
+            <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0"><?= __('select_menu_item') ?></label>
+            <select id="add-item-select"
+                    class="w-full bg-transparent border-b border-border py-2 px-1 text-[0.8rem] sm:text-sm text-text-primary focus:outline-none focus:border-accent appearance-none cursor-pointer truncate">
+                <option value="" class="bg-card text-text-primary">...</option>
+                <?php foreach ($menuItems as $mi): ?>
+                    <option class="bg-card text-text-primary" value="<?= $mi['id'] ?>" data-price="<?= $mi['selling_price'] ?>" data-raw-qty="<?= (float)$mi['raw_qty'] ?>">
+                        <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?> — ৳<?= $mi['selling_price'] ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+        </div>
+        <div class="relative w-20 sm:w-24 shrink-0 mt-1">
+            <input type="number" id="add-item-opening" step="0.5" min="0" placeholder="<?= __('opening_qty') ?>"
+                   class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-center text-sm transition-colors focus:outline-none placeholder-transparent">
+            <label class="absolute left-1 -top-3.5 text-[0.6rem] text-text-muted transition-all peer-placeholder-shown:text-[0.7rem] peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.6rem] peer-focus:text-accent uppercase font-bold text-center w-full truncate pointer-events-none"><?= __('opening_qty') ?></label>
+        </div>
         <button type="button" id="btn-add-day-item"
-                class="text-xs font-bold text-accent bg-accent/10 border border-accent/30 px-3 py-2.5 rounded-lg
-                       hover:bg-accent/20 transition-all">
+                class="shrink-0 text-xs font-bold text-accent bg-accent/10 border border-accent/30 px-3 py-2 rounded-lg hover:bg-accent/20 transition-all mt-1">
             <i class="fas fa-plus"></i>
         </button>
     </div>
@@ -59,11 +65,11 @@
              data-selling-price="<?= $item['selling_price'] ?>">
 
             <!-- Item Header -->
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-sm">
+            <div class="flex items-start sm:items-center justify-between mb-3 gap-2">
+                <h3 class="font-bold text-sm leading-tight flex-1">
                     <?= htmlspecialchars(currentLang() === 'bn' ? $item['item_name_bn'] : $item['item_name']) ?>
                 </h3>
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1 shrink-0 mt-0.5 sm:mt-0">
                     <span class="text-xs text-text-muted mr-1">৳<?= number_format($item['selling_price']) ?>/<?= __('unit') ?></span>
                     <button type="button" class="btn-remove-item text-text-muted hover:text-red-400 transition-colors p-1" title="<?= __('delete') ?>">
                         <i class="fas fa-trash-alt text-xs"></i>
@@ -72,27 +78,27 @@
             </div>
 
             <!-- Input Grid -->
-            <div class="grid grid-cols-3 gap-2.5 mb-3">
+            <div class="grid grid-cols-3 gap-x-2 gap-y-4 pt-2 mb-3">
                 <!-- Opening -->
-                <div>
-                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('opening_qty') ?></label>
+                <div class="relative">
                     <input type="number" step="0.5" min="0"
-                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-opening"
-                           value="<?= (float)$item['opening_qty'] ?>" placeholder="0">
+                           class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-center text-sm font-semibold transition-colors focus:outline-none placeholder-transparent di-opening"
+                           value="<?= (float)$item['opening_qty'] ?>" placeholder="<?= __('opening_qty') ?>">
+                    <label class="absolute left-0 -top-3.5 text-[0.6rem] sm:text-xs text-text-muted transition-all peer-placeholder-shown:text-[0.7rem] peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.6rem] sm:peer-focus:text-[0.65rem] peer-focus:text-accent uppercase font-bold text-center w-full truncate pointer-events-none"><?= __('opening_qty') ?></label>
                 </div>
                 <!-- Closing -->
-                <div>
-                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('closing_qty') ?></label>
+                <div class="relative">
                     <input type="number" step="0.5" min="0"
-                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-closing"
-                           value="<?= $item['closing_qty'] !== '' ? (float)$item['closing_qty'] : '' ?>" placeholder="0">
+                           class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-center text-sm font-semibold transition-colors focus:outline-none placeholder-transparent di-closing"
+                           value="<?= $item['closing_qty'] !== '' ? (float)$item['closing_qty'] : '' ?>" placeholder="<?= __('closing_qty') ?>">
+                    <label class="absolute left-0 -top-3.5 text-[0.6rem] sm:text-xs text-text-muted transition-all peer-placeholder-shown:text-[0.7rem] peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.6rem] sm:peer-focus:text-[0.65rem] peer-focus:text-accent uppercase font-bold text-center w-full truncate pointer-events-none"><?= __('closing_qty') ?></label>
                 </div>
                 <!-- Complimentary -->
-                <div>
-                    <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('comp_qty') ?></label>
+                <div class="relative">
                     <input type="number" step="0.5" min="0"
-                           class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-center focus:border-accent focus:outline-none di-comp"
-                           value="<?= (float)$item['complimentary_qty'] ?: '' ?>" placeholder="0">
+                           class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-center text-sm font-semibold transition-colors focus:outline-none placeholder-transparent di-comp"
+                           value="<?= (float)$item['complimentary_qty'] ?: '' ?>" placeholder="<?= __('comp_qty') ?>">
+                    <label class="absolute left-0 -top-3.5 text-[0.6rem] sm:text-xs text-text-muted transition-all peer-placeholder-shown:text-[0.7rem] peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.6rem] sm:peer-focus:text-[0.65rem] peer-focus:text-accent uppercase font-bold text-center w-full truncate pointer-events-none"><?= __('comp_qty') ?></label>
                 </div>
             </div>
 
@@ -146,26 +152,42 @@
         </div>
 
         <!-- Add Due Form -->
-        <div class="space-y-2 mb-6">
-            <input type="text" id="due-name" placeholder="<?= __('customer_name_req') ?>"
-                   class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
-            <div class="flex gap-2">
-                <input type="number" id="due-amount" step="1" min="1" placeholder="<?= __('due_amount_req') ?>"
-                       class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
-                <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
-                       class="w-28 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400">
+        <div class="space-y-6 pt-2 mb-6">
+            <div class="relative">
+                <input type="text" id="due-name" placeholder="<?= __('customer_name_req') ?>"
+                       class="peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent">
+                <label class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-amber-400 pointer-events-none"><?= __('customer_name_req') ?></label>
             </div>
-            <div class="flex gap-2">
-                <select id="due-item-id" class="flex-1 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-amber-400 appearance-none cursor-pointer">
-                    <option value="">(Optional) Select Item...</option>
-                    <?php foreach ($menuItems as $mi): ?>
-                        <option value="<?= $mi['id'] ?>">
-                            <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
-                       class="w-20 bg-surface border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary text-center focus:outline-none focus:border-amber-400">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="relative">
+                    <input type="number" id="due-amount" step="1" min="1" placeholder="<?= __('due_amount_req') ?>"
+                           class="peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent">
+                    <label class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-amber-400 pointer-events-none"><?= __('due_amount_req') ?></label>
+                </div>
+                <div class="relative">
+                    <input type="tel" id="due-phone" placeholder="<?= __('phone') ?>"
+                           class="peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent">
+                    <label class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-amber-400 pointer-events-none"><?= __('phone') ?></label>
+                </div>
+            </div>
+            <div class="flex gap-3 items-center">
+                <div class="relative flex-1">
+                    <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0">Select Item</label>
+                    <select id="due-item-id" class="w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                        <option value="" class="bg-card text-text-primary">(Optional) Select Item...</option>
+                        <?php foreach ($menuItems as $mi): ?>
+                            <option class="bg-card text-text-primary" value="<?= $mi['id'] ?>">
+                                <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+                </div>
+                <div class="relative w-20 shrink-0 mt-1">
+                    <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
+                           class="peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-center text-sm transition-colors focus:outline-none placeholder-transparent">
+                    <label class="absolute left-1 -top-3.5 text-[0.65rem] text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.65rem] peer-focus:text-amber-400 text-center w-full truncate pointer-events-none">Qty</label>
+                </div>
             </div>
             <button type="button" id="btn-add-due"
                     class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg

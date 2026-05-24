@@ -22,8 +22,8 @@
 <!-- Tab: Menu Items -->
 <div id="tab-items" class="settings-pane block space-y-4 stagger">
     <div class="bg-card border border-border/50 rounded-xl p-4">
-        <form id="form-items" data-id="0" class="space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+        <form id="form-items" data-id="0" class="space-y-6">
+            <div class="grid grid-cols-2 gap-x-3 pt-2">
                 <div class="relative">
                     <input type="text" id="it_name" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="English Name">
                     <label for="it_name" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">English Name</label>
@@ -33,29 +33,29 @@
                     <label for="it_name_bn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Bangla Name</label>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2 pt-2">
+            <div class="grid grid-cols-3 gap-x-3">
                 <div class="relative">
                     <input type="number" id="it_sell" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Sell Price">
                     <label for="it_sell" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Sell Price</label>
                 </div>
                 <div class="relative">
-                    <input type="number" id="it_cost" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Cost Price">
-                    <label for="it_cost" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Cost Price</label>
+                    <input type="number" id="it_cost" step="0.01" readonly class="peer w-full bg-transparent border-b border-border text-orange-400 font-bold py-2 px-1 text-sm transition-colors focus:outline-none placeholder-transparent cursor-not-allowed" placeholder="Cost Price">
+                    <label for="it_cost" class="absolute left-1 -top-3.5 text-xs text-text-muted">Total Cost Price</label>
                 </div>
                 <div class="relative">
-                    <input type="number" id="it_min" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Min Stock">
-                    <label for="it_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
+                    <input type="number" id="it_additional_cost" step="0.01" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Additional Cost">
+                    <label for="it_additional_cost" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Additional Cost</label>
                 </div>
             </div>
-            <div class="mt-2 relative">
-                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1"><?= __('link_raw_ingredient') ?></label>
+            <div class="relative">
+                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0"><?= __('link_raw_ingredient') ?></label>
                 <select id="it_linked_raw" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
-                    <option value=""><?= __('select_raw_item') ?>...</option>
+                    <option value="" class="bg-card text-text-primary"><?= __('select_raw_item') ?>...</option>
                     <?php foreach ($rawInventory as $raw): ?>
-                        <option value="<?= htmlspecialchars($raw['item_name']) ?>"><?= htmlspecialchars($raw['item_name']) ?></option>
+                        <option class="bg-card text-text-primary" value="<?= htmlspecialchars($raw['item_name']) ?>" data-price="<?= $raw['avg_unit_price'] ?>"><?= htmlspecialchars($raw['item_name']) ?> (৳<?= $raw['avg_unit_price'] ?>)</option>
                     <?php endforeach; ?>
                 </select>
-                <i class="fas fa-chevron-down absolute right-2 top-8 text-xs text-text-muted pointer-events-none"></i>
+                <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
             </div>
             <div class="flex items-center justify-between pt-2">
                 <label class="flex items-center gap-2 text-sm text-text-muted">
@@ -72,9 +72,15 @@
             <div>
                 <div class="text-sm font-bold"><?= htmlspecialchars($item['item_name']) ?> <span class="text-xs font-normal text-text-muted">(<?= htmlspecialchars($item['item_name_bn']) ?>)</span></div>
                 <div class="text-[0.65rem] text-text-muted mt-1 uppercase tracking-wider">
+                    <?php 
+                        $displayCost = $item['cost_price'];
+                        if (!empty($item['linked_raw_item']) && isset($item['raw_price'])) {
+                            $displayCost = (float)$item['raw_price'] + (float)($item['additional_cost'] ?? 0);
+                        }
+                    ?>
                     Sell: <span class="text-accent font-bold">৳<?= $item['selling_price'] ?></span> | 
-                    Cost: <span class="text-orange-400 font-bold">৳<?= $item['cost_price'] ?></span> | 
-                    Min: <?= $item['min_stock_threshold'] ?>
+                    Total Cost: <span class="text-orange-400 font-bold">৳<?= number_format($displayCost, 2, '.', '') ?></span> | 
+                    Add. Cost: ৳<?= $item['additional_cost'] ?? 0 ?>
                     <?php if (!empty($item['linked_raw_item'])): ?>
                     <br><span class="text-blue-400"><i class="fas fa-link"></i> <?= htmlspecialchars($item['linked_raw_item']) ?></span>
                     <?php endif; ?>
@@ -96,8 +102,8 @@
 <!-- Tab: Raw Inventory -->
 <div id="tab-raw" class="settings-pane hidden space-y-4 stagger">
     <div class="bg-card border border-border/50 rounded-xl p-4">
-        <form id="form-raw" data-id="0" class="space-y-3">
-            <div class="grid grid-cols-2 gap-2">
+        <form id="form-raw" data-id="0" class="space-y-6">
+            <div class="grid grid-cols-2 gap-x-3 pt-2">
                 <div class="relative">
                     <input type="text" id="raw_name" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="English Name">
                     <label for="raw_name" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">English Name</label>
@@ -107,10 +113,15 @@
                     <label for="raw_name_bn" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Bangla Name</label>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-2 pt-2">
+            <div class="grid grid-cols-3 gap-x-3">
                 <div class="relative">
-                    <input type="text" id="raw_unit" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Unit">
-                    <label for="raw_unit" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Unit</label>
+                    <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0">Unit</label>
+                    <select id="raw_unit" required class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                        <option class="bg-card text-text-primary" value="kg">kg</option>
+                        <option class="bg-card text-text-primary" value="l">l</option>
+                        <option class="bg-card text-text-primary" value="pcs">pcs</option>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
                 </div>
                 <div class="relative">
                     <input type="number" id="raw_price" step="0.01" required class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="Avg Price">
@@ -121,11 +132,9 @@
                     <label for="raw_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
                 </div>
             </div>
-            <div class="pt-2">
-                <div class="relative">
-                    <input type="number" id="raw_qty" step="0.01" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="<?= __('opening_current_stock') ?>">
-                    <label for="raw_qty" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent"><?= __('opening_current_stock') ?></label>
-                </div>
+            <div class="relative">
+                <input type="number" id="raw_qty" step="0.01" class="peer w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent" placeholder="<?= __('opening_current_stock') ?>">
+                <label for="raw_qty" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent"><?= __('opening_current_stock') ?></label>
             </div>
             <div class="flex justify-end pt-2">
                 <button type="submit" id="btn-submit-raw" class="text-xs font-bold bg-accent/20 text-accent px-4 py-2 rounded-lg hover:bg-accent/30 transition-colors"><i class="fas fa-plus mr-1"></i> <?= __('add') ?></button>
@@ -208,6 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const calcTotalCost = () => {
+        const sel = document.getElementById('it_linked_raw');
+        const opt = sel.options[sel.selectedIndex];
+        const rawPrice = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
+        const addCost = parseFloat(document.getElementById('it_additional_cost').value) || 0;
+        document.getElementById('it_cost').value = (rawPrice + addCost).toFixed(2);
+    };
+    
+    document.getElementById('it_linked_raw').addEventListener('change', calcTotalCost);
+    document.getElementById('it_additional_cost').addEventListener('input', calcTotalCost);
+
     setupForm(
         'form-items', 
         'btn-submit-item', 
@@ -217,16 +237,17 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('it_name_bn').value = item.item_name_bn;
             document.getElementById('it_sell').value = item.selling_price;
             document.getElementById('it_cost').value = item.cost_price;
-            document.getElementById('it_min').value = item.min_stock_threshold;
+            document.getElementById('it_additional_cost').value = item.additional_cost || 0;
             document.getElementById('it_active').checked = item.is_active == 1;
             document.getElementById('it_linked_raw').value = item.linked_raw_item || '';
+            calcTotalCost();
         },
         () => ({
             item_name: document.getElementById('it_name').value,
             item_name_bn: document.getElementById('it_name_bn').value,
             selling_price: parseFloat(document.getElementById('it_sell').value) || 0,
             cost_price: parseFloat(document.getElementById('it_cost').value) || 0,
-            min_stock_threshold: parseFloat(document.getElementById('it_min').value) || 0,
+            additional_cost: parseFloat(document.getElementById('it_additional_cost').value) || 0,
             is_active: document.getElementById('it_active').checked ? 1 : 0,
             linked_raw_item: document.getElementById('it_linked_raw').value.trim()
         }),

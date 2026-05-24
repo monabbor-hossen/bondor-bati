@@ -13,7 +13,12 @@ public function __construct() {
     public function settings() {
         $this->requireAdmin();
 
-        $items = $this->db->query("SELECT * FROM items ORDER BY sort_order, item_name")->fetchAll();
+        $items = $this->db->query("
+            SELECT i.*, r.avg_unit_price as raw_price 
+            FROM items i 
+            LEFT JOIN raw_inventory r ON i.linked_raw_item = r.item_name 
+            ORDER BY i.sort_order, i.item_name
+        ")->fetchAll();
         $rawInventory = $this->db->query("SELECT * FROM raw_inventory ORDER BY item_name")->fetchAll();
         
         $users = $this->db->query("
@@ -76,6 +81,9 @@ public function __construct() {
                 try {
                     $this->db->exec("ALTER TABLE items ADD COLUMN linked_raw_item VARCHAR(100) NULL AFTER item_name");
                 } catch (\Exception $e) {} // Ignore if column exists
+                try {
+                    $this->db->exec("ALTER TABLE items ADD COLUMN additional_cost DECIMAL(10,2) DEFAULT 0 AFTER cost_price");
+                } catch (\Exception $e) {} // Ignore if column exists
             }
 
             if ($id > 0) {
@@ -100,6 +108,18 @@ public function __construct() {
                 $this->db->prepare($sql)->execute($params);
                 $id = $this->db->lastInsertId();
             }
+            
+            // Auto-sync linked menu items if raw inventory price changes
+            if ($entity === 'raw_inventory' && $id > 0) {
+                try {
+                    $updatedRaw = $this->db->query("SELECT item_name, avg_unit_price FROM raw_inventory WHERE id = " . (int)$id)->fetch();
+                    if ($updatedRaw) {
+                        $this->db->prepare("UPDATE items SET cost_price = additional_cost + :price WHERE linked_raw_item = :name")
+                                 ->execute([':price' => $updatedRaw['avg_unit_price'], ':name' => $updatedRaw['item_name']]);
+                    }
+                } catch (\Exception $e) {}
+            }
+
             $this->json(['success' => true, 'id' => $id]);
         } catch (\Exception $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()]);
