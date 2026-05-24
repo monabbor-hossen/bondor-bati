@@ -223,5 +223,8 @@
     "gross_sales": "Gross Sales",
     "platform_commission": "Platform Commission",
     "net_receivable": "Net Receivable",
-    "payout_amount": "Amount Received"
+    "payout_amount": "Amount Received",
+    "add_item": "Add Item",
+    "unit_price": "Price",
+    "discount": "Discount"
 }

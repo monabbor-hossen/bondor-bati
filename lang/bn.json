@@ -223,5 +223,8 @@
     "gross_sales": "মোট সেলস",
     "platform_commission": "প্লাটফর্ম কমিশন",
     "net_receivable": "নেট প্রাপ্য",
-    "payout_amount": "প্রাপ্ত পরিমাণ"
+    "payout_amount": "প্রাপ্ত পরিমাণ",
+    "add_item": "আইটেম যোগ করুন",
+    "unit_price": "মূল্য",
+    "discount": "ডিসকাউন্ট"
 }

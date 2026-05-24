@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="<?= currentLang() ?>" dir="ltr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -41,7 +42,9 @@
     <!-- Google Fonts: Inter + Noto Sans Bengali -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- Font Awesome 6 Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -51,7 +54,10 @@
 
     <style>
         /* Critical overrides for ultra-dark mobile UI */
-        * { -webkit-tap-highlight-color: transparent; }
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             background: #0a0a0f;
             color: #e2e8f0;
@@ -59,17 +65,25 @@
             min-height: 100dvh;
             overscroll-behavior: none;
         }
+
         /* Hide scrollbar but allow scrolling */
-        ::-webkit-scrollbar { width: 0; height: 0; }
+        ::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
 
         /* Smooth input focus ring */
-        input:focus, select:focus, textarea:focus {
+        input:focus,
+        select:focus,
+        textarea:focus {
             outline: none;
             box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.4);
         }
 
         /* Bottom nav safe area */
-        .app-main { padding-bottom: 5.5rem; }
+        .app-main {
+            padding-bottom: 5.5rem;
+        }
 
         /* Glass card effect */
         .glass {
@@ -81,59 +95,132 @@
 
         /* Stat chip pulse animation */
         @keyframes pulse-accent {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.3); }
-            50% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+            }
         }
-        .pulse-accent { animation: pulse-accent 2s infinite; }
+
+        .pulse-accent {
+            animation: pulse-accent 2s infinite;
+        }
 
         /* Slide up animation for cards */
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .animate-slideUp { animation: slideUp 0.3s ease-out forwards; }
+
+        .animate-slideUp {
+            animation: slideUp 0.3s ease-out forwards;
+        }
 
         /* Stagger children */
-        .stagger > * { opacity: 0; animation: slideUp 0.3s ease-out forwards; }
-        .stagger > *:nth-child(1) { animation-delay: 0.05s; }
-        .stagger > *:nth-child(2) { animation-delay: 0.1s; }
-        .stagger > *:nth-child(3) { animation-delay: 0.15s; }
-        .stagger > *:nth-child(4) { animation-delay: 0.2s; }
-        .stagger > *:nth-child(5) { animation-delay: 0.25s; }
-        .stagger > *:nth-child(6) { animation-delay: 0.3s; }
+        .stagger>* {
+            opacity: 0;
+            animation: slideUp 0.3s ease-out forwards;
+        }
+
+        .stagger>*:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .stagger>*:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .stagger>*:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .stagger>*:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .stagger>*:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .stagger>*:nth-child(6) {
+            animation-delay: 0.3s;
+        }
 
         /* Toast notification */
         .toast {
-            position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
-            z-index: 9999; padding: 0.75rem 1.25rem;
-            border-radius: 12px; font-weight: 600; font-size: 0.85rem;
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
             animation: slideDown 0.3s ease-out;
-            max-width: 90vw; text-align: center;
+            max-width: 90vw;
+            text-align: center;
         }
+
         @keyframes slideDown {
-            from { opacity: 0; transform: translate(-50%, -20px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+            from {
+                opacity: 0;
+                transform: translate(-50%, -20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
         }
 
         /* Offline indicator */
         #offline-banner {
             display: none;
-            position: fixed; bottom: 4.5rem; left: 50%; transform: translateX(-50%);
-            background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4);
-            color: #fbbf24; padding: 0.5rem 1rem; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600; z-index: 100;
+            position: fixed;
+            bottom: 4.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 100;
             backdrop-filter: blur(8px);
         }
 
         /* Bengali font tweaks */
-        .font-bn { font-family: 'Noto Sans Bengali', sans-serif; }
+        .font-bn {
+            font-family: 'Noto Sans Bengali', sans-serif;
+        }
 
         /* Number inputs remove spinners */
         input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
+
 <body class="antialiased">
     <div class="min-h-screen flex flex-col">
 
@@ -143,26 +230,28 @@
         <header class="sticky top-0 z-50 glass px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <h1 class="text-lg font-black tracking-tight">
-                    <?= __('app_name') !== 'বন্দর বাটি' ? 'Bondor' : 'বন্দর' ?><span class="text-accent">.</span><?= __('app_name') !== 'বন্দর বাটি' ? 'Bati' : 'বাটি' ?>
+                    <?= __('app_name') !== 'বন্দর বাটি' ? 'Bondor' : 'বন্দর' ?><span
+                        class="text-accent">.</span><?= __('app_name') !== 'বন্দর বাটি' ? 'Bati' : 'বাটি' ?>
                 </h1>
             </div>
 
             <div class="flex items-center gap-3">
                 <!-- Language Toggle -->
                 <?php $oppLang = currentLang() === 'en' ? 'bn' : 'en'; ?>
-                <a href="?<?= http_build_query(array_merge($_GET, ['lang' => $oppLang])) ?>"
-                   id="lang-toggle"
-                   class="text-xs font-bold px-2.5 py-1 rounded-full border border-border text-text-muted hover:text-accent hover:border-accent transition-all duration-200">
+                <a href="?<?= http_build_query(array_merge($_GET, ['lang' => $oppLang])) ?>" id="lang-toggle"
+                    class="text-xs font-bold px-2.5 py-1 rounded-full border border-border text-text-muted hover:text-accent hover:border-accent transition-all duration-200">
                     <?= $oppLang === 'bn' ? 'বাংলা' : 'EN' ?>
                 </a>
 
                 <!-- Date Badge -->
-                <span class="text-[0.65rem] font-semibold text-text-muted bg-card px-2 py-1 rounded-full border border-border hidden sm:inline">
+                <span
+                    class="text-[0.65rem] font-semibold text-text-muted bg-card px-2 py-1 rounded-full border border-border hidden sm:inline">
                     <?= date('D, d M') ?>
                 </span>
 
                 <!-- Offline indicator dot -->
-                <span id="connection-dot" class="w-2 h-2 rounded-full bg-success transition-colors duration-300" title="Online"></span>
+                <span id="connection-dot" class="w-2 h-2 rounded-full bg-success transition-colors duration-300"
+                    title="Online"></span>
             </div>
         </header>
 
@@ -184,19 +273,17 @@
              BOTTOM NAVIGATION BAR
         ════════════════════════════════════════════════════════ -->
         <?php
-        $role      = $_SESSION['role'] ?? 'staff';
+        $role = $_SESSION['role'] ?? 'staff';
         $activeNav = $activeNav ?? '';
         $isMoreActive = in_array($activeNav, ['online', 'settings', 'costs', 'analytics']);
         ?>
 
         <!-- ── More Sheet Backdrop ────────────────────────────────── -->
-        <div id="more-backdrop"
-             class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden"
-             onclick="closeMoreSheet()"></div>
+        <div id="more-backdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden"
+            onclick="closeMoreSheet()"></div>
 
         <!-- ── More Slide-Up Sheet ────────────────────────────────── -->
-        <div id="more-sheet"
-             class="fixed bottom-0 inset-x-0 z-50 glass border-t border-border rounded-t-3xl
+        <div id="more-sheet" class="fixed bottom-0 inset-x-0 z-50 glass border-t border-border rounded-t-3xl
                     transform translate-y-full transition-transform duration-300 ease-out max-w-lg mx-auto">
 
             <!-- drag handle -->
@@ -204,40 +291,38 @@
                 <div class="w-10 h-1 rounded-full bg-border"></div>
             </div>
             <div class="px-4 pb-4 pt-2">
-                <p class="text-[0.6rem] font-bold text-text-muted uppercase tracking-widest mb-3 text-center">Quick Access</p>
+                <p class="text-[0.6rem] font-bold text-text-muted uppercase tracking-widest mb-3 text-center">Quick
+                    Access</p>
                 <div class="grid grid-cols-3 gap-3">
                     <?php
                     $moreLinks = [
-                        ['url' => 'onlineSales',      'key' => 'online',    'icon' => 'fa-motorcycle',      'label' => 'online_platforms', 'color' => 'indigo'],
-                        ['url' => 'finance/spreadCosts','key' => 'costs',   'icon' => 'fa-fire-flame-curved','label' => 'link_spread_costs','color' => 'orange'],
-                        ['url' => 'analytics',         'key' => 'analytics','icon' => 'fa-chart-bar',        'label' => 'link_analytics',  'color' => 'purple'],
-                        ['url' => 'admin/staff',       'key' => 'staff',    'icon' => 'fa-users',            'label' => 'link_staff',      'color' => 'cyan'],
-                        ['url' => 'bazaar',            'key' => 'bazaar',   'icon' => 'fa-cart-shopping',    'label' => 'bazaar',          'color' => 'emerald'],
-                        ['url' => 'settings',          'key' => 'settings', 'icon' => 'fa-cog',              'label' => 'nav_settings',    'color' => 'slate'],
+                        ['url' => 'onlineSales', 'key' => 'online', 'icon' => 'fa-motorcycle', 'label' => 'online_platforms', 'color' => 'indigo'],
+                        ['url' => 'finance/spreadCosts', 'key' => 'costs', 'icon' => 'fa-fire-flame-curved', 'label' => 'link_spread_costs', 'color' => 'orange'],
+                        ['url' => 'analytics', 'key' => 'analytics', 'icon' => 'fa-chart-bar', 'label' => 'link_analytics', 'color' => 'purple'],
+                        ['url' => 'admin/users', 'key' => 'staff', 'icon' => 'fa-users', 'label' => 'link_staff', 'color' => 'cyan'],
+                        ['url' => 'settings', 'key' => 'settings', 'icon' => 'fa-cog', 'label' => 'nav_settings', 'color' => 'slate'],
                     ];
                     $colorMap = [
-                        'indigo'  => ['bg' => 'bg-indigo-500/10',  'border' => 'border-indigo-500/30',  'text' => 'text-indigo-400'],
-                        'orange'  => ['bg' => 'bg-orange-500/10',  'border' => 'border-orange-500/30',  'text' => 'text-orange-400'],
-                        'purple'  => ['bg' => 'bg-purple-500/10',  'border' => 'border-purple-500/30',  'text' => 'text-purple-400'],
-                        'cyan'    => ['bg' => 'bg-cyan-500/10',    'border' => 'border-cyan-500/30',    'text' => 'text-cyan-400'],
+                        'indigo' => ['bg' => 'bg-indigo-500/10', 'border' => 'border-indigo-500/30', 'text' => 'text-indigo-400'],
+                        'orange' => ['bg' => 'bg-orange-500/10', 'border' => 'border-orange-500/30', 'text' => 'text-orange-400'],
+                        'purple' => ['bg' => 'bg-purple-500/10', 'border' => 'border-purple-500/30', 'text' => 'text-purple-400'],
+                        'cyan' => ['bg' => 'bg-cyan-500/10', 'border' => 'border-cyan-500/30', 'text' => 'text-cyan-400'],
                         'emerald' => ['bg' => 'bg-emerald-500/10', 'border' => 'border-emerald-500/30', 'text' => 'text-emerald-400'],
-                        'slate'   => ['bg' => 'bg-slate-500/10',   'border' => 'border-slate-500/30',   'text' => 'text-slate-400'],
+                        'slate' => ['bg' => 'bg-slate-500/10', 'border' => 'border-slate-500/30', 'text' => 'text-slate-400'],
                     ];
                     foreach ($moreLinks as $ml):
                         $mc = $colorMap[$ml['color']];
                         $mlActive = $activeNav === $ml['key'];
-                    ?>
-                    <a href="?url=<?= $ml['url'] ?>"
-                       onclick="closeMoreSheet()"
-                       class="flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all duration-150
+                        ?>
+                        <a href="?url=<?= $ml['url'] ?>" onclick="closeMoreSheet()" class="flex flex-col items-center gap-2 py-4 rounded-2xl border transition-all duration-150
                               <?= $mlActive
-                                  ? $mc['bg'].' '.$mc['border'].' ring-1 ring-inset '.$mc['text']
-                                  : 'bg-surface border-border/50 text-text-muted hover:'.$mc['text'] ?>">
-                        <i class="fas <?= $ml['icon'] ?> text-xl <?= $mlActive ? $mc['text'] : '' ?>"></i>
-                        <span class="text-[0.6rem] font-bold uppercase tracking-wide leading-tight text-center px-1">
-                            <?= __($ml['label']) ?>
-                        </span>
-                    </a>
+                                  ? $mc['bg'] . ' ' . $mc['border'] . ' ring-1 ring-inset ' . $mc['text']
+                                  : 'bg-surface border-border/50 text-text-muted hover:' . $mc['text'] ?>">
+                            <i class="fas <?= $ml['icon'] ?> text-xl <?= $mlActive ? $mc['text'] : '' ?>"></i>
+                            <span class="text-[0.6rem] font-bold uppercase tracking-wide leading-tight text-center px-1">
+                                <?= __($ml['label']) ?>
+                            </span>
+                        </a>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -249,26 +334,25 @@
         <nav id="bottom-nav" class="fixed bottom-0 inset-x-0 z-40 glass border-t border-border">
             <div class="flex items-stretch justify-around max-w-lg mx-auto">
                 <?php if ($role === 'admin'): ?>
-                <!-- Home -->
-                <a href="?url=dashboard"
-                   class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
+                    <!-- Home -->
+                    <a href="?url=dashboard"
+                        class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
                           <?= $activeNav === 'dashboard' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
-                    <i class="fas fa-home text-lg mb-0.5 <?= $activeNav === 'dashboard' ? 'text-accent' : '' ?>"></i>
-                    <?= __('nav_dashboard') ?>
-                </a>
+                        <i class="fas fa-home text-lg mb-0.5 <?= $activeNav === 'dashboard' ? 'text-accent' : '' ?>"></i>
+                        <?= __('nav_dashboard') ?>
+                    </a>
                 <?php endif; ?>
 
                 <!-- Bazaar -->
-                <a href="?url=bazaar"
-                   class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
+                <a href="?url=bazaar" class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
                           <?= $activeNav === 'bazaar' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
-                    <i class="fas fa-cart-shopping text-lg mb-0.5 <?= $activeNav === 'bazaar' ? 'text-accent' : '' ?>"></i>
+                    <i
+                        class="fas fa-cart-shopping text-lg mb-0.5 <?= $activeNav === 'bazaar' ? 'text-accent' : '' ?>"></i>
                     <?= __('nav_prep') ?>
                 </a>
 
                 <!-- Close / Ledger -->
-                <a href="?url=inventory/closeDayView"
-                   class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
+                <a href="?url=inventory/closeDayView" class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200
                           <?= $activeNav === 'close' ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
                     <i class="fas fa-moon text-lg mb-0.5 <?= $activeNav === 'close' ? 'text-accent' : '' ?>"></i>
                     <?= __('nav_close') ?>
@@ -276,17 +360,15 @@
 
                 <!-- More ··· (admin only) -->
                 <?php if ($role === 'admin'): ?>
-                <button id="more-btn"
-                        onclick="openMoreSheet()"
-                        class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200 relative
+                    <button id="more-btn" onclick="openMoreSheet()" class="flex flex-col items-center justify-center py-2 px-3 min-h-[3.5rem] text-[0.6rem] font-semibold uppercase tracking-wider transition-colors duration-200 relative
                                <?= $isMoreActive ? 'text-accent' : 'text-text-muted hover:text-text-primary' ?>">
-                    <!-- active dot when a "more" section is open -->
-                    <?php if ($isMoreActive): ?>
-                    <span class="absolute top-2 right-4 w-1.5 h-1.5 rounded-full bg-accent"></span>
-                    <?php endif; ?>
-                    <i class="fas fa-grip-dots text-lg mb-0.5 <?= $isMoreActive ? 'text-accent' : '' ?>"></i>
-                    More
-                </button>
+                        <!-- active dot when a "more" section is open -->
+                        <?php if ($isMoreActive): ?>
+                            <span class="absolute top-2 right-4 w-1.5 h-1.5 rounded-full bg-accent"></span>
+                        <?php endif; ?>
+                        <i class="fas fa-ellipsis text-lg mb-0.5 <?= $isMoreActive ? 'text-accent' : '' ?>"></i>
+                        More
+                    </button>
                 <?php endif; ?>
             </div>
         </nav>
@@ -307,9 +389,9 @@
             const toast = document.createElement('div');
             const colors = {
                 success: 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400',
-                error:   'bg-red-500/20 border border-red-500/40 text-red-400',
+                error: 'bg-red-500/20 border border-red-500/40 text-red-400',
                 warning: 'bg-amber-500/20 border border-amber-500/40 text-amber-400',
-                info:    'bg-indigo-500/20 border border-indigo-500/40 text-indigo-400',
+                info: 'bg-indigo-500/20 border border-indigo-500/40 text-indigo-400',
             };
             toast.className = `toast ${colors[type] || colors.info}`;
             toast.textContent = message;
@@ -321,7 +403,7 @@
         // ── IndexedDB Offline Queue ───────────────────────────
         const DB_NAME = 'bondor_sync_db';
         const STORE_NAME = 'sync_queue';
-        
+
         function initDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(DB_NAME, 1);
@@ -335,7 +417,7 @@
                 request.onerror = () => reject(request.error);
             });
         }
-        
+
         async function saveToQueue(url, data) {
             const db = await initDB();
             return new Promise((resolve, reject) => {
@@ -345,26 +427,26 @@
                 tx.onerror = () => reject(tx.error);
             });
         }
-        
+
         async function processQueue() {
             if (!navigator.onLine) return;
             const db = await initDB();
             const tx = db.transaction(STORE_NAME, 'readwrite');
             const store = tx.objectStore(STORE_NAME);
             const request = store.getAll();
-            
+
             request.onsuccess = async () => {
                 const items = request.result;
                 if (items.length === 0) return;
-                
+
                 showToast(`Syncing ${items.length} offline records...`, 'info');
                 let successCount = 0;
-                
+
                 for (let item of items) {
                     try {
                         const res = await fetch(item.url, {
                             method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(item.data)
                         });
                         if (res.ok) {
@@ -379,7 +461,7 @@
                         console.error('Sync failed for item', item);
                     }
                 }
-                
+
                 if (successCount > 0) {
                     showToast(`Successfully synced ${successCount} records.`, 'success');
                 }
@@ -388,7 +470,7 @@
 
         // ── Offline/Online Detection ──────────────────────────
         const offlineBanner = document.getElementById('offline-banner');
-        const connDot       = document.getElementById('connection-dot');
+        const connDot = document.getElementById('connection-dot');
 
         function updateOnlineStatus() {
             if (navigator.onLine) {
@@ -411,7 +493,7 @@
 
         // ── Currency Formatter ────────────────────────────────
         function formatTK(amount) {
-            return '৳' + parseFloat(amount || 0).toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            return '৳' + parseFloat(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
         }
 
         // ── AJAX Helper with Queueing ─────────────────────────
@@ -425,7 +507,7 @@
             try {
                 const res = await fetch(url, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 return await res.json();
@@ -446,59 +528,60 @@
         }
 
         <?php if (!empty($_SESSION['user_id'])): ?>
-        // ── Real-Time Kill Switch ─────────────────────────────
-        setInterval(async () => {
-            try {
-                const response = await fetch('?url=auth/checkStatus');
-                const result = await response.json();
-                if (result && result.active === false) {
-                    window.location.href = '?url=auth/login';
+            // ── Real-Time Kill Switch ─────────────────────────────
+            setInterval(async () => {
+                try {
+                    const response = await fetch('?url=auth/checkStatus');
+                    const result = await response.json();
+                    if (result && result.active === false) {
+                        window.location.href = '?url=auth/login';
+                    }
+                } catch (err) {
+                    // Ignore network errors, only act on explicit false status
                 }
-            } catch (err) {
-                // Ignore network errors, only act on explicit false status
-            }
-        }, 10000);
+            }, 10000);
         <?php endif; ?>
     </script>
 
     <!-- ── More Sheet JS ──────────────────────────────────────── -->
     <script>
-    (function () {
-        const sheet    = document.getElementById('more-sheet');
-        const backdrop = document.getElementById('more-backdrop');
-        if (!sheet) return; // staff role — no sheet rendered
+            (function () {
+                const sheet = document.getElementById('more-sheet');
+                const backdrop = document.getElementById('more-backdrop');
+                if (!sheet) return; // staff role — no sheet rendered
 
-        function openMoreSheet() {
-            backdrop.classList.remove('hidden');
-            // Force reflow then animate in
-            requestAnimationFrame(() => {
-                sheet.style.transform = 'translateY(0)';
-            });
-            document.body.style.overflow = 'hidden';
-        }
+                function openMoreSheet() {
+                    backdrop.classList.remove('hidden');
+                    // Force reflow then animate in
+                    requestAnimationFrame(() => {
+                        sheet.style.transform = 'translateY(0)';
+                    });
+                    document.body.style.overflow = 'hidden';
+                }
 
-        function closeMoreSheet() {
-            sheet.style.transform = '';
-            backdrop.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
+                function closeMoreSheet() {
+                    sheet.style.transform = '';
+                    backdrop.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
 
-        window.openMoreSheet  = openMoreSheet;
-        window.closeMoreSheet = closeMoreSheet;
+                window.openMoreSheet = openMoreSheet;
+                window.closeMoreSheet = closeMoreSheet;
 
-        // Escape key
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeMoreSheet();
-        });
+                // Escape key
+                document.addEventListener('keydown', e => {
+                    if (e.key === 'Escape') closeMoreSheet();
+                });
 
-        // Swipe-down-to-close on the sheet
-        let startY = 0;
-        sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
-        sheet.addEventListener('touchend', e => {
-            const dy = e.changedTouches[0].clientY - startY;
-            if (dy > 60) closeMoreSheet();
-        }, { passive: true });
-    })();
+                // Swipe-down-to-close on the sheet
+                let startY = 0;
+                sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+                sheet.addEventListener('touchend', e => {
+                    const dy = e.changedTouches[0].clientY - startY;
+                    if (dy > 60) closeMoreSheet();
+                }, { passive: true });
+            })();
     </script>
 </body>
+
 </html>
