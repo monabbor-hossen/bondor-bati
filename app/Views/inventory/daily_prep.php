@@ -39,12 +39,12 @@
 
         <!-- Input Grid -->
         <div class="grid grid-cols-3 gap-2.5">
-            <!-- Carry Forward (read-only) -->
+            <!-- Carry Forward -->
             <div>
                 <label class="block text-[0.6rem] font-bold text-text-muted uppercase tracking-wider mb-1"><?= __('carry_forward') ?></label>
                 <input type="number" step="0.5" min="0"
-                       class="w-full bg-surface/50 border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-text-primary text-center prep-cf"
-                       value="<?= $item['carry_forward'] ?>" readonly>
+                       class="w-full bg-surface border border-border rounded-lg px-3 py-2.5 text-sm font-semibold text-text-primary text-center focus:border-accent prep-cf"
+                       value="<?= $item['carry_forward'] ?>">
             </div>
 
             <!-- Wastage -->
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openingDisplay.textContent = opening % 1 === 0 ? opening : opening.toFixed(1);
         }
 
-        [wastageInput, freshInput].forEach(el => el.addEventListener('input', recalc));
+        [cfInput, wastageInput, freshInput].forEach(el => el.addEventListener('input', recalc));
     });
 
     // Save

@@ -47,7 +47,7 @@ public function __construct() {
                     WHERE LOWER(item_name) = LOWER(:name)
                     LIMIT 1
                 ");
-                $rawStmt->execute([':name' => $item['item_name']]);
+                $rawStmt->execute([':name' => !empty($item['linked_raw_item']) ? $item['linked_raw_item'] : $item['item_name']]);
                 $rawQty = $rawStmt->fetchColumn();
                 $carryForward = $rawQty !== false ? (float)$rawQty : 0;
             }
@@ -159,7 +159,7 @@ public function __construct() {
             SELECT i.id, i.item_name, i.item_name_bn, i.selling_price, i.cost_price,
                    COALESCE(r.current_qty, 0) AS raw_qty
             FROM items i
-            LEFT JOIN raw_inventory r ON LOWER(r.item_name) = LOWER(i.item_name)
+            LEFT JOIN raw_inventory r ON LOWER(r.item_name) = LOWER(COALESCE(NULLIF(i.linked_raw_item, ''), i.item_name))
             WHERE i.is_active = 1
             ORDER BY i.sort_order, i.item_name
         ")->fetchAll();
@@ -241,12 +241,13 @@ public function __construct() {
                 ':opening' => $openingQty,
             ]);
 
-            // Deduct from raw_inventory (matched by item_name)
+            // Deduct from raw_inventory (matched by linked_raw_item fallback to item_name)
             // On first add: deduct full openingQty
             // On edit:      deduct only the difference (new - old)
-            $itemNameStmt = $this->db->prepare("SELECT item_name FROM items WHERE id = :id");
+            $itemNameStmt = $this->db->prepare("SELECT item_name, linked_raw_item FROM items WHERE id = :id");
             $itemNameStmt->execute([':id' => $itemId]);
-            $itemName = $itemNameStmt->fetchColumn();
+            $itemData = $itemNameStmt->fetch();
+            $itemName = $itemData ? (!empty($itemData['linked_raw_item']) ? $itemData['linked_raw_item'] : $itemData['item_name']) : null;
 
             if ($itemName) {
                 if ($existingOpening === false) {

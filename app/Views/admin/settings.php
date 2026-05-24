@@ -17,12 +17,7 @@
     <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-raw">Raw Inventory</button>
 </div>
 
-<!-- Datalist for Raw Items -->
-<datalist id="raw-items-list">
-    <?php foreach ($rawInventory as $raw): ?>
-        <option value="<?= htmlspecialchars($raw['item_name']) ?>">
-    <?php endforeach; ?>
-</datalist>
+
 
 <!-- Tab: Menu Items -->
 <div id="tab-items" class="settings-pane block space-y-4 stagger">
@@ -52,9 +47,15 @@
                     <label for="it_min" class="absolute left-1 -top-3.5 text-xs text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-accent">Min Stock</label>
                 </div>
             </div>
-            <div class="mt-2">
+            <div class="mt-2 relative">
                 <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1"><?= __('link_raw_ingredient') ?></label>
-                <input type="text" id="it_linked_raw" list="raw-items-list" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none" placeholder="<?= __('select_raw_item') ?>...">
+                <select id="it_linked_raw" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                    <option value=""><?= __('select_raw_item') ?>...</option>
+                    <?php foreach ($rawInventory as $raw): ?>
+                        <option value="<?= htmlspecialchars($raw['item_name']) ?>"><?= htmlspecialchars($raw['item_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <i class="fas fa-chevron-down absolute right-2 top-8 text-xs text-text-muted pointer-events-none"></i>
             </div>
             <div class="flex items-center justify-between pt-2">
                 <label class="flex items-center gap-2 text-sm text-text-muted">
