@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('<?= __("absence_saved") ?>', 'success');
             document.getElementById('absence-modal').style.display = 'none';
         } else {
-            showToast(res.error || 'Failed to log absence', 'error');
+            showToast(res.error || 'Failed to record absence', 'error');
         }
         btn.innerHTML = originalHtml;
         btn.disabled = false;

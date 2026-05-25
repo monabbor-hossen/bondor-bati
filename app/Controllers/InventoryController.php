@@ -60,6 +60,11 @@ public function __construct() {
             $existStmt->execute([':id' => $item['id'], ':date' => $date]);
             $existing = $existStmt->fetch();
 
+            // Filter: Only show if there's previous closing stock or already saved today
+            if (!$existing && ($prevClosing === false || (float)$prevClosing <= 0)) {
+                continue;
+            }
+
             $prepData[] = [
                 'item_id'          => $item['id'],
                 'item_name'        => $item['item_name'],
@@ -72,19 +77,11 @@ public function __construct() {
             ];
         }
 
-        $rawItems = $this->db->query("SELECT item_name FROM raw_inventory ORDER BY item_name")->fetchAll(\PDO::FETCH_COLUMN);
-        
-        $conStmt = $this->db->prepare("SELECT * FROM daily_consumable_logs WHERE log_date = :date");
-        $conStmt->execute([':date' => $date]);
-        $todayConsumables = $conStmt->fetchAll();
-
         $this->view('inventory/daily_prep', [
-            'pageTitle'        => __('morning_prep'),
-            'activeNav'        => 'stock',
-            'prepData'         => $prepData,
-            'logDate'          => $date,
-            'rawItems'         => $rawItems,
-            'todayConsumables' => $todayConsumables,
+            'pageTitle' => __('morning_prep'),
+            'activeNav' => 'stock',
+            'prepData'  => $prepData,
+            'logDate'   => $date,
         ]);
     }
 
@@ -187,14 +184,22 @@ public function __construct() {
         $duesStmt->execute([':date' => $date]);
         $todayDues = $duesStmt->fetchAll();
 
+        $rawItems = $this->db->query("SELECT item_name, unit FROM raw_inventory ORDER BY item_name")->fetchAll(\PDO::FETCH_ASSOC);
+        
+        $stmt = $this->db->prepare("SELECT * FROM daily_consumable_logs WHERE log_date = :d");
+        $stmt->execute([':d' => $date]);
+        $loggedConsumables = $stmt->fetchAll();
+
         $this->view('inventory/close_day', [
-            'pageTitle'     => __('day_ledger'),
-            'activeNav'     => 'close',
-            'menuItems'     => $menuItems,
-            'todayItems'    => $todayItems,
-            'todayDues'     => $todayDues,
-            'businessDate'  => $date,
-            'currentShift'  => $shift,
+            'pageTitle'         => __('day_ledger'),
+            'activeNav'         => 'close',
+            'menuItems'         => $menuItems,
+            'todayItems'        => $todayItems,
+            'todayDues'         => $todayDues,
+            'businessDate'      => $date,
+            'currentShift'      => $shift,
+            'rawItems'          => $rawItems,
+            'loggedConsumables' => $loggedConsumables,
         ]);
     }
 
@@ -528,7 +533,8 @@ public function __construct() {
         $data    = json_decode(file_get_contents('php://input'), true);
         $itemName = trim($data['item_name'] ?? '');
         $usedQty  = (float)($data['used_qty'] ?? 0);
-        $logDate  = $data['log_date'] ?? $this->getBusinessDate();
+        $unit     = trim($data['unit'] ?? 'pcs');
+        $logDate  = $this->getBusinessDate();
 
         if (empty($itemName) || $usedQty <= 0) {
             $this->json(['success' => false, 'error' => 'Invalid data provided']);
@@ -548,21 +554,61 @@ public function __construct() {
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     item_name VARCHAR(100),
                     used_qty DECIMAL(10,2),
+                    unit VARCHAR(20) DEFAULT 'pcs',
                     unit_cost DECIMAL(10,2),
                     log_date DATE,
                     UNIQUE KEY (item_name, log_date)
                 )");
+                $col = $this->db->query("SHOW COLUMNS FROM daily_consumable_logs LIKE 'unit'")->fetch();
+                if (!$col) {
+                    $this->db->exec("ALTER TABLE daily_consumable_logs ADD COLUMN unit VARCHAR(20) DEFAULT 'pcs' AFTER used_qty");
+                }
             } catch (\Exception $e) {}
 
             $stmt = $this->db->prepare("
-                INSERT INTO daily_consumable_logs (item_name, used_qty, unit_cost, log_date) 
-                VALUES (:name, :qty, :cost, :date) 
-                ON DUPLICATE KEY UPDATE used_qty = VALUES(used_qty), unit_cost = VALUES(unit_cost)
+                INSERT INTO daily_consumable_logs (item_name, used_qty, unit, unit_cost, log_date) 
+                VALUES (:name, :qty, :unit, :cost, :date) 
+                ON DUPLICATE KEY UPDATE used_qty = VALUES(used_qty), unit = VALUES(unit), unit_cost = VALUES(unit_cost)
             ");
             $stmt->execute([
                 ':name' => $itemName,
                 ':qty'  => $usedQty,
+                ':unit' => $unit,
                 ':cost' => $unitCost,
+                ':date' => $logDate
+            ]);
+
+            $this->db->commit();
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Delete Daily Consumable Log (AJAX)
+     * Route: ?url=inventory/deleteConsumableLog
+     */
+    public function deleteConsumableLog() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data    = json_decode(file_get_contents('php://input'), true);
+        $itemName = trim($data['item_name'] ?? '');
+        $logDate  = $this->getBusinessDate();
+
+        if (empty($itemName)) {
+            $this->json(['success' => false, 'error' => 'Invalid data provided']);
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("DELETE FROM daily_consumable_logs WHERE item_name = :name AND log_date = :date");
+            $stmt->execute([
+                ':name' => $itemName,
                 ':date' => $logDate
             ]);
 

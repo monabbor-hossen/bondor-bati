@@ -213,7 +213,7 @@
     "current_raw_cost": "বর্তমান কাঁচামাল খরচ",
     "suggested_selling_price": "প্রস্তাবিত বিক্রয় মূল্য",
     "save_todays_price": "আজকের মূল্য সেভ করুন",
-    "recent_price_logs": "সাম্প্রতিক মূল্যের লগ",
+    "recent_price_logs": "সাম্প্রতিক মূল্যের রেকর্ড",
     "raw_cost": "কাঁচামাল খরচ",
     "final_price": "চূড়ান্ত মূল্য",
     "link_raw_ingredient": "সংযুক্ত কাঁচামাল (ঐচ্ছিক)",
@@ -227,5 +227,11 @@
     "payout_amount": "প্রাপ্ত পরিমাণ",
     "add_item": "আইটেম যোগ করুন",
     "unit_price": "মূল্য",
-    "discount": "ডিসকাউন্ট"
+    "discount": "ডিসকাউন্ট",
+    "log_consumables": "দৈনিক ব্যবহার্য আইটেম (কয়লা, সস)",
+    "select_item": "আইটেম নির্বাচন করুন...",
+    "save_log": "তথ্য সেভ করুন",
+    "logged_today": "আজকের রেকর্ড সমূহ",
+    "no_logs_yet": "এখনো কোনো আইটেম যুক্ত করা হয়নি।",
+    "invalid_input": "সঠিক আইটেম এবং পরিমাণ দিন।"
 }

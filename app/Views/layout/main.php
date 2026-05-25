@@ -450,13 +450,13 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(item.data)
                         });
-                        if (res.ok) {
+                        if (res.ok || res.status >= 400) {
                             await new Promise((resolve) => {
                                 const delTx = db.transaction(STORE_NAME, 'readwrite');
                                 delTx.objectStore(STORE_NAME).delete(item.id);
                                 delTx.oncomplete = resolve;
                             });
-                            successCount++;
+                            if (res.ok) successCount++;
                         }
                     } catch (e) {
                         console.error('Sync failed for item', item);

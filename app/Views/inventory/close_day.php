@@ -21,6 +21,10 @@
     </div>
 </div>
 
+<button type="button" onclick="document.getElementById('consumablesModal').classList.remove('hidden')" class="w-full mb-6 bg-surface border border-info/50 text-info font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-info/10">
+    <i class="fas fa-fire-burner"></i> <?= __('log_consumables') ?>
+</button>
+
 <!-- ══════════════════════════════════════════════════════════ -->
 <!--  SECTION 1: Add Item to Today's Ledger                   -->
 <!-- ══════════════════════════════════════════════════════════ -->
@@ -236,6 +240,75 @@
     </div>
 </div>
 
+<div id="consumablesModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass w-full max-w-md rounded-2xl border border-border p-5 flex flex-col max-h-[90vh]">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-text-primary"><i class="fas fa-pump-soap text-accent mr-2"></i><?= __('log_consumables') ?></h3>
+            <button onclick="document.getElementById('consumablesModal').classList.add('hidden')" class="text-text-muted hover:text-accent text-xl"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="flex gap-3 items-center mb-6 pt-2">
+            <div class="relative flex-1">
+                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0"><?= __('select_item') ?></label>
+                <select id="conItemName" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                    <option value="" class="bg-surface">...</option>
+                    <?php foreach($rawItems as $item): ?>
+                        <option value="<?= htmlspecialchars($item['item_name']) ?>" data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>" class="bg-surface"><?= htmlspecialchars($item['item_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+            </div>
+            <div class="relative w-36 shrink-0 mt-1">
+                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 right-0 text-right"><?= __('qty') ?></label>
+                <div class="group flex items-center border border-border rounded-xl focus-within:border-accent transition-colors bg-transparent">
+                    <input type="number" id="conQty" step="0.5" min="0" placeholder="0"
+                           class="w-full bg-transparent py-1.5 pl-3 pr-1 text-right font-bold text-sm text-text-primary focus:outline-none">
+                    
+                    <div class="w-px h-5 bg-border group-focus-within:bg-accent transition-colors mx-1"></div>
+                    
+                    <div class="relative shrink-0">
+                        <select id="conUnit" class="bg-transparent py-1.5 pl-1 pr-5 font-bold text-sm text-text-muted hover:text-text-primary focus:outline-none appearance-none cursor-pointer">
+                            <option value="pcs" class="bg-surface">pcs</option>
+                            <option value="kg" class="bg-surface">kg</option>
+                            <option value="L" class="bg-surface">L</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[0.6rem] text-text-muted pointer-events-none"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="saveConBtn" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-2 rounded-xl mb-4 transition-colors">
+            <?= __('save_log') ?>
+        </button>
+
+        <div class="flex-1 overflow-y-auto">
+            <h4 class="text-xs font-bold text-text-muted uppercase mb-2"><?= __('logged_today') ?></h4>
+            <?php if(empty($loggedConsumables)): ?>
+                <p class="text-sm text-text-muted italic text-center py-4"><?= __('no_logs_yet') ?></p>
+            <?php else: ?>
+                <div class="space-y-2">
+                    <?php foreach($loggedConsumables as $log): ?>
+                        <div class="flex justify-between items-center bg-surface p-2 rounded-lg border border-border/50 text-sm">
+                            <span class="text-text-primary font-medium"><?= htmlspecialchars($log['item_name']) ?></span>
+                            <div class="flex items-center gap-3">
+                                <span class="text-info font-bold"><?= (float)$log['used_qty'] ?> <span class="text-xs"><?= htmlspecialchars($log['unit'] ?? 'pcs') ?></span></span>
+                                <div class="flex items-center gap-1 border-l border-border/50 pl-3">
+                                    <button type="button" class="text-text-muted hover:text-accent transition-colors p-1 btn-edit-con" data-name="<?= htmlspecialchars($log['item_name']) ?>" data-qty="<?= (float)$log['used_qty'] ?>" data-unit="<?= htmlspecialchars($log['unit'] ?? 'pcs') ?>">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="text-text-muted hover:text-red-400 transition-colors p-1 btn-delete-con" data-name="<?= htmlspecialchars($log['item_name']) ?>">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -431,6 +504,75 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             showToast(res.error || '<?= __("error") ?>', 'error');
         }
+    });
+
+    document.getElementById('conItemName').addEventListener('change', (e) => {
+        const selected = e.target.options[e.target.selectedIndex];
+        const unit = selected.dataset.unit;
+        if (unit) {
+            document.getElementById('conUnit').value = unit;
+        }
+    });
+
+    document.getElementById('saveConBtn').addEventListener('click', async () => {
+        const item = document.getElementById('conItemName').value;
+        const qty = document.getElementById('conQty').value;
+
+        if(!item || !qty || qty <= 0) {
+            showToast('<?= __("invalid_input") ?>', 'warning');
+            return;
+        }
+
+        const unit = document.getElementById('conUnit').value;
+
+        const btn = document.getElementById('saveConBtn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const res = await apiPost('?url=inventory/saveConsumableLog', { item_name: item, used_qty: qty, unit: unit });
+
+        if(res.success) {
+            showToast('<?= __("success") ?>', 'success');
+            setTimeout(() => window.location.reload(), 500);
+        } else {
+            showToast(res.error || 'Error saving entry', 'error');
+            btn.innerHTML = '<?= __("save_log") ?>';
+            btn.disabled = false;
+        }
+    });
+
+    document.querySelectorAll('.btn-edit-con').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.dataset.name;
+            const qty = btn.dataset.qty;
+            const unit = btn.dataset.unit;
+            document.getElementById('conItemName').value = name;
+            document.getElementById('conQty').value = qty;
+            document.getElementById('conUnit').value = unit;
+            document.getElementById('conQty').focus();
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-con').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if(!confirm('<?= __("confirm_delete") ?>')) return;
+            
+            const name = btn.dataset.name;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const res = await apiPost('?url=inventory/deleteConsumableLog', { item_name: name });
+            
+            if(res.success) {
+                showToast('<?= __("success") ?>', 'success');
+                setTimeout(() => window.location.reload(), 500);
+            } else {
+                showToast(res.error || 'Error deleting entry', 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        });
     });
 });
 </script>

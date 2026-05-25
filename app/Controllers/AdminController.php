@@ -29,12 +29,21 @@ public function __construct() {
             ORDER BY u.role, u.name
         ")->fetchAll();
 
+        // Fetch Online Addons
+        $addonsJson = $this->db->query("SELECT setting_value FROM app_settings WHERE setting_key = 'online_addons'")->fetchColumn();
+        if (!$addonsJson) {
+            $addonsJson = '[{"name":"+ Mayonnaise","price":20},{"name":"+ Sauce","price":15},{"name":"+ Box","price":10}]';
+            $this->db->prepare("INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES ('online_addons', ?)")->execute([$addonsJson]);
+        }
+        $onlineAddons = json_decode($addonsJson, true) ?: [];
+
         $this->view('admin/settings', [
             'pageTitle'    => 'Configuration & Permissions',
             'activeNav'    => 'admin_settings',
             'items'        => $items,
             'rawInventory' => $rawInventory,
-            'users'        => $users
+            'users'        => $users,
+            'onlineAddons' => $onlineAddons
         ]);
     }
 
@@ -325,5 +334,31 @@ public function __construct() {
         } catch (\Exception $e) {
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
+    }
+
+    public function saveOnlineAddons() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $addons = $data['addons'] ?? [];
+        
+        $cleanAddons = [];
+        foreach ($addons as $a) {
+            $name = trim($a['name'] ?? '');
+            $price = (float)($a['price'] ?? 0);
+            if (!empty($name) && $price >= 0) {
+                // Ensure it starts with '+ ' to distinguish it easily if they forget, or just keep whatever they put
+                $cleanAddons[] = ['name' => $name, 'price' => $price];
+            }
+        }
+
+        $json = json_encode($cleanAddons, JSON_UNESCAPED_UNICODE);
+        $this->db->prepare("INSERT INTO app_settings (setting_key, setting_value) VALUES ('online_addons', :val) ON DUPLICATE KEY UPDATE setting_value = :val")
+                 ->execute([':val' => $json]);
+                 
+        $this->json(['success' => true]);
     }
 }

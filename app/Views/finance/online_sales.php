@@ -126,6 +126,17 @@ $stockMap = $stockMap ?? [];
                     </button>
                 </div>
 
+                <!-- Quick Addons -->
+                <div class="flex gap-2 overflow-x-auto pb-2 mb-2 hide-scrollbar">
+                    <?php if (!empty($onlineAddons)): ?>
+                        <?php foreach ($onlineAddons as $addon): ?>
+                        <button type="button" onclick="addAddon('<?= htmlspecialchars($addon['name'], ENT_QUOTES) ?>', <?= $addon['price'] ?>)" class="flex-shrink-0 px-2.5 py-1 bg-surface border border-border rounded-lg text-[0.65rem] font-bold text-text-muted hover:text-text-primary hover:border-indigo-500 transition-colors"><?= htmlspecialchars($addon['name']) ?> (৳<?= $addon['price'] ?>)</button>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <span class="text-[0.65rem] text-text-muted italic">No addons configured. Configure in Settings.</span>
+                    <?php endif; ?>
+                </div>
+
                 <!-- Header row -->
                 <div class="grid grid-cols-12 gap-1 mb-1 px-1">
                     <span
@@ -443,6 +454,7 @@ $stockMap = $stockMap ?? [];
             .filter(n => (STOCK_MAP[n] ?? 0) > 0)
             .sort();
         const PLATFORM_STATS = <?= json_encode($balances) ?>;
+        const ADDON_NAMES = <?= json_encode(array_column($onlineAddons, 'name'), JSON_UNESCAPED_UNICODE) ?>;
 
         // ── Payout Hint Logic ─────────────────────────────────────
         function updatePayoutHint() {
@@ -530,8 +542,8 @@ $stockMap = $stockMap ?? [];
             // Auto-fill price when name matches menu; validate stock
             row.querySelector('.item-name').addEventListener('change', function () {
                 const selectedName = this.value.trim();
-                // If item typed is not in MENU_NAMES (no opening stock), reject it
-                if (selectedName && !MENU_NAMES.includes(selectedName)) {
+                // If item typed is not in MENU_NAMES or Addons (no opening stock), reject it
+                if (selectedName && !MENU_NAMES.includes(selectedName) && !ADDON_NAMES.includes(selectedName)) {
                     const stockQty = STOCK_MAP[selectedName] ?? 0;
                     if (stockQty <= 0) {
                         showToast('No opening stock for "' + selectedName + '" today', 'warning');
@@ -551,6 +563,24 @@ $stockMap = $stockMap ?? [];
             calculateOnlineTotals();
         }
         window.addOnlineItemRow = addOnlineItemRow;
+
+        function addAddon(name, price) {
+            let found = false;
+            document.querySelectorAll('#onlineItemsContainer > div').forEach(row => {
+                const nameInput = row.querySelector('.item-name');
+                if (nameInput && nameInput.value.trim() === name) {
+                    const qtyInput = row.querySelector('.item-qty');
+                    qtyInput.value = (parseFloat(qtyInput.value) || 0) + 1;
+                    found = true;
+                }
+            });
+            if (found) {
+                calculateOnlineTotals();
+            } else {
+                addOnlineItemRow(name, 1, price);
+            }
+        }
+        window.addAddon = addAddon;
 
         // ── Remove row ────────────────────────────────────────────
         function removeOnlineItemRow(id) {

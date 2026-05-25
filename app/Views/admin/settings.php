@@ -15,6 +15,7 @@
 <div class="flex gap-2 mb-4 overflow-x-auto pb-1 no-scrollbar animate-slideUp">
     <button class="settings-tab active flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-accent/10 border-accent/40 text-accent border transition-all" data-target="tab-items">Menu Items</button>
     <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-raw">Raw Inventory</button>
+    <button class="settings-tab flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold bg-card border-border text-text-muted border hover:text-text-primary transition-all" data-target="tab-addons">Online Addons</button>
 </div>
 
 
@@ -171,6 +172,32 @@
     </div>
 </div>
 
+<!-- Tab: Online Addons -->
+<div id="tab-addons" class="settings-pane hidden space-y-4 stagger">
+    <div class="bg-card border border-border/50 rounded-xl p-4">
+        <form id="form-addons" class="space-y-4">
+            <div class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest flex justify-between items-center mb-2">
+                <span>Manage Online Addons</span>
+                <button type="button" onclick="addAddonRow()" class="text-indigo-400 bg-indigo-500/10 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 transition-all border border-indigo-500/30"><i class="fas fa-plus"></i> Add</button>
+            </div>
+            
+            <div id="addons-container" class="space-y-2">
+                <?php foreach ($onlineAddons as $addon): ?>
+                <div class="flex gap-2 items-center addon-row">
+                    <input type="text" class="addon-name w-full bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary transition-colors focus:outline-none" value="<?= htmlspecialchars($addon['name']) ?>" placeholder="e.g. + Cheese">
+                    <input type="number" class="addon-price w-24 bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary text-right transition-colors focus:outline-none" value="<?= $addon['price'] ?>" placeholder="Price">
+                    <button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400 p-2.5"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="flex justify-end pt-3 border-t border-border/50 mt-4">
+                <button type="submit" id="btn-save-addons" class="text-xs font-bold bg-accent/20 text-accent px-4 py-2.5 rounded-lg hover:bg-accent/30 transition-colors"><i class="fas fa-save mr-1"></i> Save Addons</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Tab Switching
@@ -317,5 +344,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ── Manage Addons ──────────────────────────────────────────
+    function addAddonRow() {
+        const row = document.createElement('div');
+        row.className = 'flex gap-2 items-center addon-row';
+        row.innerHTML = `
+            <input type="text" class="addon-name w-full bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary transition-colors focus:outline-none" placeholder="e.g. + Cheese">
+            <input type="number" class="addon-price w-24 bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary text-right transition-colors focus:outline-none" placeholder="Price">
+            <button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400 p-2.5"><i class="fas fa-times text-lg"></i></button>
+        `;
+        document.getElementById('addons-container').appendChild(row);
+    }
+    window.addAddonRow = addAddonRow;
+
+    const formAddons = document.getElementById('form-addons');
+    if (formAddons) {
+        formAddons.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-addons');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            const addons = [];
+            document.querySelectorAll('.addon-row').forEach(row => {
+                const name = row.querySelector('.addon-name').value.trim();
+                const price = parseFloat(row.querySelector('.addon-price').value) || 0;
+                if (name) addons.push({ name, price });
+            });
+
+            const res = await apiPost('?url=admin/saveOnlineAddons', { addons });
+            if (res.success) {
+                showToast('Addons saved successfully!', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast(res.error || 'Failed to save', 'error');
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
+        });
+    }
 });
 </script>

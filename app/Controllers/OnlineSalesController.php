@@ -115,6 +115,14 @@ class OnlineSalesController extends Controller {
             $stockMap[$sr['item_name']] = (float)$sr['opening_qty'];
         }
 
+        // Fetch Online Addons
+        $addonsJson = $this->db->query("SELECT setting_value FROM app_settings WHERE setting_key = 'online_addons'")->fetchColumn();
+        if (!$addonsJson) {
+            $addonsJson = '[{"name":"+ Mayonnaise","price":20},{"name":"+ Sauce","price":15},{"name":"+ Box","price":10}]';
+            $this->db->prepare("INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES ('online_addons', ?)")->execute([$addonsJson]);
+        }
+        $onlineAddons = json_decode($addonsJson, true) ?: [];
+
         $this->view('finance/online_sales', [
             'pageTitle'  => __('online_platforms'),
             'activeNav'  => 'online',
@@ -123,6 +131,7 @@ class OnlineSalesController extends Controller {
             'payoutLogs' => $payoutLogs,
             'menuItems'  => $menuItems,
             'stockMap'   => $stockMap,
+            'onlineAddons'=> $onlineAddons
         ]);
     }
 
