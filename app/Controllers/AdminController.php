@@ -7,6 +7,7 @@ use PDO;
 
 class AdminController extends Controller {
 public function __construct() {
+        parent::__construct();
         $this->db = (new Database())->getConnection();
     }
 

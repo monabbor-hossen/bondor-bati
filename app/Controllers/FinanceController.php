@@ -10,6 +10,7 @@ use PDO;
  */
 class FinanceController extends Controller {
     public function __construct() {
+        parent::__construct();
         $this->db = (new Database())->getConnection();
         
         // Auto-create fixed cost skips table if it doesn't exist

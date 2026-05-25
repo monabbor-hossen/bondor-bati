@@ -10,6 +10,7 @@ use PDO;
  */
 class AuthController extends Controller {
 public function __construct() {
+        parent::__construct();
         $this->db = (new Database())->getConnection();
     }
 

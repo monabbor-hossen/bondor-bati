@@ -11,6 +11,7 @@ use Config\Database;
 class OnlineSalesController extends Controller {
 
     public function __construct() {
+        parent::__construct();
         $this->db = (new Database())->getConnection();
 
         $this->db->exec("CREATE TABLE IF NOT EXISTS online_sales_logs (

@@ -1,16 +1,12 @@
+import os
 import glob
-import re
 
-for filepath in glob.glob('/opt/lampp/htdocs/bondor-bati/app/Controllers/*.php'):
+for filepath in glob.glob("app/Controllers/*.php"):
     with open(filepath, 'r') as f:
         content = f.read()
     
-    # Remove private $db;
-    content = re.sub(r'\s*private\s+\$db;\s*', '\n', content)
-    
-    # Remove the constructor
-    content = re.sub(r'\s*public\s+function\s+__construct\(\)\s*\{\s*\$this->db\s*=\s*\(new\s*\\?Config\\Database\(\)\)->getConnection\(\);\s*\}\s*', '\n', content)
-    
-    with open(filepath, 'w') as f:
-        f.write(content)
-print("Done")
+    if 'public function __construct()' in content and 'parent::__construct();' not in content:
+        content = content.replace('public function __construct() {', 'public function __construct() {\n        parent::__construct();')
+        with open(filepath, 'w') as f:
+            f.write(content)
+        print(f"Fixed {filepath}")

@@ -51,6 +51,11 @@ class Controller {
                 }
             }
         }
+
+        // 3. Auto-Migrations for Deployment (Ensures schema consistency on new hosts)
+        try { $this->db->exec("ALTER TABLE items ADD COLUMN linked_raw_item VARCHAR(100) NULL AFTER item_name"); } catch (\Exception $e) {}
+        try { $this->db->exec("ALTER TABLE items ADD COLUMN additional_cost DECIMAL(10,2) DEFAULT 0 AFTER cost_price"); } catch (\Exception $e) {}
+        try { $this->db->exec("ALTER TABLE items ADD COLUMN online_price DECIMAL(10,2) DEFAULT 0 AFTER selling_price"); } catch (\Exception $e) {}
     }
 
     /**
