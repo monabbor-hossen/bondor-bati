@@ -522,7 +522,53 @@ public function __construct() {
         }
     }
     /**
-     * Save Daily Consumable Log (AJAX)
+     * Get Consumable Opening Qty (AJAX)
+     * Returns previous day's closing_qty for an item.
+     * Route: ?url=inventory/getConsumableOpening
+     */
+    public function getConsumableOpening() {
+        $data     = json_decode(file_get_contents('php://input'), true);
+        $itemName = trim($data['item_name'] ?? '');
+        $today    = $this->getBusinessDate();
+
+        if (empty($itemName)) {
+            $this->json(['success' => false, 'opening_qty' => 0]);
+            return;
+        }
+
+        // Check if there's already a record for today (edit mode)
+        $todayStmt = $this->db->prepare("SELECT opening_qty, added_qty, closing_qty FROM daily_consumable_logs WHERE item_name = :item AND log_date = :today LIMIT 1");
+        $todayStmt->execute([':item' => $itemName, ':today' => $today]);
+        $todayRow = $todayStmt->fetch();
+
+        if ($todayRow) {
+            $this->json([
+                'success'     => true,
+                'opening_qty' => (float)$todayRow['opening_qty'],
+                'added_qty'   => (float)$todayRow['added_qty'],
+                'closing_qty' => (float)$todayRow['closing_qty'],
+                'exists'      => true
+            ]);
+            return;
+        }
+
+        // Fetch the most recent closing_qty from a previous day
+        $stmt = $this->db->prepare("SELECT closing_qty FROM daily_consumable_logs WHERE item_name = :item AND log_date < :today ORDER BY log_date DESC LIMIT 1");
+        $stmt->execute([':item' => $itemName, ':today' => $today]);
+        $closingQty = $stmt->fetchColumn();
+
+        $this->json([
+            'success'     => true,
+            'opening_qty' => $closingQty !== false ? (float)$closingQty : 0,
+            'added_qty'   => 0,
+            'closing_qty' => 0,
+            'exists'      => false
+        ]);
+    }
+
+    /**
+     * Save Daily Consumable Log (AJAX) — Deductive Tracking
+     * Used = (Opening + Added) - Closing
      * Route: ?url=inventory/saveConsumableLog
      */
     public function saveConsumableLog() {
@@ -530,14 +576,20 @@ public function __construct() {
             $this->json(['success' => false, 'error' => 'POST required']);
         }
 
-        $data    = json_decode(file_get_contents('php://input'), true);
-        $itemName = trim($data['item_name'] ?? '');
-        $usedQty  = (float)($data['used_qty'] ?? 0);
-        $unit     = trim($data['unit'] ?? 'pcs');
-        $logDate  = $this->getBusinessDate();
+        $data       = json_decode(file_get_contents('php://input'), true);
+        $itemName   = trim($data['item_name'] ?? '');
+        $openingQty = (float)($data['opening_qty'] ?? 0);
+        $addedQty   = (float)($data['added_qty'] ?? 0);
+        $closingQty = (float)($data['closing_qty'] ?? 0);
+        $unit       = trim($data['unit'] ?? 'pcs');
+        $logDate    = $this->getBusinessDate();
 
-        if (empty($itemName) || $usedQty <= 0) {
+        // Calculate used_qty from deductive formula
+        $usedQty = ($openingQty + $addedQty) - $closingQty;
+
+        if (empty($itemName)) {
             $this->json(['success' => false, 'error' => 'Invalid data provided']);
+            return;
         }
 
         try {
@@ -565,17 +617,34 @@ public function __construct() {
                 }
             } catch (\Exception $e) {}
 
+            // Silent migration: add deductive tracking columns
+            try {
+                $this->db->exec("ALTER TABLE daily_consumable_logs 
+                    ADD COLUMN opening_qty DECIMAL(10,2) DEFAULT 0 AFTER item_name,
+                    ADD COLUMN added_qty DECIMAL(10,2) DEFAULT 0 AFTER opening_qty,
+                    ADD COLUMN closing_qty DECIMAL(10,2) DEFAULT 0 AFTER added_qty");
+            } catch (\Exception $e) {}
+
             $stmt = $this->db->prepare("
-                INSERT INTO daily_consumable_logs (item_name, used_qty, unit, unit_cost, log_date) 
-                VALUES (:name, :qty, :unit, :cost, :date) 
-                ON DUPLICATE KEY UPDATE used_qty = VALUES(used_qty), unit = VALUES(unit), unit_cost = VALUES(unit_cost)
+                INSERT INTO daily_consumable_logs (item_name, opening_qty, added_qty, closing_qty, used_qty, unit, unit_cost, log_date) 
+                VALUES (:name, :opening, :added, :closing, :used, :unit, :cost, :date) 
+                ON DUPLICATE KEY UPDATE 
+                    opening_qty = VALUES(opening_qty), 
+                    added_qty = VALUES(added_qty), 
+                    closing_qty = VALUES(closing_qty), 
+                    used_qty = VALUES(used_qty), 
+                    unit = VALUES(unit), 
+                    unit_cost = VALUES(unit_cost)
             ");
             $stmt->execute([
-                ':name' => $itemName,
-                ':qty'  => $usedQty,
-                ':unit' => $unit,
-                ':cost' => $unitCost,
-                ':date' => $logDate
+                ':name'    => $itemName,
+                ':opening' => $openingQty,
+                ':added'   => $addedQty,
+                ':closing' => $closingQty,
+                ':used'    => $usedQty,
+                ':unit'    => $unit,
+                ':cost'    => $unitCost,
+                ':date'    => $logDate
             ]);
 
             $this->db->commit();

@@ -233,5 +233,9 @@
     "save_log": "Save Entry",
     "logged_today": "Recorded Today",
     "no_logs_yet": "No items recorded yet.",
-    "invalid_input": "Please select an item and valid quantity."
+    "invalid_input": "Please select an item and valid quantity.",
+    "opening_qty": "Opening (Leftover)",
+    "added_today": "Added Today",
+    "closing_qty": "Closing (Leftover)",
+    "used_qty": "Total Used"
 }

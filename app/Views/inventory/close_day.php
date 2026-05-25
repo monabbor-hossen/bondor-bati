@@ -247,36 +247,48 @@
             <button onclick="document.getElementById('consumablesModal').classList.add('hidden')" class="text-text-muted hover:text-accent text-xl"><i class="fas fa-times"></i></button>
         </div>
 
-        <div class="flex gap-3 items-center mb-6 pt-2">
-            <div class="relative flex-1">
-                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0"><?= __('select_item') ?></label>
-                <select id="conItemName" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
-                    <option value="" class="bg-surface">...</option>
-                    <?php foreach($rawItems as $item): ?>
-                        <option value="<?= htmlspecialchars($item['item_name']) ?>" data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>" class="bg-surface"><?= htmlspecialchars($item['item_name']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+        <!-- Item Select -->
+        <div class="relative mb-5 pt-2">
+            <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-3 left-0"><?= __('select_item') ?></label>
+            <select id="conItemName" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                <option value="" class="bg-surface">...</option>
+                <?php foreach($rawItems as $item): ?>
+                    <option value="<?= htmlspecialchars($item['item_name']) ?>" data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>" class="bg-surface"><?= htmlspecialchars($item['item_name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <i class="fas fa-chevron-down absolute right-2 top-5 text-xs text-text-muted pointer-events-none"></i>
+        </div>
+
+        <!-- Deductive Input Grid -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <div>
+                <label class="text-[0.65rem] text-text-muted uppercase tracking-wider font-bold block mb-1"><?= __('opening_qty') ?></label>
+                <input type="number" id="conOpening" readonly step="0.1" class="w-full bg-transparent border-b border-border text-info font-bold py-2 outline-none cursor-not-allowed text-sm" value="0">
             </div>
-            <div class="relative w-36 shrink-0 mt-1">
-                <label class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 right-0 text-right"><?= __('qty') ?></label>
-                <div class="group flex items-center border border-border rounded-xl focus-within:border-accent transition-colors bg-transparent">
-                    <input type="number" id="conQty" step="0.5" min="0" placeholder="0"
-                           class="w-full bg-transparent py-1.5 pl-3 pr-1 text-right font-bold text-sm text-text-primary focus:outline-none">
-                    
-                    <div class="w-px h-5 bg-border group-focus-within:bg-accent transition-colors mx-1"></div>
-                    
-                    <div class="relative shrink-0">
-                        <select id="conUnit" class="bg-transparent py-1.5 pl-1 pr-5 font-bold text-sm text-text-muted hover:text-text-primary focus:outline-none appearance-none cursor-pointer">
-                            <option value="pcs" class="bg-surface">pcs</option>
-                            <option value="kg" class="bg-surface">kg</option>
-                            <option value="L" class="bg-surface">L</option>
-                        </select>
-                        <i class="fas fa-chevron-down absolute right-1.5 top-1/2 -translate-y-1/2 text-[0.6rem] text-text-muted pointer-events-none"></i>
-                    </div>
-                </div>
+            <div>
+                <label class="text-[0.65rem] text-text-muted uppercase tracking-wider font-bold block mb-1"><?= __('added_today') ?></label>
+                <input type="number" id="conAdded" placeholder="0" step="0.1" min="0" inputmode="decimal" class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-2 outline-none text-sm">
+            </div>
+            <div>
+                <label class="text-[0.65rem] text-text-muted uppercase tracking-wider font-bold block mb-1"><?= __('closing_qty') ?></label>
+                <input type="number" id="conClosing" placeholder="0" step="0.1" min="0" inputmode="decimal" class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-2 outline-none text-sm">
+            </div>
+            <div>
+                <label class="text-[0.65rem] text-text-muted uppercase tracking-wider font-bold block mb-1"><?= __('used_qty') ?></label>
+                <input type="number" id="conUsed" readonly class="w-full bg-transparent border-b border-border text-accent font-black py-2 outline-none cursor-not-allowed text-sm" value="0">
             </div>
         </div>
+
+        <!-- Unit (auto-selected, compact) -->
+        <div class="flex items-center gap-2 mb-4">
+            <span class="text-[0.65rem] text-text-muted uppercase tracking-wider font-bold"><?= __('qty') ?> Unit:</span>
+            <select id="conUnit" class="bg-transparent border-b border-border py-1 px-2 font-bold text-sm text-text-muted focus:outline-none appearance-none cursor-pointer">
+                <option value="pcs" class="bg-surface">pcs</option>
+                <option value="kg" class="bg-surface">kg</option>
+                <option value="L" class="bg-surface">L</option>
+            </select>
+        </div>
+
         <button id="saveConBtn" class="w-full bg-accent hover:bg-accent-light text-white font-bold py-2 rounded-xl mb-4 transition-colors">
             <?= __('save_log') ?>
         </button>
@@ -288,17 +300,39 @@
             <?php else: ?>
                 <div class="space-y-2">
                     <?php foreach($loggedConsumables as $log): ?>
-                        <div class="flex justify-between items-center bg-surface p-2 rounded-lg border border-border/50 text-sm">
-                            <span class="text-text-primary font-medium"><?= htmlspecialchars($log['item_name']) ?></span>
-                            <div class="flex items-center gap-3">
-                                <span class="text-info font-bold"><?= (float)$log['used_qty'] ?> <span class="text-xs"><?= htmlspecialchars($log['unit'] ?? 'pcs') ?></span></span>
-                                <div class="flex items-center gap-1 border-l border-border/50 pl-3">
-                                    <button type="button" class="text-text-muted hover:text-accent transition-colors p-1 btn-edit-con" data-name="<?= htmlspecialchars($log['item_name']) ?>" data-qty="<?= (float)$log['used_qty'] ?>" data-unit="<?= htmlspecialchars($log['unit'] ?? 'pcs') ?>">
+                        <div class="bg-surface p-2.5 rounded-lg border border-border/50 text-sm">
+                            <div class="flex justify-between items-center mb-1.5">
+                                <span class="text-text-primary font-bold"><?= htmlspecialchars($log['item_name']) ?></span>
+                                <div class="flex items-center gap-1 border-l border-border/50 pl-2">
+                                    <button type="button" class="text-text-muted hover:text-accent transition-colors p-1 btn-edit-con" 
+                                        data-name="<?= htmlspecialchars($log['item_name']) ?>" 
+                                        data-opening="<?= (float)($log['opening_qty'] ?? 0) ?>" 
+                                        data-added="<?= (float)($log['added_qty'] ?? 0) ?>" 
+                                        data-closing="<?= (float)($log['closing_qty'] ?? 0) ?>" 
+                                        data-unit="<?= htmlspecialchars($log['unit'] ?? 'pcs') ?>">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button type="button" class="text-text-muted hover:text-red-400 transition-colors p-1 btn-delete-con" data-name="<?= htmlspecialchars($log['item_name']) ?>">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1 text-[0.6rem] text-text-muted">
+                                <div class="text-center">
+                                    <span class="block uppercase tracking-wide opacity-70"><?= __('opening_qty') ?></span>
+                                    <span class="block text-info font-bold text-xs"><?= (float)($log['opening_qty'] ?? 0) ?></span>
+                                </div>
+                                <div class="text-center">
+                                    <span class="block uppercase tracking-wide opacity-70">+<?= __('added_today') ?></span>
+                                    <span class="block text-emerald-400 font-bold text-xs"><?= (float)($log['added_qty'] ?? 0) ?></span>
+                                </div>
+                                <div class="text-center">
+                                    <span class="block uppercase tracking-wide opacity-70"><?= __('closing_qty') ?></span>
+                                    <span class="block text-text-primary font-bold text-xs"><?= (float)($log['closing_qty'] ?? 0) ?></span>
+                                </div>
+                                <div class="text-center">
+                                    <span class="block uppercase tracking-wide opacity-70"><?= __('used_qty') ?></span>
+                                    <span class="block text-accent font-black text-xs"><?= (float)$log['used_qty'] ?> <?= htmlspecialchars($log['unit'] ?? 'pcs') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -506,32 +540,73 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.getElementById('conItemName').addEventListener('change', (e) => {
+    // ── Deductive Used Calculation ──────────────────────────────
+    function calcConUsed() {
+        const opening = parseFloat(document.getElementById('conOpening').value) || 0;
+        const added   = parseFloat(document.getElementById('conAdded').value) || 0;
+        const closing = parseFloat(document.getElementById('conClosing').value) || 0;
+        const used = (opening + added) - closing;
+        document.getElementById('conUsed').value = Math.max(0, parseFloat(used.toFixed(2)));
+    }
+    document.getElementById('conAdded').addEventListener('input', calcConUsed);
+    document.getElementById('conClosing').addEventListener('input', calcConUsed);
+
+    // ── Item Selection → Fetch Opening Qty ────────────────────
+    document.getElementById('conItemName').addEventListener('change', async (e) => {
         const selected = e.target.options[e.target.selectedIndex];
         const unit = selected.dataset.unit;
         if (unit) {
             document.getElementById('conUnit').value = unit;
         }
+
+        const itemName = e.target.value;
+        // Reset fields
+        document.getElementById('conOpening').value = 0;
+        document.getElementById('conAdded').value = '';
+        document.getElementById('conClosing').value = '';
+        document.getElementById('conUsed').value = 0;
+
+        if (!itemName) return;
+
+        // Fetch opening from server
+        const res = await apiPost('?url=inventory/getConsumableOpening', { item_name: itemName });
+        if (res.success) {
+            document.getElementById('conOpening').value = res.opening_qty || 0;
+            if (res.exists) {
+                // Editing existing record for today
+                document.getElementById('conAdded').value = res.added_qty || '';
+                document.getElementById('conClosing').value = res.closing_qty || '';
+            }
+            calcConUsed();
+        }
     });
 
+    // ── Save Consumable (Deductive) ───────────────────────────
     document.getElementById('saveConBtn').addEventListener('click', async () => {
         const item = document.getElementById('conItemName').value;
-        const qty = document.getElementById('conQty').value;
-
-        if(!item || !qty || qty <= 0) {
+        if (!item) {
             showToast('<?= __("invalid_input") ?>', 'warning');
             return;
         }
 
-        const unit = document.getElementById('conUnit').value;
+        const opening = parseFloat(document.getElementById('conOpening').value) || 0;
+        const added   = parseFloat(document.getElementById('conAdded').value) || 0;
+        const closing = parseFloat(document.getElementById('conClosing').value) || 0;
+        const unit    = document.getElementById('conUnit').value;
 
         const btn = document.getElementById('saveConBtn');
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
 
-        const res = await apiPost('?url=inventory/saveConsumableLog', { item_name: item, used_qty: qty, unit: unit });
+        const res = await apiPost('?url=inventory/saveConsumableLog', {
+            item_name: item,
+            opening_qty: opening,
+            added_qty: added,
+            closing_qty: closing,
+            unit: unit
+        });
 
-        if(res.success) {
+        if (res.success) {
             showToast('<?= __("success") ?>', 'success');
             setTimeout(() => window.location.reload(), 500);
         } else {
@@ -541,18 +616,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // ── Edit Consumable ───────────────────────────────────────
     document.querySelectorAll('.btn-edit-con').forEach(btn => {
         btn.addEventListener('click', () => {
-            const name = btn.dataset.name;
-            const qty = btn.dataset.qty;
-            const unit = btn.dataset.unit;
-            document.getElementById('conItemName').value = name;
-            document.getElementById('conQty').value = qty;
-            document.getElementById('conUnit').value = unit;
-            document.getElementById('conQty').focus();
+            document.getElementById('conItemName').value = btn.dataset.name;
+            document.getElementById('conOpening').value = btn.dataset.opening || 0;
+            document.getElementById('conAdded').value = btn.dataset.added || '';
+            document.getElementById('conClosing').value = btn.dataset.closing || '';
+            document.getElementById('conUnit').value = btn.dataset.unit || 'pcs';
+            calcConUsed();
+            document.getElementById('conAdded').focus();
         });
     });
 
+    // ── Delete Consumable ─────────────────────────────────────
     document.querySelectorAll('.btn-delete-con').forEach(btn => {
         btn.addEventListener('click', async () => {
             if(!confirm('<?= __("confirm_delete") ?>')) return;
