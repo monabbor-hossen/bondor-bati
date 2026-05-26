@@ -65,12 +65,20 @@ class FinanceController extends Controller {
         $e->execute([':d' => $date]);
         $directExpenses = (float)$e->fetchColumn();
 
-        // Online platform gross sales — cash is with platform, NOT in physical drawer
-        $onlG = $this->db->prepare("SELECT COALESCE(SUM(gross_amount), 0) FROM online_sales_logs WHERE log_date = :d");
-        $onlG->execute([':d' => $date]);
-        $onlineGrossSales = (float)$onlG->fetchColumn();
+        // Deductive Sales (shift_closings) calculates all missing portions at BASE PRICE.
+        // This includes items that went to Online Platforms. We must subtract the BASE VALUE
+        // of those online items, NOT the marked-up gross, to find the true Cash Sales.
+        $onlBase = $this->db->prepare("
+            SELECT COALESCE(SUM(osi.qty * i.selling_price), 0) 
+            FROM online_sales_items osi
+            JOIN online_sales_logs osl ON osi.log_id = osl.id
+            LEFT JOIN items i ON osi.item_name = i.item_name
+            WHERE osl.log_date = :d
+        ");
+        $onlBase->execute([':d' => $date]);
+        $onlineBaseValue = (float)$onlBase->fetchColumn();
 
-        return ($totalSales - $dueSales) + $advanceReceived - $bazaarDrawerDeduction - $directExpenses - $onlineGrossSales;
+        return ($totalSales - $dueSales) + $advanceReceived - $bazaarDrawerDeduction - $directExpenses - $onlineBaseValue;
     }
 
     /**
@@ -79,10 +87,24 @@ class FinanceController extends Controller {
     public function calculateNetProfit(?string $date = null): float {
         $date = $date ?: date('Y-m-d');
 
-        // 1. Total Revenue (cash + due)
+        // 1. Total Deductive Sales (This includes Cash Sales + Online Sales at BASE PRICE)
         $s = $this->db->prepare("SELECT COALESCE(SUM(total_sales_amount), 0) FROM shift_closings WHERE log_date = :d");
         $s->execute([':d' => $date]);
-        $totalRevenue = (float)$s->fetchColumn();
+        $totalDeductiveSales = (float)$s->fetchColumn();
+
+        // 1.5 Isolate Online Base Value
+        $onlBase = $this->db->prepare("
+            SELECT COALESCE(SUM(osi.qty * i.selling_price), 0) 
+            FROM online_sales_items osi
+            JOIN online_sales_logs osl ON osi.log_id = osl.id
+            LEFT JOIN items i ON osi.item_name = i.item_name
+            WHERE osl.log_date = :d
+        ");
+        $onlBase->execute([':d' => $date]);
+        $onlineBaseValue = (float)$onlBase->fetchColumn();
+
+        // True Cash Revenue
+        $totalRevenue = $totalDeductiveSales - $onlineBaseValue;
 
         // Add due sales as revenue (they are still owed)
         $d = $this->db->prepare("SELECT COALESCE(SUM(due_amount), 0) FROM customer_dues WHERE log_date = :d");

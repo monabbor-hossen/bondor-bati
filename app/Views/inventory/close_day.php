@@ -79,7 +79,17 @@
 <!-- ══════════════════════════════════════════════════════════ -->
 <div class="space-y-3 mb-4 stagger" id="day-items-list">
     <?php if (!empty($todayItems)): ?>
-        <?php foreach ($todayItems as $item): ?>
+        <?php foreach ($todayItems as $item):
+            // Determine display units dynamically
+            $hasConversion = (!empty($item['raw_usage']) && (float)$item['raw_usage'] !== 1.000);
+            // Closing is always weighed in the raw unit (e.g. kg) so staff weighs the pot
+            $closingUnit = !empty($item['raw_unit']) ? $item['raw_unit'] : ($item['unit'] ?? 'pcs');
+            // Complimentary: if conversion exists → use item's selling unit (e.g. plate)
+            //                no conversion     → use raw_unit (e.g. pcs/kg), not the item unit
+            $compUnit = $hasConversion
+                ? ($item['unit'] ?? 'pcs')
+                : ($item['raw_unit'] ?? $item['unit'] ?? 'pcs');
+        ?>
             <div class="bg-card border border-border rounded-xl p-4 day-item" data-item-id="<?= $item['item_id'] ?>"
                 data-selling-price="<?= $item['selling_price'] ?>" data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>"
                 data-raw-usage="<?= (float) ($item['raw_usage'] ?? 1.0) ?>"
@@ -138,7 +148,7 @@
                         </label>
                         <span
                             class="absolute right-0 bottom-2 text-[0.6rem] font-black text-info/70 uppercase tracking-widest pointer-events-none">
-                            <?= htmlspecialchars(__('unit_' . strtolower($item['raw_unit'] ?? $item['unit'] ?? 'pcs'))) ?>
+                            <?= htmlspecialchars(strtolower($closingUnit)) ?>
                         </span>
                     </div>
                     <!-- Complimentary -->
@@ -152,7 +162,7 @@
                         </label>
                         <span
                             class="absolute right-0 bottom-2 text-[0.6rem] font-black text-amber-400/70 uppercase tracking-widest pointer-events-none">
-                            <?= htmlspecialchars(__('unit_' . strtolower($item['unit'] ?? 'pcs'))) ?>
+                            <?= htmlspecialchars(strtolower($compUnit)) ?>
                         </span>
                     </div>
                 </div>
@@ -330,74 +340,83 @@
 </div>
 
 <div id="consumablesModal"
-    class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass w-full max-w-sm rounded-xl border border-border p-4 flex flex-col max-h-[90vh]">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-base font-bold text-text-primary flex items-center gap-2"><i class="fas fa-pump-soap text-accent"></i>
+    class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="glass w-full max-w-sm rounded-xl border border-border p-4 flex flex-col max-h-[92vh]">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-text-primary flex items-center gap-2">
+                <i class="fas fa-pump-soap text-accent"></i>
                 <?= __('log_consumables') ?>
             </h3>
             <button onclick="document.getElementById('consumablesModal').classList.add('hidden')"
-                class="text-text-muted hover:text-accent text-lg"><i class="fas fa-times"></i></button>
+                class="text-text-muted hover:text-accent text-base"><i class="fas fa-times"></i></button>
         </div>
 
-        <!-- Item Select & Unit -->
-        <div class="flex gap-2 mb-4 pt-1">
-            <div class="relative flex-1">
-                <label class="text-[0.6rem] text-text-muted mb-0.5 block uppercase tracking-widest font-bold px-1 absolute -top-3 left-0">
-                    <?= __('select_item') ?>
-                </label>
-                <select id="conItemName"
-                    class="w-full bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
-                    <option value="" class="bg-surface">...</option>
-                    <?php foreach ($rawItems as $item): ?>
-                        <option value="<?= htmlspecialchars($item['item_name']) ?>"
-                            data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>" class="bg-surface">
-                            <?= htmlspecialchars($item['item_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <i class="fas fa-chevron-down absolute right-1 top-2.5 text-[0.6rem] text-text-muted pointer-events-none"></i>
+        <!-- Add Item Row -->
+        <div class="bg-surface/50 rounded-lg p-3 mb-3 border border-border/40">
+            <div class="flex gap-2 mb-2">
+                <div class="relative flex-1">
+                    <select id="conItemName"
+                        class="w-full bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-xs text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                        <option value="" class="bg-surface"><?= __('select_item') ?>...</option>
+                        <?php foreach ($rawItems as $item): ?>
+                            <option value="<?= htmlspecialchars($item['item_name']) ?>"
+                                data-unit="<?= htmlspecialchars($item['unit'] ?? 'pcs') ?>" class="bg-surface">
+                                <?= htmlspecialchars($item['item_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-1 top-2 text-[0.5rem] text-text-muted pointer-events-none"></i>
+                </div>
+                <div class="w-14 shrink-0">
+                    <select id="conUnit"
+                        class="w-full bg-transparent border-b border-border py-1.5 px-1 font-bold text-xs text-text-muted focus:outline-none appearance-none cursor-pointer text-center">
+                        <option value="pcs" class="bg-surface">pcs</option>
+                        <option value="kg" class="bg-surface">kg</option>
+                        <option value="L" class="bg-surface">L</option>
+                    </select>
+                </div>
             </div>
             
-            <div class="relative w-16 shrink-0 mt-0.5">
-                <select id="conUnit"
-                    class="w-full bg-transparent border-b border-border py-1 px-1 font-bold text-xs text-text-muted focus:outline-none appearance-none cursor-pointer text-center">
-                    <option value="pcs" class="bg-surface">pcs</option>
-                    <option value="kg" class="bg-surface">kg</option>
-                    <option value="L" class="bg-surface">L</option>
-                </select>
+            <!-- 4-col inputs -->
+            <div class="grid grid-cols-4 gap-1.5 mb-2">
+                <div>
+                    <label class="text-[0.5rem] text-info/70 uppercase font-bold block mb-0.5 text-center">OP</label>
+                    <input type="number" id="conOpening" readonly step="0.1" value="0"
+                        class="w-full bg-transparent border-b border-border text-info font-bold py-1 text-center outline-none cursor-not-allowed text-xs">
+                </div>
+                <div>
+                    <label class="text-[0.5rem] text-text-muted uppercase font-bold block mb-0.5 text-center">ADD</label>
+                    <input type="number" id="conAdded" placeholder="0" step="0.1" min="0" inputmode="decimal"
+                        class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-1 text-center outline-none text-xs">
+                </div>
+                <div>
+                    <label class="text-[0.5rem] text-text-muted uppercase font-bold block mb-0.5 text-center">CL</label>
+                    <input type="number" id="conClosing" placeholder="0" step="0.1" min="0" inputmode="decimal"
+                        class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-1 text-center outline-none text-xs">
+                </div>
+                <div>
+                    <label class="text-[0.5rem] text-amber-400/80 uppercase font-bold block mb-0.5 text-center">USED</label>
+                    <input type="number" id="conUsed" readonly value="0"
+                        class="w-full bg-transparent border-b border-amber-500/30 text-amber-400 font-black py-1 text-center outline-none cursor-not-allowed text-xs">
+                </div>
             </div>
+
+            <!-- Add to Queue button -->
+            <button id="addToQueueBtn"
+                class="w-full border border-accent/50 text-accent hover:bg-accent/10 font-bold py-1.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1.5">
+                <i class="fas fa-plus"></i> Add to List
+            </button>
         </div>
 
-        <!-- Deductive Input Grid -->
-        <div class="grid grid-cols-4 gap-2 mb-4">
-            <div>
-                <label class="text-[0.55rem] text-text-muted uppercase tracking-wider font-bold block mb-0.5 truncate text-center" title="<?= __('opening_qty') ?>">OP</label>
-                <input type="number" id="conOpening" readonly step="0.1"
-                    class="w-full bg-transparent border-b border-border text-info font-bold py-1 text-center outline-none cursor-not-allowed text-xs"
-                    value="0">
-            </div>
-            <div>
-                <label class="text-[0.55rem] text-text-muted uppercase tracking-wider font-bold block mb-0.5 truncate text-center" title="<?= __('added_today') ?>">ADD</label>
-                <input type="number" id="conAdded" placeholder="0" step="0.1" min="0" inputmode="decimal"
-                    class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-1 text-center outline-none text-xs">
-            </div>
-            <div>
-                <label class="text-[0.55rem] text-text-muted uppercase tracking-wider font-bold block mb-0.5 truncate text-center" title="<?= __('closing_qty') ?>">CL</label>
-                <input type="number" id="conClosing" placeholder="0" step="0.1" min="0" inputmode="decimal"
-                    class="w-full bg-transparent border-b border-border focus:border-accent text-text-primary py-1 text-center outline-none text-xs">
-            </div>
-            <div>
-                <label class="text-[0.55rem] text-text-muted uppercase tracking-wider font-bold block mb-0.5 truncate text-center" title="<?= __('used_qty') ?>">USED</label>
-                <input type="number" id="conUsed" readonly
-                    class="w-full bg-transparent border-b border-border text-accent font-black py-1 text-center outline-none cursor-not-allowed text-xs"
-                    value="0">
-            </div>
-        </div>
+        <!-- Queue Preview -->
+        <div id="conQueue" class="space-y-1.5 mb-3 overflow-y-auto max-h-36 empty:hidden"></div>
 
+        <!-- Save All Button -->
         <button id="saveConBtn"
-            class="w-full bg-accent hover:bg-accent-light text-white font-bold py-1.5 rounded-xl mb-3 text-sm transition-colors">
-            <?= __('save_log') ?>
+            class="w-full bg-accent hover:bg-accent-light text-white font-bold py-1.5 rounded-xl mb-3 text-sm transition-colors hidden">
+            <i class="fas fa-check mr-1"></i> Save All (<span id="queueCount">0</span>)
         </button>
 
         <div class="flex-1 overflow-y-auto">
@@ -725,37 +744,98 @@
             }
         });
 
-        // ── Save Consumable (Deductive) ───────────────────────────
-        document.getElementById('saveConBtn').addEventListener('click', async () => {
-            const item = document.getElementById('conItemName').value;
-            if (!item) {
-                showToast('<?= __("invalid_input") ?>', 'warning');
+        // ── Queue (batch) system ──────────────────────────────────
+        let conQueue = [];
+
+        function renderQueue() {
+            const qEl = document.getElementById('conQueue');
+            const saveBtn = document.getElementById('saveConBtn');
+            const countEl = document.getElementById('queueCount');
+            qEl.innerHTML = '';
+            if (conQueue.length === 0) {
+                saveBtn.classList.add('hidden');
                 return;
             }
+            saveBtn.classList.remove('hidden');
+            countEl.textContent = conQueue.length;
+            conQueue.forEach((entry, idx) => {
+                const used = Math.max(0, (entry.opening + entry.added) - entry.closing);
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between bg-surface rounded-lg px-2.5 py-1.5 border border-border/50';
+                row.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <span class="text-xs font-bold text-text-primary truncate block">${entry.item}</span>
+                        <span class="text-[0.6rem] text-text-muted">
+                            OP:${entry.opening} ADD:${entry.added} CL:${entry.closing}
+                            <span class="text-amber-400 font-bold ml-1">USED:${used} ${entry.unit}</span>
+                        </span>
+                    </div>
+                    <button data-idx="${idx}" class="btn-rm-queue ml-2 text-text-muted hover:text-red-400 text-xs p-1 shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>`;
+                qEl.appendChild(row);
+            });
+            qEl.querySelectorAll('.btn-rm-queue').forEach(b => {
+                b.addEventListener('click', () => {
+                    conQueue.splice(parseInt(b.dataset.idx), 1);
+                    renderQueue();
+                });
+            });
+        }
 
-            const opening = parseFloat(document.getElementById('conOpening').value) || 0;
-            const added = parseFloat(document.getElementById('conAdded').value) || 0;
-            const closing = parseFloat(document.getElementById('conClosing').value) || 0;
-            const unit = document.getElementById('conUnit').value;
+        // Add to Queue button
+        document.getElementById('addToQueueBtn').addEventListener('click', () => {
+            const item = document.getElementById('conItemName').value;
+            if (!item) { showToast('<?= __("invalid_input") ?>', 'warning'); return; }
 
-            const btn = document.getElementById('saveConBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
+            // Prevent duplicates
+            if (conQueue.find(e => e.item === item)) {
+                showToast('Already in list — remove first to re-add', 'warning'); return;
+            }
 
-            const res = await apiPost('?url=inventory/saveConsumableLog', {
-                item_name: item,
-                opening_qty: opening,
-                added_qty: added,
-                closing_qty: closing,
-                unit: unit
+            conQueue.push({
+                item,
+                opening: parseFloat(document.getElementById('conOpening').value) || 0,
+                added:   parseFloat(document.getElementById('conAdded').value)   || 0,
+                closing: parseFloat(document.getElementById('conClosing').value) || 0,
+                unit:    document.getElementById('conUnit').value
             });
 
-            if (res.success) {
+            // Reset form for next item
+            document.getElementById('conItemName').value = '';
+            document.getElementById('conOpening').value  = 0;
+            document.getElementById('conAdded').value    = '';
+            document.getElementById('conClosing').value  = '';
+            document.getElementById('conUsed').value     = 0;
+            renderQueue();
+        });
+
+        // ── Save All ──────────────────────────────────────────────
+        document.getElementById('saveConBtn').addEventListener('click', async () => {
+            if (conQueue.length === 0) { showToast('<?= __("invalid_input") ?>', 'warning'); return; }
+
+            const btn = document.getElementById('saveConBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Saving...';
+            btn.disabled = true;
+
+            let allOk = true;
+            for (const entry of conQueue) {
+                const res = await apiPost('?url=inventory/saveConsumableLog', {
+                    item_name:   entry.item,
+                    opening_qty: entry.opening,
+                    added_qty:   entry.added,
+                    closing_qty: entry.closing,
+                    unit:        entry.unit
+                });
+                if (!res.success) { allOk = false; }
+            }
+
+            if (allOk) {
                 showToast('<?= __("success") ?>', 'success');
                 setTimeout(() => window.location.reload(), 500);
             } else {
-                showToast(res.error || 'Error saving entry', 'error');
-                btn.innerHTML = '<?= __("save_log") ?>';
+                showToast('Some items failed to save', 'error');
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i> Save All (<span id="queueCount">' + conQueue.length + '</span>)';
                 btn.disabled = false;
             }
         });

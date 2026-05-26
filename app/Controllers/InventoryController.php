@@ -460,13 +460,14 @@ public function __construct() {
                 $itemIds = array_values(array_unique(array_filter(array_map(fn($i) => (int)($i['item_id'] ?? 0), $items))));
                 if ($itemIds) {
                     $ph = implode(',', array_fill(0, count($itemIds), '?'));
-                    $ruStmt = $this->db->prepare("SELECT i.id, COALESCE(i.raw_usage, 1.0) as raw_usage, i.raw_usage_unit, r.unit as raw_unit FROM items i LEFT JOIN raw_inventory r ON i.linked_raw_item = r.item_name WHERE i.id IN ($ph)");
+                    $ruStmt = $this->db->prepare("SELECT i.id, COALESCE(i.raw_usage, 1.0) as raw_usage, i.raw_usage_unit, i.linked_raw_item, r.unit as raw_unit FROM items i LEFT JOIN raw_inventory r ON i.linked_raw_item = r.item_name WHERE i.id IN ($ph)");
                     $ruStmt->execute($itemIds);
                     foreach ($ruStmt->fetchAll() as $row) {
                         $rawUsageMap[(int)$row['id']] = [
                             'usage' => max(0.001, (float)$row['raw_usage']),
                             'usage_unit' => strtolower($row['raw_usage_unit'] ?: 'kg'),
-                            'raw_unit' => strtolower($row['raw_unit'] ?: 'kg')
+                            'raw_unit' => strtolower($row['raw_unit'] ?: 'kg'),
+                            'linked' => $row['linked_raw_item'] ?? null
                         ];
                     }
                 }
@@ -480,12 +481,25 @@ public function __construct() {
                 $sellingPrice     = (float)($item['selling_price'] ?? 0);
 
                 // Yield formula: raw used ÷ raw_usage = portions created
-                $rm = $rawUsageMap[(int)($item['item_id'] ?? 0)] ?? ['usage' => 1.0, 'usage_unit' => 'kg', 'raw_unit' => 'kg'];
+                $rm = $rawUsageMap[(int)($item['item_id'] ?? 0)] ?? ['usage' => 1.0, 'usage_unit' => 'kg', 'raw_unit' => 'kg', 'linked' => null];
                 $rawUsage = $rm['usage'];
                 if ($rm['raw_unit'] === 'kg' && ($rm['usage_unit'] === 'g' || $rm['usage_unit'] === 'gm')) $rawUsage /= 1000;
                 if ($rm['raw_unit'] === 'l' && $rm['usage_unit'] === 'ml') $rawUsage /= 1000;
                 
+                // Fetch previous closing/opening to calculate delta for master inventory
+                $oldDsStmt = $this->db->prepare("SELECT opening_qty FROM daily_stocks WHERE item_id = :item_id AND log_date = :log_date");
+                $oldDsStmt->execute([':item_id' => $item['item_id'], ':log_date' => $logDate]);
+                $oldOpening = $oldDsStmt->fetchColumn();
+
+                $oldClosingStmt = $this->db->prepare("SELECT closing_qty FROM shift_closings WHERE item_id = :item_id AND log_date = :log_date AND shift = :shift");
+                $oldClosingStmt->execute([':item_id' => $item['item_id'], ':log_date' => $logDate, ':shift' => $shift]);
+                $oldClosing = $oldClosingStmt->fetchColumn();
+
+                $previousUsedRaw = ($oldOpening !== false && $oldClosing !== false) ? ((float)$oldOpening - (float)$oldClosing) : 0;
+                
                 $usedRaw  = $effectiveOpening - $closingQty;
+                $deltaUsedRaw = $usedRaw - $previousUsedRaw;
+
                 $portions = ($usedRaw > 0) ? floor($usedRaw / $rawUsage) : 0;
                 $soldQty  = max(0, $portions - $compQty - $dueQty);
 
@@ -504,6 +518,16 @@ public function __construct() {
                     ':sold'     => $soldQty,
                     ':sales'    => $salesAmount,
                 ]);
+
+                // Also update the opening_qty in daily_stocks so a corrected value persists
+                $this->db->prepare("UPDATE daily_stocks SET opening_qty = :opening WHERE item_id = :item_id AND log_date = :log_date")
+                         ->execute([':opening' => $effectiveOpening, ':item_id' => (int)$item['item_id'], ':log_date' => $logDate]);
+
+                // Sync raw_inventory.current_qty by deducting the true consumption (delta)
+                if (!empty($rm['linked']) && $deltaUsedRaw != 0) {
+                    $this->db->prepare("UPDATE raw_inventory SET current_qty = current_qty - :delta WHERE item_name = :name")
+                             ->execute([':delta' => $deltaUsedRaw, ':name' => $rm['linked']]);
+                }
             }
 
             // Save customer dues (baki)
@@ -532,10 +556,15 @@ public function __construct() {
 
             $this->db->commit();
 
-            // Calculate financial results
-            $finance    = new FinanceController();
-            $cashDrawer = $finance->calculateCashInDrawer($logDate);
-            $netProfit  = $finance->calculateNetProfit($logDate);
+            // Calculate financial results — wrapped separately so a finance error never
+            // causes a rollback on already-committed ledger data.
+            $cashDrawer = 0;
+            $netProfit  = 0;
+            try {
+                $finance    = new \App\Controllers\FinanceController();
+                $cashDrawer = $finance->calculateCashInDrawer($logDate);
+                $netProfit  = $finance->calculateNetProfit($logDate);
+            } catch (\Exception $fe) { /* non-critical: finance calc failed, but ledger is saved */ }
 
             $this->json([
                 'success'       => true,
@@ -546,10 +575,11 @@ public function __construct() {
                 'shift'         => $shift,
             ]);
         } catch (\Exception $e) {
-            $this->db->rollBack();
+            try { $this->db->rollBack(); } catch (\Exception $re) {}
             $this->json(['success' => false, 'error' => $e->getMessage()]);
         }
     }
+
     /**
      * Get Consumable Opening Qty (AJAX)
      * Returns previous day's closing_qty for an item.
@@ -665,6 +695,13 @@ public function __construct() {
                     unit = VALUES(unit), 
                     unit_cost = VALUES(unit_cost)
             ");
+            
+            // Fetch previous used_qty to calculate delta
+            $oldStmt = $this->db->prepare("SELECT used_qty FROM daily_consumable_logs WHERE item_name = :name AND log_date = :date");
+            $oldStmt->execute([':name' => $itemName, ':date' => $logDate]);
+            $oldUsed = $oldStmt->fetchColumn();
+            $previousUsed = $oldUsed !== false ? (float)$oldUsed : 0;
+            $deltaUsed = $usedQty - $previousUsed;
             $stmt->execute([
                 ':name'    => $itemName,
                 ':opening' => $openingQty,
@@ -675,6 +712,11 @@ public function __construct() {
                 ':cost'    => $unitCost,
                 ':date'    => $logDate
             ]);
+
+            if ($deltaUsed != 0) {
+                $this->db->prepare("UPDATE raw_inventory SET current_qty = current_qty - :delta WHERE LOWER(item_name) = LOWER(:name)")
+                         ->execute([':delta' => $deltaUsed, ':name' => $itemName]);
+            }
 
             $this->db->commit();
             $this->json(['success' => true]);
