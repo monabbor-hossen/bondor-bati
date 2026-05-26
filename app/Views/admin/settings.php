@@ -57,10 +57,38 @@
                 <select id="it_linked_raw" class="w-full bg-transparent border-b border-border focus:border-accent py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
                     <option value="" class="bg-card text-text-primary"><?= __('select_raw_item') ?>...</option>
                     <?php foreach ($rawInventory as $raw): ?>
-                        <option class="bg-card text-text-primary" value="<?= htmlspecialchars($raw['item_name']) ?>" data-price="<?= $raw['avg_unit_price'] ?>"><?= htmlspecialchars($raw['item_name']) ?> (৳<?= $raw['avg_unit_price'] ?>)</option>
+                        <option class="bg-card text-text-primary" value="<?= htmlspecialchars($raw['item_name']) ?>" data-price="<?= $raw['avg_unit_price'] ?>" data-unit="<?= htmlspecialchars($raw['unit'] ?? 'kg') ?>"><?= htmlspecialchars($raw['item_name']) ?> (৳<?= $raw['avg_unit_price'] ?>)</option>
                     <?php endforeach; ?>
                 </select>
                 <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+            </div>
+            <div class="mt-5 pt-3 border-t border-border/30">
+                <button type="button" id="btn-toggle-conversion" class="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg hover:bg-amber-500/20 transition-all flex items-center gap-1 mb-2">
+                    <i class="fas fa-calculator"></i> <?= __('add_conversion') ?>
+                </button>
+                <div id="conversion-section" class="hidden space-y-2">
+                    <label class="text-[0.65rem] text-amber-400/80 block uppercase tracking-widest font-bold"><?= __('raw_usage_per_unit') ?></label>
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <input type="number" id="it_raw_usage" step="0.001" min="0.001"
+                                   class="peer w-full bg-transparent border-b border-amber-500/30 focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none placeholder-transparent"
+                                   placeholder="1.000" value="1.000">
+                            <label for="it_raw_usage" class="absolute left-1 -top-3.5 text-xs text-amber-400/70 transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-xs peer-focus:text-amber-400"><?= __('amount') ?></label>
+                        </div>
+                        <div class="relative w-24 shrink-0 mt-1">
+                            <select id="it_raw_usage_unit" class="w-full bg-transparent border-b border-amber-500/30 focus:border-amber-400 py-1.5 px-1 text-sm text-amber-400 transition-colors focus:outline-none appearance-none cursor-pointer">
+                                <option class="bg-card text-text-primary" value="kg">kg</option>
+                                <option class="bg-card text-text-primary" value="g">g</option>
+                                <option class="bg-card text-text-primary" value="L">L</option>
+                                <option class="bg-card text-text-primary" value="ml">ml</option>
+                                <option class="bg-card text-text-primary" value="pcs">pcs</option>
+                                <option class="bg-card text-text-primary" value="plate">plate</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-1 top-2.5 text-[0.6rem] text-amber-400/70 pointer-events-none"></i>
+                        </div>
+                    </div>
+                    <p class="text-[0.6rem] text-text-muted mt-1"><?= __('raw_usage_hint') ?></p>
+                </div>
             </div>
             <div class="flex items-center justify-between pt-2">
                 <label class="flex items-center gap-2 text-sm text-text-muted">
@@ -80,7 +108,12 @@
                     <?php 
                         $displayCost = $item['cost_price'];
                         if (!empty($item['linked_raw_item']) && isset($item['raw_price'])) {
-                            $displayCost = (float)$item['raw_price'] + (float)($item['additional_cost'] ?? 0);
+                            $rawUsageVal = max(0.001, (float)($item['raw_usage'] ?? 1.0));
+                            $rUnit = strtolower($item['raw_usage_unit'] ?? 'kg');
+                            $rawU = strtolower($item['raw_unit'] ?? 'kg');
+                            if ($rawU === 'kg' && ($rUnit === 'g' || $rUnit === 'gm')) $rawUsageVal /= 1000;
+                            if ($rawU === 'l' && $rUnit === 'ml') $rawUsageVal /= 1000;
+                            $displayCost = ((float)$item['raw_price'] * $rawUsageVal) + (float)($item['additional_cost'] ?? 0);
                         }
                     ?>
                     Sell: <span class="text-accent font-bold">৳<?= $item['selling_price'] ?></span> | 
@@ -89,6 +122,9 @@
                     Add. Cost: ৳<?= $item['additional_cost'] ?? 0 ?>
                     <?php if (!empty($item['linked_raw_item'])): ?>
                     <br><span class="text-blue-400"><i class="fas fa-link"></i> <?= htmlspecialchars($item['linked_raw_item']) ?></span>
+                    <?php if (isset($item['raw_usage']) && (float)$item['raw_usage'] > 0 && (float)$item['raw_usage'] != 1.0): ?>
+                    <span class="text-amber-400 ml-1 text-[0.6rem] bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20"><i class="fas fa-exchange-alt"></i> <?= (float)$item['raw_usage'] ?> <?= htmlspecialchars($item['raw_usage_unit'] ?? 'kg') ?>/unit</span>
+                    <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
@@ -263,16 +299,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const btnToggleConv = document.getElementById('btn-toggle-conversion');
+    if (btnToggleConv) {
+        btnToggleConv.addEventListener('click', () => {
+            document.getElementById('conversion-section').classList.toggle('hidden');
+        });
+    }
+
     const calcTotalCost = () => {
         const sel = document.getElementById('it_linked_raw');
         const opt = sel.options[sel.selectedIndex];
-        const rawPrice = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
-        const addCost = parseFloat(document.getElementById('it_additional_cost').value) || 0;
-        document.getElementById('it_cost').value = (rawPrice + addCost).toFixed(2);
+        const rawPrice  = opt && opt.dataset.price ? parseFloat(opt.dataset.price) : 0;
+        const rawUnit   = opt && opt.dataset.unit ? opt.dataset.unit.toLowerCase() : 'kg';
+        
+        const rawUsage  = parseFloat(document.getElementById('it_raw_usage').value) || 1.0;
+        const rawUsageUnit = document.getElementById('it_raw_usage_unit').value || 'kg';
+        
+        let normalizedUsage = rawUsage;
+        if (rawUnit === 'kg' && (rawUsageUnit === 'g' || rawUsageUnit === 'gm')) normalizedUsage = rawUsage / 1000;
+        if (rawUnit === 'l' && rawUsageUnit === 'ml') normalizedUsage = rawUsage / 1000;
+
+        const addCost   = parseFloat(document.getElementById('it_additional_cost').value) || 0;
+        document.getElementById('it_cost').value = ((rawPrice * normalizedUsage) + addCost).toFixed(2);
     };
     
     document.getElementById('it_linked_raw').addEventListener('change', calcTotalCost);
     document.getElementById('it_additional_cost').addEventListener('input', calcTotalCost);
+    document.getElementById('it_raw_usage').addEventListener('input', calcTotalCost);
+    document.getElementById('it_raw_usage_unit').addEventListener('change', calcTotalCost);
 
     setupForm(
         'form-items', 
@@ -287,6 +341,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('it_additional_cost').value = item.additional_cost || 0;
             document.getElementById('it_active').checked = item.is_active == 1;
             document.getElementById('it_linked_raw').value = item.linked_raw_item || '';
+            document.getElementById('it_raw_usage').value = item.raw_usage || 1.000;
+            document.getElementById('it_raw_usage_unit').value = item.raw_usage_unit || 'kg';
+            if ((item.raw_usage || 1.0) != 1.0) {
+                document.getElementById('conversion-section').classList.remove('hidden');
+            } else {
+                document.getElementById('conversion-section').classList.add('hidden');
+            }
             calcTotalCost();
         },
         () => ({
@@ -297,7 +358,9 @@ document.addEventListener('DOMContentLoaded', () => {
             cost_price: parseFloat(document.getElementById('it_cost').value) || 0,
             additional_cost: parseFloat(document.getElementById('it_additional_cost').value) || 0,
             is_active: document.getElementById('it_active').checked ? 1 : 0,
-            linked_raw_item: document.getElementById('it_linked_raw').value.trim()
+            linked_raw_item: document.getElementById('it_linked_raw').value.trim(),
+            raw_usage: parseFloat(document.getElementById('it_raw_usage').value) || 1.000,
+            raw_usage_unit: document.getElementById('it_raw_usage_unit').value || 'kg'
         }),
         'items'
     );

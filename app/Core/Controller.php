@@ -56,6 +56,8 @@ class Controller {
         try { $this->db->exec("ALTER TABLE items ADD COLUMN linked_raw_item VARCHAR(100) NULL AFTER item_name"); } catch (\Exception $e) {}
         try { $this->db->exec("ALTER TABLE items ADD COLUMN additional_cost DECIMAL(10,2) DEFAULT 0 AFTER cost_price"); } catch (\Exception $e) {}
         try { $this->db->exec("ALTER TABLE items ADD COLUMN online_price DECIMAL(10,2) DEFAULT 0 AFTER selling_price"); } catch (\Exception $e) {}
+        try { $this->db->exec("ALTER TABLE items ADD COLUMN raw_usage DECIMAL(8,3) DEFAULT 1.000 AFTER linked_raw_item"); } catch (\Exception $e) {}
+        try { $this->db->exec("ALTER TABLE items ADD COLUMN raw_usage_unit VARCHAR(20) DEFAULT 'kg' AFTER raw_usage"); } catch (\Exception $e) {}
     }
 
     /**

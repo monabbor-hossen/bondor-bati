@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
-        itemsList.appendChild(div);
+        itemsList.prepend(div);
         bindBazaarInputs(div);
     });
 

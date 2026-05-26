@@ -154,7 +154,7 @@ public function __construct() {
         // All active menu items for the "Add to Today" dropdown
         // LEFT JOIN raw_inventory to get current raw stock for auto-fill
         $menuItems = $this->db->query("
-            SELECT i.id, i.item_name, i.item_name_bn, i.selling_price, i.cost_price,
+            SELECT i.id, i.item_name, i.item_name_bn, i.selling_price, i.cost_price, i.unit,
                    COALESCE(r.current_qty, 0) AS raw_qty
             FROM items i
             LEFT JOIN raw_inventory r ON LOWER(r.item_name) = LOWER(COALESCE(NULLIF(i.linked_raw_item, ''), i.item_name))
@@ -165,13 +165,18 @@ public function __construct() {
         // Items already tracked today (from daily_stocks joined with shift_closings)
         $todayStmt = $this->db->prepare("
             SELECT ds.item_id, ds.opening_qty,
-                   i.item_name, i.item_name_bn, i.selling_price, i.cost_price,
+                   i.item_name, i.item_name_bn, i.selling_price, i.cost_price, i.unit,
+                   COALESCE(i.raw_usage, 1.0) AS raw_usage,
+                   i.raw_usage_unit,
+                   COALESCE(r.unit, i.unit) AS raw_unit,
+                   COALESCE(r.avg_unit_price, 0) AS raw_price,
                    COALESCE(sc.closing_qty, '') AS closing_qty,
                    COALESCE(sc.complimentary_qty, 0) AS complimentary_qty,
                    COALESCE(sc.sold_qty, 0) AS sold_qty,
                    COALESCE(sc.total_sales_amount, 0) AS total_sales_amount
             FROM daily_stocks ds
             JOIN items i ON i.id = ds.item_id
+            LEFT JOIN raw_inventory r ON LOWER(r.item_name) = LOWER(COALESCE(NULLIF(i.linked_raw_item, ''), ''))
             LEFT JOIN shift_closings sc ON sc.item_id = ds.item_id AND sc.log_date = ds.log_date AND sc.shift = :shift
             WHERE ds.log_date = :date
             ORDER BY i.sort_order, i.item_name
@@ -449,6 +454,24 @@ public function __construct() {
             $totalSold = 0;
             $totalRevenue = 0;
 
+            // Pre-fetch raw_usage for yield formula
+            $rawUsageMap = [];
+            if (!empty($items)) {
+                $itemIds = array_values(array_unique(array_filter(array_map(fn($i) => (int)($i['item_id'] ?? 0), $items))));
+                if ($itemIds) {
+                    $ph = implode(',', array_fill(0, count($itemIds), '?'));
+                    $ruStmt = $this->db->prepare("SELECT i.id, COALESCE(i.raw_usage, 1.0) as raw_usage, i.raw_usage_unit, r.unit as raw_unit FROM items i LEFT JOIN raw_inventory r ON i.linked_raw_item = r.item_name WHERE i.id IN ($ph)");
+                    $ruStmt->execute($itemIds);
+                    foreach ($ruStmt->fetchAll() as $row) {
+                        $rawUsageMap[(int)$row['id']] = [
+                            'usage' => max(0.001, (float)$row['raw_usage']),
+                            'usage_unit' => strtolower($row['raw_usage_unit'] ?: 'kg'),
+                            'raw_unit' => strtolower($row['raw_unit'] ?: 'kg')
+                        ];
+                    }
+                }
+            }
+
             foreach ($items as $item) {
                 $effectiveOpening = (float)($item['effective_opening'] ?? 0);
                 $closingQty       = (float)($item['closing_qty'] ?? 0);
@@ -456,9 +479,15 @@ public function __construct() {
                 $dueQty           = (float)($item['due_qty'] ?? 0);
                 $sellingPrice     = (float)($item['selling_price'] ?? 0);
 
-                // Deductive Sales: Opening - Closing - Complimentary - Due = Sold
-                $soldQty = $effectiveOpening - $closingQty - $compQty - $dueQty;
-                if ($soldQty < 0) $soldQty = 0;
+                // Yield formula: raw used ÷ raw_usage = portions created
+                $rm = $rawUsageMap[(int)($item['item_id'] ?? 0)] ?? ['usage' => 1.0, 'usage_unit' => 'kg', 'raw_unit' => 'kg'];
+                $rawUsage = $rm['usage'];
+                if ($rm['raw_unit'] === 'kg' && ($rm['usage_unit'] === 'g' || $rm['usage_unit'] === 'gm')) $rawUsage /= 1000;
+                if ($rm['raw_unit'] === 'l' && $rm['usage_unit'] === 'ml') $rawUsage /= 1000;
+                
+                $usedRaw  = $effectiveOpening - $closingQty;
+                $portions = ($usedRaw > 0) ? floor($usedRaw / $rawUsage) : 0;
+                $soldQty  = max(0, $portions - $compQty - $dueQty);
 
                 $salesAmount = $soldQty * $sellingPrice;
                 $totalSold    += $soldQty;

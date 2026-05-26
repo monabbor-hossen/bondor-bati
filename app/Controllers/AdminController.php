@@ -15,7 +15,7 @@ public function __construct() {
         $this->requireAdmin();
 
         $items = $this->db->query("
-            SELECT i.*, r.avg_unit_price as raw_price 
+            SELECT i.*, r.avg_unit_price as raw_price, r.unit as raw_unit
             FROM items i 
             LEFT JOIN raw_inventory r ON i.linked_raw_item = r.item_name 
             ORDER BY i.sort_order, i.item_name
@@ -125,10 +125,21 @@ public function __construct() {
             // Auto-sync linked menu items if raw inventory price changes
             if ($entity === 'raw_inventory' && $id > 0) {
                 try {
-                    $updatedRaw = $this->db->query("SELECT item_name, avg_unit_price FROM raw_inventory WHERE id = " . (int)$id)->fetch();
+                    $updatedRaw = $this->db->query("SELECT item_name, avg_unit_price, unit FROM raw_inventory WHERE id = " . (int)$id)->fetch();
                     if ($updatedRaw) {
-                        $this->db->prepare("UPDATE items SET cost_price = additional_cost + :price WHERE linked_raw_item = :name")
-                                 ->execute([':price' => $updatedRaw['avg_unit_price'], ':name' => $updatedRaw['item_name']]);
+                        $linkedItems = $this->db->query("SELECT id, raw_usage, raw_usage_unit, additional_cost FROM items WHERE linked_raw_item = " . $this->db->quote($updatedRaw['item_name']))->fetchAll();
+                        foreach ($linkedItems as $li) {
+                            $rUsage = (float)$li['raw_usage'];
+                            $rUnit = strtolower($li['raw_usage_unit'] ?: 'kg');
+                            $rawUnit = strtolower($updatedRaw['unit']);
+                            
+                            $norm = $rUsage;
+                            if ($rawUnit === 'kg' && ($rUnit === 'g' || $rUnit === 'gm')) $norm = $rUsage / 1000.0;
+                            if ($rawUnit === 'l' && $rUnit === 'ml') $norm = $rUsage / 1000.0;
+                            
+                            $newCost = (float)$li['additional_cost'] + ($updatedRaw['avg_unit_price'] * $norm);
+                            $this->db->prepare("UPDATE items SET cost_price = :cost WHERE id = :id")->execute([':cost' => $newCost, ':id' => $li['id']]);
+                        }
                     }
                 } catch (\Exception $e) {}
             }
