@@ -252,29 +252,33 @@
                     </label>
                 </div>
             </div>
-            <div class="flex gap-3 items-center">
-                <div class="relative flex-1">
-                    <label
-                        class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0">Select
-                        Item</label>
-                    <select id="due-item-id"
-                        class="w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
-                        <option value="" class="bg-card text-text-primary">(Optional) Select Item...</option>
-                        <?php foreach ($menuItems as $mi): ?>
-                            <option class="bg-card text-text-primary" value="<?= $mi['id'] ?>">
-                                <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <i
-                        class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+            <div id="due-items-container" class="space-y-3">
+                <div class="flex gap-2 items-center due-item-row">
+                    <div class="relative flex-1">
+                        <label
+                            class="text-[0.65rem] text-text-muted mb-1 block uppercase tracking-widest font-bold px-1 absolute -top-4 left-0">Select
+                            Item</label>
+                        <select class="due-item-id w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                            <option value="" class="bg-card text-text-primary">(Optional) Select Item...</option>
+                            <?php foreach ($menuItems as $mi): ?>
+                                <option class="bg-card text-text-primary" value="<?= $mi['id'] ?>">
+                                    <?= htmlspecialchars(currentLang() === 'bn' ? ($mi['item_name_bn'] ?? $mi['item_name']) : $mi['item_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+                    </div>
+                    <div class="relative w-20 shrink-0 mt-1">
+                        <input type="number" step="0.5" min="0" placeholder="Qty"
+                            class="due-item-qty peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-center text-sm transition-colors focus:outline-none placeholder-transparent">
+                        <label
+                            class="absolute left-1 -top-3.5 text-[0.65rem] text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.65rem] peer-focus:text-amber-400 text-center w-full truncate pointer-events-none">Qty</label>
+                    </div>
+                    <button type="button" class="btn-remove-due-row text-red-500 hover:text-red-400 p-2 mt-1 hidden"><i class="fas fa-trash text-sm"></i></button>
                 </div>
-                <div class="relative w-20 shrink-0 mt-1">
-                    <input type="number" id="due-item-qty" step="0.5" min="0" placeholder="Qty"
-                        class="peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-center text-sm transition-colors focus:outline-none placeholder-transparent">
-                    <label
-                        class="absolute left-1 -top-3.5 text-[0.65rem] text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.65rem] peer-focus:text-amber-400 text-center w-full truncate pointer-events-none">Qty</label>
-                </div>
+            </div>
+            <div class="text-right">
+                <button type="button" id="btn-add-due-row" class="text-xs text-amber-400 hover:text-amber-300 font-bold py-2"><i class="fas fa-plus mr-1"></i> Add Another Item</button>
             </div>
             <button type="button" id="btn-add-due" class="w-full text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-2.5 rounded-lg
                            hover:bg-amber-500/20 transition-all mt-1">
@@ -644,29 +648,65 @@
             });
         });
 
+        // ── Customer Dues Dynamic Items ──────────────────────────────
+        const dueItemsContainer = document.getElementById('due-items-container');
+        document.getElementById('btn-add-due-row').addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center due-item-row';
+            row.innerHTML = `
+                <div class="relative flex-1 mt-3">
+                    <select class="due-item-id w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-sm text-text-primary transition-colors focus:outline-none appearance-none cursor-pointer">
+                        ${dueItemsContainer.querySelector('.due-item-id').innerHTML}
+                    </select>
+                    <i class="fas fa-chevron-down absolute right-2 top-3 text-xs text-text-muted pointer-events-none"></i>
+                </div>
+                <div class="relative w-20 shrink-0 mt-3">
+                    <input type="number" step="0.5" min="0" placeholder="Qty" class="due-item-qty peer w-full bg-transparent border-b border-border focus:border-amber-400 py-2 px-1 text-center text-sm transition-colors focus:outline-none placeholder-transparent">
+                    <label class="absolute left-1 -top-3.5 text-[0.65rem] text-text-muted transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-[0.65rem] peer-focus:text-amber-400 text-center w-full truncate pointer-events-none">Qty</label>
+                </div>
+                <button type="button" class="btn-remove-due-row text-red-500 hover:text-red-400 p-2 mt-3"><i class="fas fa-trash text-sm"></i></button>
+            `;
+            dueItemsContainer.appendChild(row);
+        });
+
+        dueItemsContainer.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-remove-due-row')) {
+                e.target.closest('.due-item-row').remove();
+            }
+        });
+
         // ── Add Customer Due ──────────────────────────────────────
         document.getElementById('btn-add-due').addEventListener('click', async () => {
             const nameInput = document.getElementById('due-name');
             const amountInput = document.getElementById('due-amount');
             const phoneInput = document.getElementById('due-phone');
-            const itemSelect = document.getElementById('due-item-id');
-            const qtyInput = document.getElementById('due-item-qty');
 
             const name = nameInput.value.trim();
             const amount = parseFloat(amountInput.value) || 0;
             const phone = phoneInput.value.trim();
-            const itemId = parseInt(itemSelect.value) || 0;
-            const qty = parseFloat(qtyInput.value) || 0;
 
             if (!name) return showToast('<?= __("customer_name_req") ?>', 'error');
             if (amount <= 0) return showToast('<?= __("due_amount_req") ?>', 'error');
+
+            const items = [];
+            const itemRows = document.querySelectorAll('.due-item-row');
+            let itemNamesStr = [];
+            itemRows.forEach(row => {
+                const select = row.querySelector('.due-item-id');
+                const qtyInput = row.querySelector('.due-item-qty');
+                const itemId = parseInt(select.value) || 0;
+                const qty = parseFloat(qtyInput.value) || 0;
+                if (itemId > 0 && qty > 0) {
+                    items.push({ item_id: itemId, qty: qty });
+                    itemNamesStr.push(`${select.options[select.selectedIndex].text.trim()} (x${qty})`);
+                }
+            });
 
             const res = await apiPost('?url=inventory/addCustomerDue', {
                 customer_name: name,
                 due_amount: amount,
                 phone: phone,
-                item_id: itemId,
-                qty: qty
+                items: items
             });
 
             if (res.success) {
@@ -675,16 +715,16 @@
                 const div = document.createElement('div');
                 div.className = 'flex justify-between items-center bg-surface/50 rounded-lg px-3 py-2 due-row';
 
-                let itemNameStr = '';
-                if (itemId > 0) {
-                    const itemOpt = itemSelect.options[itemSelect.selectedIndex];
-                    itemNameStr = ` <span class="text-xs text-text-muted bg-card px-1.5 py-0.5 rounded ml-1 border border-border">${itemOpt.text.trim()} (x${qty})</span>`;
+                let itemNameHtml = '';
+                if (itemNamesStr.length > 0) {
+                    itemNameHtml = ' <br><span class="text-xs text-text-muted bg-card px-1.5 py-0.5 rounded border border-border mt-1 inline-block">' + itemNamesStr.join(', ') + '</span>';
                 }
 
                 div.innerHTML = `
                 <div>
-                    <span class="text-sm font-semibold">${name}</span>${itemNameStr}
+                    <span class="text-sm font-semibold">${name}</span>
                     ${phone ? `<br><span class="text-[0.6rem] text-text-muted">${phone}</span>` : ''}
+                    ${itemNameHtml}
                 </div>
                 <span class="text-sm font-bold text-amber-400">৳${amount.toLocaleString('en-IN')}</span>
             `;
@@ -694,8 +734,16 @@
                 nameInput.value = '';
                 amountInput.value = '';
                 phoneInput.value = '';
-                itemSelect.value = '';
-                qtyInput.value = '';
+                
+                // Reset item rows to just 1 empty row
+                const firstRow = document.querySelector('.due-item-row');
+                firstRow.querySelector('.due-item-id').value = '';
+                firstRow.querySelector('.due-item-qty').value = '';
+                
+                const allRows = document.querySelectorAll('.due-item-row');
+                for (let i = 1; i < allRows.length; i++) {
+                    allRows[i].remove();
+                }
 
                 showToast('<?= __("success") ?>', 'success');
             } else {

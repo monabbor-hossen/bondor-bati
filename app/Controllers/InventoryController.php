@@ -375,8 +375,7 @@ public function __construct() {
         $dueAmount    = (float)($data['due_amount'] ?? 0);
         $phone        = trim($data['phone'] ?? '');
 
-        $itemId       = (int)($data['item_id'] ?? 0);
-        $qty          = (float)($data['qty'] ?? 0);
+        $items        = $data['items'] ?? [];
 
         if (empty($customerName) || $dueAmount <= 0) {
             $this->json(['success' => false, 'error' => 'Name and amount required']);
@@ -389,15 +388,49 @@ public function __construct() {
                 INSERT INTO customer_dues (customer_name, phone, due_amount, log_date, shift, item_id, qty)
                 VALUES (:name, :phone, :amount, :date, :shift, :item_id, :qty)
             ");
-            $stmt->execute([
-                ':name'   => $customerName,
-                ':phone'  => $phone ?: null,
-                ':amount' => $dueAmount,
-                ':date'   => $logDate,
-                ':shift'  => $shift,
-                ':item_id'=> $itemId > 0 ? $itemId : null,
-                ':qty'    => $qty,
-            ]);
+            
+            if (empty($items)) {
+                $stmt->execute([
+                    ':name'   => $customerName,
+                    ':phone'  => $phone ?: null,
+                    ':amount' => $dueAmount,
+                    ':date'   => $logDate,
+                    ':shift'  => $shift,
+                    ':item_id'=> null,
+                    ':qty'    => 0,
+                ]);
+            } else {
+                $first = true;
+                foreach ($items as $item) {
+                    $itemId = (int)($item['item_id'] ?? 0);
+                    $qty = (float)($item['qty'] ?? 0);
+                    
+                    if ($itemId <= 0 || $qty <= 0) continue;
+                    
+                    $stmt->execute([
+                        ':name'   => $customerName,
+                        ':phone'  => $phone ?: null,
+                        ':amount' => $first ? $dueAmount : 0,
+                        ':date'   => $logDate,
+                        ':shift'  => $shift,
+                        ':item_id'=> $itemId,
+                        ':qty'    => $qty,
+                    ]);
+                    $first = false;
+                }
+                
+                if ($first) {
+                    $stmt->execute([
+                        ':name'   => $customerName,
+                        ':phone'  => $phone ?: null,
+                        ':amount' => $dueAmount,
+                        ':date'   => $logDate,
+                        ':shift'  => $shift,
+                        ':item_id'=> null,
+                        ':qty'    => 0,
+                    ]);
+                }
+            }
             
             $newId = (int)$this->db->lastInsertId();
             $this->db->commit();
