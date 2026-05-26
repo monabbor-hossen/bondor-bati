@@ -181,12 +181,26 @@
                 <button type="button" onclick="addAddonRow()" class="text-indigo-400 bg-indigo-500/10 px-2.5 py-1.5 rounded-lg hover:bg-indigo-500/20 transition-all border border-indigo-500/30"><i class="fas fa-plus"></i> Add</button>
             </div>
             
-            <div id="addons-container" class="space-y-2">
+            <div id="addons-container" class="space-y-3">
                 <?php foreach ($onlineAddons as $addon): ?>
-                <div class="flex gap-2 items-center addon-row">
-                    <input type="text" class="addon-name w-full bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary transition-colors focus:outline-none" value="<?= htmlspecialchars($addon['name']) ?>" placeholder="e.g. + Cheese">
-                    <input type="number" class="addon-price w-24 bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary text-right transition-colors focus:outline-none" value="<?= $addon['price'] ?>" placeholder="Price">
-                    <button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400 p-2.5"><i class="fas fa-times text-lg"></i></button>
+                <div class="addon-row bg-surface border border-border/50 rounded-xl p-3 space-y-2">
+                    <div class="flex gap-2 items-center">
+                        <input type="text" class="addon-name flex-1 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-sm text-text-primary transition-colors focus:outline-none" value="<?= htmlspecialchars($addon['name']) ?>" placeholder="e.g. + Cheese">
+                        <input type="number" class="addon-price w-20 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-sm text-text-primary text-right transition-colors focus:outline-none" value="<?= $addon['price'] ?>" placeholder="৳">
+                        <button type="button" onclick="this.closest('.addon-row').remove()" class="text-text-muted hover:text-red-400 p-1.5"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <select class="addon-raw flex-1 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-xs text-text-muted transition-colors focus:outline-none appearance-none cursor-pointer">
+                            <option value="" class="bg-surface">— Raw Item (optional) —</option>
+                            <?php foreach ($rawInventory as $raw): ?>
+                                <option value="<?= htmlspecialchars($raw['item_name']) ?>" class="bg-surface" <?= ($addon['raw_item'] ?? '') === $raw['item_name'] ? 'selected' : '' ?>><?= htmlspecialchars($raw['item_name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <input type="number" class="addon-gram w-16 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-xs text-text-primary text-right transition-colors focus:outline-none" value="<?= $addon['gram'] ?? '' ?>" placeholder="0" step="1" min="0">
+                            <span class="text-[0.6rem] text-text-muted font-bold">g</span>
+                        </div>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -347,12 +361,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Manage Addons ──────────────────────────────────────────
     function addAddonRow() {
+        const rawOpts = `<?php foreach ($rawInventory as $raw): ?><option value="<?= htmlspecialchars($raw['item_name']) ?>" class="bg-surface"><?= htmlspecialchars($raw['item_name']) ?></option><?php endforeach; ?>`;
         const row = document.createElement('div');
-        row.className = 'flex gap-2 items-center addon-row';
+        row.className = 'addon-row bg-surface border border-border/50 rounded-xl p-3 space-y-2';
         row.innerHTML = `
-            <input type="text" class="addon-name w-full bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary transition-colors focus:outline-none" placeholder="e.g. + Cheese">
-            <input type="number" class="addon-price w-24 bg-surface border border-border focus:border-accent rounded-lg py-2.5 px-3 text-sm text-text-primary text-right transition-colors focus:outline-none" placeholder="Price">
-            <button type="button" onclick="this.parentElement.remove()" class="text-text-muted hover:text-red-400 p-2.5"><i class="fas fa-times text-lg"></i></button>
+            <div class="flex gap-2 items-center">
+                <input type="text" class="addon-name flex-1 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-sm text-text-primary transition-colors focus:outline-none" placeholder="e.g. + Cheese">
+                <input type="number" class="addon-price w-20 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-sm text-text-primary text-right transition-colors focus:outline-none" placeholder="৳">
+                <button type="button" onclick="this.closest('.addon-row').remove()" class="text-text-muted hover:text-red-400 p-1.5"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="flex gap-2 items-center">
+                <select class="addon-raw flex-1 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-xs text-text-muted transition-colors focus:outline-none appearance-none cursor-pointer">
+                    <option value="" class="bg-surface">— Raw Item (optional) —</option>
+                    ${rawOpts}
+                </select>
+                <div class="flex items-center gap-1 shrink-0">
+                    <input type="number" class="addon-gram w-16 bg-transparent border-b border-border focus:border-accent py-1.5 px-1 text-xs text-text-primary text-right transition-colors focus:outline-none" placeholder="0" step="1" min="0">
+                    <span class="text-[0.6rem] text-text-muted font-bold">g</span>
+                </div>
+            </div>
         `;
         document.getElementById('addons-container').appendChild(row);
     }
@@ -371,7 +398,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.addon-row').forEach(row => {
                 const name = row.querySelector('.addon-name').value.trim();
                 const price = parseFloat(row.querySelector('.addon-price').value) || 0;
-                if (name) addons.push({ name, price });
+                const raw_item = row.querySelector('.addon-raw')?.value?.trim() || '';
+                const gram = parseFloat(row.querySelector('.addon-gram')?.value) || 0;
+                if (name) addons.push({ name, price, raw_item, gram });
             });
 
             const res = await apiPost('?url=admin/saveOnlineAddons', { addons });

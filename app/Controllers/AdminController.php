@@ -349,9 +349,10 @@ public function __construct() {
         foreach ($addons as $a) {
             $name = trim($a['name'] ?? '');
             $price = (float)($a['price'] ?? 0);
+            $rawItem = trim($a['raw_item'] ?? '');
+            $gram = (float)($a['gram'] ?? 0);
             if (!empty($name) && $price >= 0) {
-                // Ensure it starts with '+ ' to distinguish it easily if they forget, or just keep whatever they put
-                $cleanAddons[] = ['name' => $name, 'price' => $price];
+                $cleanAddons[] = ['name' => $name, 'price' => $price, 'raw_item' => $rawItem, 'gram' => $gram];
             }
         }
 

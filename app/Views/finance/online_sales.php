@@ -129,8 +129,10 @@ $stockMap = $stockMap ?? [];
                 <!-- Quick Addons -->
                 <div class="flex gap-2 overflow-x-auto pb-2 mb-2 hide-scrollbar">
                     <?php if (!empty($onlineAddons)): ?>
-                        <?php foreach ($onlineAddons as $addon): ?>
-                        <button type="button" onclick="addAddon('<?= htmlspecialchars($addon['name'], ENT_QUOTES) ?>', <?= $addon['price'] ?>)" class="flex-shrink-0 px-2.5 py-1 bg-surface border border-border rounded-lg text-[0.65rem] font-bold text-text-muted hover:text-text-primary hover:border-indigo-500 transition-colors"><?= htmlspecialchars($addon['name']) ?> (৳<?= $addon['price'] ?>)</button>
+                        <?php foreach ($onlineAddons as $addon): 
+                            $gramLabel = ($addon['gram'] ?? 0) > 0 ? ' · ' . $addon['gram'] . 'g' : '';
+                        ?>
+                        <button type="button" onclick="addAddon('<?= htmlspecialchars($addon['name'], ENT_QUOTES) ?>', <?= $addon['price'] ?>)" class="flex-shrink-0 px-2.5 py-1 bg-surface border border-border rounded-lg text-[0.65rem] font-bold text-text-muted hover:text-text-primary hover:border-indigo-500 transition-colors"><?= htmlspecialchars($addon['name']) ?> (৳<?= $addon['price'] ?><?= $gramLabel ?>)</button>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <span class="text-[0.65rem] text-text-muted italic">No addons configured. Configure in Settings.</span>
