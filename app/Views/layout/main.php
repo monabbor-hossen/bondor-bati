@@ -523,9 +523,7 @@
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/bondor-bati/sw.js')
-                .then(reg => console.log('SW registered:', reg.scope))
-                .catch(err => console.log('SW failed:', err));
+            navigator.serviceWorker.register('/bondor-bati/sw.js').catch(() => {});
         }
 
         <?php if (!empty($_SESSION['user_id'])): ?>

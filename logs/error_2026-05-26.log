@@ -1,9 +1,0 @@
-17:42:31 | SQLSTATE[42S22]: Column not found: 1054 Unknown column 'opening_qty' in 'field list' | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:570
-18:26:13 | SQLSTATE[42S22]: Column not found: 1054 Unknown column 'opening_qty' in 'field list' | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:570
-18:26:21 | SQLSTATE[42S22]: Column not found: 1054 Unknown column 'opening_qty' in 'field list' | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:570
-18:26:39 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682
-18:26:40 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682
-18:27:52 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682
-18:27:53 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682
-18:28:03 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682
-18:28:03 | There is no active transaction | /opt/lampp/htdocs/bondor-bati/app/Controllers/InventoryController.php:682

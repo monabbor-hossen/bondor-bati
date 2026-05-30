@@ -1,0 +1,25 @@
+# ── Runtime Logs ─────────────────────────────────────────────────────
+logs/*.log
+logs/
+
+# ── Setup / One-time scripts (keep locally, never deploy publicly) ────
+setup_database.php
+setup_admin.php
+database_seeder.php
+
+# ── Dev/Debug Scratch Files ───────────────────────────────────────────
+test_*.php
+fix_*.py
+run_migration.php
+
+# ── OS & Editor ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Environment / Secrets ─────────────────────────────────────────────
+.env
+config/secrets.php

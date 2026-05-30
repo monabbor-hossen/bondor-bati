@@ -1,4 +1,8 @@
 <?php
+// ── Setup Guard ── Remove this file after initial deploy ──────────
+if (!defined('SETUP_ALLOWED') && php_uname('n') !== 'localhost') {
+    http_response_code(403); die('403 Forbidden — Remove setup files after deploy.');
+}
 /**
  * Bondor Bati POS v2.0 — Database Setup
  * Run once via browser: http://localhost/bondor-bati/setup_database.php

@@ -1,4 +1,8 @@
 <?php
+// ── Setup Guard ── Remove this file after initial deploy ──────────
+if (!defined('SETUP_ALLOWED') && php_uname('n') !== 'localhost') {
+    http_response_code(403); die('403 Forbidden — Remove setup files after deploy.');
+}
 /**
  * Admin Setup — Create the initial admin account
  * Run once: http://localhost/bondor-bati/setup_admin.php

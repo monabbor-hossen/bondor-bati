@@ -1,4 +1,8 @@
 <?php
+// ── Setup Guard ── Remove this file after initial deploy ──────────
+if (!defined('SETUP_ALLOWED') && php_uname('n') !== 'localhost') {
+    http_response_code(403); die('403 Forbidden — Remove setup files after deploy.');
+}
 /**
  * Database Seeder — Populates test data for development
  * Run once: http://localhost/bondor-bati/database_seeder.php
