@@ -2,15 +2,8 @@
 logs/*.log
 logs/
 
-# ── Setup / One-time scripts (keep locally, never deploy publicly) ────
-setup_database.php
-setup_admin.php
-database_seeder.php
-
-# ── Dev/Debug Scratch Files ───────────────────────────────────────────
-test_*.php
-fix_*.py
-run_migration.php
+# ── Setup / One-time scripts (kept in _deploy/, never pushed to git) ─
+_deploy/
 
 # ── OS & Editor ───────────────────────────────────────────────────────
 .DS_Store
