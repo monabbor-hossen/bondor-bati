@@ -57,6 +57,7 @@
                 </h2>
 
                 <form method="POST" action="?url=auth/login" id="login-form">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token ?? '') ?>">
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5"><?= __('username') ?></label>
                         <input type="text" name="username" id="login-username" required autocomplete="username"

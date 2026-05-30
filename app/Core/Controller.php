@@ -13,21 +13,29 @@ class Controller {
 
         // 1. If we have a persistent cookie but no session, try to log them in
         if (isset($_COOKIE['bb_token']) && empty($_SESSION['user_id'])) {
-            $stmt = $this->db->prepare("SELECT * FROM users WHERE access_token = :token LIMIT 1");
-            $stmt->execute([':token' => $_COOKIE['bb_token']]);
+            $token = $_COOKIE['bb_token'];
+            // Sanity check — valid tokens are 64 hex chars
+            if (!preg_match('/^[a-f0-9]{64}$/', $token)) {
+                setcookie('bb_token', '', time() - 3600, '/');
+                $this->redirect('?url=auth/login');
+            }
+
+            $stmt = $this->db->prepare("SELECT * FROM users WHERE access_token = :token AND is_active = 1 LIMIT 1");
+            $stmt->execute([':token' => $token]);
             $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-            if ($user && $user['is_active'] == 1) {
+            if ($user) {
                 $_SESSION['user_id']      = $user['id'];
                 $_SESSION['user_name']    = $user['name'];
                 $_SESSION['user_name_bn'] = $user['name_bn'] ?? $user['name'];
                 $_SESSION['role']         = $user['role'];
                 $_SESSION['permissions']  = json_decode($user['permissions'] ?? '{}', true);
             } else {
-                setcookie('bb_token', '', time() - 3600, '/');
+                $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+                setcookie('bb_token', '', ['expires' => time() - 3600, 'path' => '/', 'secure' => $secure, 'httponly' => true, 'samesite' => 'Lax']);
                 $this->redirect('?url=auth/login');
             }
-        } 
+        }
         
         // 2. Kill switch: if a user has a session, ensure they are still active
         if (!empty($_SESSION['user_id'])) {

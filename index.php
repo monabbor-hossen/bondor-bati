@@ -5,6 +5,20 @@
  */
 session_start();
 
+// ── Security Headers ──────────────────────────────────────────────────
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+// Tight CSP: allows CDN scripts/fonts we rely on, blocks everything else
+header("Content-Security-Policy: default-src 'self'; "
+    . "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+    . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+    . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+    . "img-src 'self' data:; "
+    . "connect-src 'self'; "
+    . "frame-ancestors 'none';");
+
 define('ROOT_PATH', __DIR__);
 define('LOG_PATH', ROOT_PATH . '/logs');
 
