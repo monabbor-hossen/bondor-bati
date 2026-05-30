@@ -1,19 +1,16 @@
 /**
- * Bondor Bati Service Worker
- * Handles offline caching and background sync
+ * Bondor Bati Service Worker v3
+ * - Cache-first for true static assets only (fonts, icons, offline page)
+ * - Network-only for all PHP/authenticated pages (no stale auth data)
  */
 
-const CACHE_NAME = 'bondor-bati-v2';
+const CACHE_NAME  = 'bondor-bati-v3';
 const OFFLINE_URL = '/bondor-bati/offline.html';
 
-// Assets to pre-cache
-const PRECACHE_URLS = [
-    '/bondor-bati/',
-    '/bondor-bati/?url=dashboard',
-    OFFLINE_URL,
-];
+// Only pre-cache the offline fallback — nothing authenticated
+const PRECACHE_URLS = [OFFLINE_URL];
 
-// Install: pre-cache critical assets
+// Install: pre-cache offline page only
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -22,76 +19,65 @@ self.addEventListener('install', event => {
     );
 });
 
-// Activate: clean old caches
+// Activate: purge old caches
 self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(keys
-                .filter(key => key !== CACHE_NAME)
-                .map(key => caches.delete(key))
-            )
-        ).then(() => self.clients.claim())
+        caches.keys()
+            .then(keys => Promise.all(
+                keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+            ))
+            .then(() => self.clients.claim())
     );
 });
 
-// Fetch: network-first for API, cache-first for assets
+// Fetch strategy
 self.addEventListener('fetch', event => {
-    const url = new URL(event.request.url);
+    const req = event.request;
+    const url = new URL(req.url);
 
-    // Skip non-GET requests
-    if (event.request.method !== 'GET') return;
+    // Only handle GET from our own origin
+    if (req.method !== 'GET' || url.origin !== self.location.origin) return;
 
-    // Skip external resources
-    if (!url.origin.includes(self.location.origin)) return;
-
-    // API requests: network-first
-    if (url.search.includes('url=')) {
+    // ── Dynamic/authenticated pages → Network-only (never cache) ──
+    // These are PHP pages that contain user-specific data
+    if (url.pathname.endsWith('index.php') || url.search.includes('url=') || url.pathname === '/bondor-bati/' || url.pathname === '/bondor-bati') {
         event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    // Cache successful responses
-                    if (response.ok) {
-                        const clone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    // Try cache, then offline page
-                    return caches.match(event.request)
-                        .then(cached => cached || caches.match(OFFLINE_URL));
-                })
+            fetch(req).catch(() => caches.match(OFFLINE_URL))
         );
         return;
     }
 
-    // Static assets: cache-first
-    event.respondWith(
-        caches.match(event.request)
-            .then(cached => cached || fetch(event.request)
-                .then(response => {
+    // ── True static assets → Cache-first ──────────────────────────
+    // (fonts, icons, images loaded via direct path — not PHP)
+    if (url.pathname.match(/\.(woff2?|ttf|png|jpg|jpeg|gif|svg|ico|webp|css|js)$/)) {
+        event.respondWith(
+            caches.match(req).then(cached => {
+                if (cached) return cached;
+                return fetch(req).then(response => {
                     if (response.ok) {
                         const clone = response.clone();
-                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
                     }
                     return response;
-                })
-            )
-            .catch(() => caches.match(OFFLINE_URL))
+                }).catch(() => caches.match(OFFLINE_URL));
+            })
+        );
+        return;
+    }
+
+    // Everything else → network with offline fallback
+    event.respondWith(
+        fetch(req).catch(() => caches.match(OFFLINE_URL))
     );
 });
 
-// Background Sync: push offline data when connectivity resumes
+// Background sync relay to client
 self.addEventListener('sync', event => {
     if (event.tag === 'bondor-sync') {
-        event.waitUntil(syncOfflineData());
+        event.waitUntil(
+            self.clients.matchAll().then(clients =>
+                clients.forEach(c => c.postMessage({ type: 'SYNC_START' }))
+            )
+        );
     }
 });
-
-async function syncOfflineData() {
-    // This will be called by the client-side IndexedDB sync logic
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-        client.postMessage({ type: 'SYNC_START' });
-    });
-}
