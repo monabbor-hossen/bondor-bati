@@ -265,11 +265,11 @@ public function __construct() {
 
                 $stmt = $this->db->prepare("INSERT INTO users (name, name_bn, username, password, role, is_active) VALUES (:name, :name_bn, :username, :password, :role, 1)");
                 $stmt->execute([
-                    ':name' => $name,
-                    ':name_bn' => $nameBn,
+                    ':name'     => $name,
+                    ':name_bn'  => $nameBn,
                     ':username' => $phone,
-                    ':password' => password_hash('123456', PASSWORD_DEFAULT),
-                    ':role' => $role
+                    ':password' => password_hash(bin2hex(random_bytes(12)), PASSWORD_DEFAULT), // random secure password — staff use magic links, not passwords
+                    ':role'     => $role
                 ]);
                 $userId = $this->db->lastInsertId();
                 
