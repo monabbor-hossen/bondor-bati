@@ -142,6 +142,30 @@ public function __construct() {
     // ══════════════════════════════════════════════════════════════
     //  DAY LEDGER (unified closing)
     // ══════════════════════════════════════════════════════════════
+    
+    private function getShiftOpeningQty(int $itemId, string $logDate, string $currentShift): float {
+        if ($currentShift === 'evening') {
+            $stmt = $this->db->prepare("SELECT closing_qty FROM shift_closings WHERE item_id = ? AND log_date = ? AND shift = 'morning'");
+            $stmt->execute([$itemId, $logDate]);
+            $val = $stmt->fetchColumn();
+            if ($val !== false) return (float)$val;
+        }
+        if ($currentShift === 'night') {
+            $stmt = $this->db->prepare("SELECT closing_qty FROM shift_closings WHERE item_id = ? AND log_date = ? AND shift = 'evening'");
+            $stmt->execute([$itemId, $logDate]);
+            $val = $stmt->fetchColumn();
+            if ($val !== false) return (float)$val;
+            
+            $stmt = $this->db->prepare("SELECT closing_qty FROM shift_closings WHERE item_id = ? AND log_date = ? AND shift = 'morning'");
+            $stmt->execute([$itemId, $logDate]);
+            $val = $stmt->fetchColumn();
+            if ($val !== false) return (float)$val;
+        }
+        $stmt = $this->db->prepare("SELECT opening_qty FROM daily_stocks WHERE item_id = ? AND log_date = ?");
+        $stmt->execute([$itemId, $logDate]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (float)$val : 0;
+    }
 
     /**
      * Display Day Ledger
@@ -164,7 +188,7 @@ public function __construct() {
 
         // Items already tracked today (from daily_stocks joined with shift_closings)
         $todayStmt = $this->db->prepare("
-            SELECT ds.item_id, ds.opening_qty,
+            SELECT ds.item_id, ds.opening_qty AS daily_opening,
                    i.item_name, i.item_name_bn, i.selling_price, i.cost_price, i.unit,
                    COALESCE(i.raw_usage, 1.0) AS raw_usage,
                    i.raw_usage_unit,
@@ -183,6 +207,12 @@ public function __construct() {
         ");
         $todayStmt->execute([':date' => $date, ':shift' => $shift]);
         $todayItems = $todayStmt->fetchAll();
+        
+        // Inject correct dynamic shift opening quantity
+        foreach ($todayItems as &$ti) {
+            $ti['opening_qty'] = $this->getShiftOpeningQty((int)$ti['item_id'], $date, $shift);
+        }
+        unset($ti);
 
         // Today's customer dues
         $duesStmt = $this->db->prepare("SELECT id, customer_name, phone, due_amount, status FROM customer_dues WHERE log_date = :date ORDER BY id DESC");
@@ -520,15 +550,13 @@ public function __construct() {
                 if ($rm['raw_unit'] === 'l' && $rm['usage_unit'] === 'ml') $rawUsage /= 1000;
                 
                 // Fetch previous closing/opening to calculate delta for master inventory
-                $oldDsStmt = $this->db->prepare("SELECT opening_qty FROM daily_stocks WHERE item_id = :item_id AND log_date = :log_date");
-                $oldDsStmt->execute([':item_id' => $item['item_id'], ':log_date' => $logDate]);
-                $oldOpening = $oldDsStmt->fetchColumn();
+                $oldOpening = $this->getShiftOpeningQty((int)$item['item_id'], $logDate, $shift);
 
                 $oldClosingStmt = $this->db->prepare("SELECT closing_qty FROM shift_closings WHERE item_id = :item_id AND log_date = :log_date AND shift = :shift");
                 $oldClosingStmt->execute([':item_id' => $item['item_id'], ':log_date' => $logDate, ':shift' => $shift]);
                 $oldClosing = $oldClosingStmt->fetchColumn();
 
-                $previousUsedRaw = ($oldOpening !== false && $oldClosing !== false) ? ((float)$oldOpening - (float)$oldClosing) : 0;
+                $previousUsedRaw = ($oldClosing !== false) ? ((float)$oldOpening - (float)$oldClosing) : 0;
                 
                 $usedRaw  = $effectiveOpening - $closingQty;
                 $deltaUsedRaw = $usedRaw - $previousUsedRaw;

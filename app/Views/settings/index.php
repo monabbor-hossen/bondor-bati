@@ -67,6 +67,13 @@ $role = $_SESSION['role'] ?? 'staff';
                 </div>
                 <i class="fas fa-chevron-right text-xs text-text-muted group-hover:text-purple-400 transition-colors"></i>
             </a>
+            <a href="?url=bazaar/history" class="flex items-center justify-between py-4 px-2 border-b border-border/50 hover:bg-surface/50 transition-colors group">
+                <div class="flex items-center gap-4">
+                    <i class="fas fa-history text-lg text-fuchsia-400 drop-shadow-[0_0_8px_rgba(232,121,249,0.5)] group-hover:scale-110 transition-transform"></i>
+                    <span class="text-sm font-semibold text-text-primary">Bazaar &amp; Sales History</span>
+                </div>
+                <i class="fas fa-chevron-right text-xs text-text-muted group-hover:text-fuchsia-400 transition-colors"></i>
+            </a>
         </div>
     </div>
     <?php endif; ?>

@@ -288,6 +288,75 @@ public function __construct() {
         $this->json(['success' => false, 'error' => 'Invalid staff ID']);
     }
 
+    /**
+     * Bazaar History Page — date-based purchase list + selling product list
+     * Route: ?url=bazaar/history
+     */
+    public function history() {
+        $this->requireAdmin();
+
+        // Date filter — defaults to today
+        $date = $_GET['date'] ?? date('Y-m-d');
+
+        // --- Bazaar Purchase Lists for the selected date ---
+        $ledgerStmt = $this->db->prepare("
+            SELECT bl.*, u.name AS staff_name
+            FROM bazaar_ledgers bl
+            LEFT JOIN users u ON u.id = bl.assigned_staff_id
+            WHERE bl.log_date = :d
+            ORDER BY bl.id ASC
+        ");
+        $ledgerStmt->execute([':d' => $date]);
+        $ledgers = $ledgerStmt->fetchAll();
+
+        // Fetch items for each ledger
+        foreach ($ledgers as &$l) {
+            $itemStmt = $this->db->prepare("SELECT * FROM bazaar_items WHERE ledger_id = :id ORDER BY id");
+            $itemStmt->execute([':id' => $l['id']]);
+            $l['items'] = $itemStmt->fetchAll();
+        }
+        unset($l);
+
+        // --- Selling Product List for the selected date ---
+        // Aggregate sold_qty, sales & wastage across all shifts per item
+        $salesStmt = $this->db->prepare("
+            SELECT i.item_name, i.item_name_bn,
+                   SUM(sc.sold_qty) AS total_sold,
+                   SUM(sc.complimentary_qty) AS total_comp,
+                   SUM(sc.total_sales_amount) AS total_sales,
+                   i.selling_price,
+                   COALESCE(ds.wastage_qty, 0) AS wastage_qty,
+                   GROUP_CONCAT(CONCAT(sc.shift,':',sc.sold_qty) ORDER BY sc.shift SEPARATOR ', ') AS shift_breakdown
+            FROM shift_closings sc
+            JOIN items i ON i.id = sc.item_id
+            LEFT JOIN daily_stocks ds ON ds.item_id = sc.item_id AND ds.log_date = :d2
+            WHERE sc.log_date = :d
+            GROUP BY sc.item_id, i.item_name, i.item_name_bn, i.selling_price, ds.wastage_qty
+            ORDER BY total_sold DESC
+        ");
+        $salesStmt->execute([':d' => $date, ':d2' => $date]);
+        $salesRows = $salesStmt->fetchAll();
+
+        // Available dates for the date picker (last 60 days that have bazaar or sales data)
+        $datesStmt = $this->db->query("
+            SELECT DISTINCT log_date FROM bazaar_ledgers
+            UNION
+            SELECT DISTINCT log_date FROM shift_closings
+            ORDER BY log_date DESC
+            LIMIT 60
+        ");
+        $availableDates = $datesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $this->view('bazaar/history', [
+            'pageTitle'      => 'Bazaar & Sales History',
+            'activeNav'      => 'settings',
+            'selectedDate'   => $date,
+            'ledgers'        => $ledgers,
+            'salesRows'      => $salesRows,
+            'availableDates' => $availableDates,
+        ]);
+    }
+
     public function deleteLedger() {
         if (($_SESSION['role'] ?? '') !== 'admin') {
             $this->json(['success' => false, 'error' => 'Unauthorized']);
