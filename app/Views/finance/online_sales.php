@@ -115,54 +115,67 @@ $stockMap = $stockMap ?? [];
                 </div>
             </div>
 
-            <!-- Item Repeater -->
-            <div class="mb-3">
+            <!-- ── Entry Mode Toggle ───────────────────────────── -->
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest">Mode</span>
+                <div class="flex bg-surface border border-border rounded-xl overflow-hidden text-xs font-bold ml-auto">
+                    <button type="button" id="mode-quick"
+                        onclick="setEntryMode('quick')"
+                        class="px-3 py-1.5 transition-all bg-indigo-500/20 text-indigo-300 border-r border-border">
+                        <i class="fas fa-bolt mr-1"></i>Quick
+                    </button>
+                    <button type="button" id="mode-detail"
+                        onclick="setEntryMode('detail')"
+                        class="px-3 py-1.5 transition-all text-text-muted hover:text-text-primary">
+                        <i class="fas fa-list mr-1"></i>Detailed
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Quick Entry: just type the gross total ──────── -->
+            <div id="quick-entry-section" class="mb-3">
+                <label class="block text-[0.65rem] font-bold text-text-muted uppercase tracking-widest mb-1.5">
+                    <i class="fas fa-bolt text-indigo-400 mr-1"></i>Total Sale Amount (৳)
+                </label>
+                <input type="number" id="quick-gross" min="0" step="1" inputmode="decimal" placeholder="0"
+                    class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-3xl font-black text-text-primary focus:border-indigo-500 transition-colors text-right focus:outline-none">
+                <p class="text-[0.6rem] text-text-muted mt-1.5 px-1">Enter the total order amount. Commission & discount will be deducted below.</p>
+            </div>
+
+            <!-- ── Detailed Entry: item-by-item ───────────────── -->
+            <div id="detail-entry-section" class="mb-3 hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <label
-                        class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest"><?= __('item') ?></label>
+                    <label class="text-[0.65rem] font-bold text-text-muted uppercase tracking-widest"><?= __('item') ?></label>
                     <button type="button" onclick="addOnlineItemRow()"
                         class="flex items-center gap-1.5 text-xs font-bold text-indigo-400 border border-indigo-500/40 bg-indigo-500/10 px-2.5 py-1 rounded-lg hover:bg-indigo-500/20 transition-all">
                         <i class="fas fa-plus text-[0.65rem]"></i> <?= __('add_item') ?>
                     </button>
                 </div>
-
                 <!-- Quick Addons -->
                 <div class="flex gap-2 overflow-x-auto pb-2 mb-2 hide-scrollbar">
                     <?php if (!empty($onlineAddons)): ?>
-                        <?php foreach ($onlineAddons as $addon): 
+                        <?php foreach ($onlineAddons as $addon):
                             $gramLabel = ($addon['gram'] ?? 0) > 0 ? ' · ' . $addon['gram'] . 'g' : '';
                         ?>
                         <button type="button" onclick="addAddon('<?= htmlspecialchars($addon['name'], ENT_QUOTES) ?>', <?= $addon['price'] ?>)" class="flex-shrink-0 px-2.5 py-1 bg-surface border border-border rounded-lg text-[0.65rem] font-bold text-text-muted hover:text-text-primary hover:border-indigo-500 transition-colors"><?= htmlspecialchars($addon['name']) ?> (৳<?= $addon['price'] ?><?= $gramLabel ?>)</button>
                         <?php endforeach; ?>
                     <?php else: ?>
-                        <span class="text-[0.65rem] text-text-muted italic">No addons configured. Configure in Settings.</span>
+                        <span class="text-[0.65rem] text-text-muted italic">No addons configured.</span>
                     <?php endif; ?>
                 </div>
-
                 <!-- Header row -->
                 <div class="grid grid-cols-12 gap-1 mb-1 px-1">
-                    <span
-                        class="col-span-5 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide"><?= __('item') ?></span>
-                    <span
-                        class="col-span-2 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-center"><?= __('qty') ?></span>
-                    <span
-                        class="col-span-3 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-right"><?= __('unit_price') ?></span>
-                    <span
-                        class="col-span-2 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-right pr-1"><?= __('total') ?></span>
+                    <span class="col-span-5 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide"><?= __('item') ?></span>
+                    <span class="col-span-2 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-center"><?= __('qty') ?></span>
+                    <span class="col-span-3 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-right"><?= __('unit_price') ?></span>
+                    <span class="col-span-2 text-[0.55rem] font-bold text-text-muted uppercase tracking-wide text-right pr-1"><?= __('total') ?></span>
                 </div>
-
                 <div id="onlineItemsContainer" class="space-y-2"></div>
-
-                <!-- Empty state hint -->
-                <div id="itemsEmptyHint"
-                    class="text-center py-4 text-text-muted border border-dashed border-border/50 rounded-xl">
+                <div id="itemsEmptyHint" class="text-center py-4 text-text-muted border border-dashed border-border/50 rounded-xl">
                     <i class="fas fa-layer-group text-xl mb-1 block opacity-30"></i>
                     <span class="text-xs"><?= __('add_item') ?></span>
                 </div>
-
-                <!-- No stock warning -->
-                <div id="noStockWarning"
-                    class="hidden text-center py-4 border border-dashed border-amber-500/40 bg-amber-500/5 rounded-xl">
+                <div id="noStockWarning" class="hidden text-center py-4 border border-dashed border-amber-500/40 bg-amber-500/5 rounded-xl">
                     <i class="fas fa-box-open text-xl mb-1 block text-amber-400 opacity-60"></i>
                     <span class="text-xs font-bold text-amber-400">No opening stock set today</span>
                     <p class="text-[0.6rem] text-text-muted mt-0.5">Please set items on the Close Day page first.</p>
@@ -595,17 +608,38 @@ $stockMap = $stockMap ?? [];
         }
         window.removeOnlineItemRow = removeOnlineItemRow;
 
+        // ── Entry Mode Toggle ─────────────────────────────────────
+        let currentMode = 'quick'; // default to quick mode
+
+        function setEntryMode(mode) {
+            currentMode = mode;
+            const isQuick = mode === 'quick';
+            document.getElementById('quick-entry-section').classList.toggle('hidden', !isQuick);
+            document.getElementById('detail-entry-section').classList.toggle('hidden', isQuick);
+            document.getElementById('mode-quick').className = 'px-3 py-1.5 transition-all border-r border-border ' +
+                (isQuick ? 'bg-indigo-500/20 text-indigo-300' : 'text-text-muted hover:text-text-primary');
+            document.getElementById('mode-detail').className = 'px-3 py-1.5 transition-all ' +
+                (!isQuick ? 'bg-indigo-500/20 text-indigo-300' : 'text-text-muted hover:text-text-primary');
+            calculateOnlineTotals();
+        }
+        window.setEntryMode = setEntryMode;
+
         // ── Calculate totals ──────────────────────────────────────
         function calculateOnlineTotals() {
             let gross = 0;
-            document.querySelectorAll('#onlineItemsContainer > div').forEach(row => {
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                const total = qty * price;
-                row.querySelector('.item-total').textContent = total > 0 ? '৳' + Math.round(total) : '0';
-                gross += total;
-            });
-            gross = Math.round(gross);
+
+            if (currentMode === 'quick') {
+                gross = Math.round(parseFloat(document.getElementById('quick-gross').value) || 0);
+            } else {
+                document.querySelectorAll('#onlineItemsContainer > div').forEach(row => {
+                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                    const total = qty * price;
+                    row.querySelector('.item-total').textContent = total > 0 ? '৳' + Math.round(total) : '0';
+                    gross += total;
+                });
+                gross = Math.round(gross);
+            }
 
             const commIn = parseFloat(document.getElementById('sale-commission').value) || 0;
             const commType = document.getElementById('sale-commission-type').value;
@@ -672,6 +706,9 @@ $stockMap = $stockMap ?? [];
             document.getElementById('itemsEmptyHint').classList.add('hidden');
         }
 
+        // Quick-gross input wired to recalculate
+        document.getElementById('quick-gross').addEventListener('input', calculateOnlineTotals);
+
         // ── Sale Form submit ──────────────────────────────────────
         document.getElementById('saleForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -680,17 +717,27 @@ $stockMap = $stockMap ?? [];
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
-            const items = [];
-            document.querySelectorAll('#onlineItemsContainer > div').forEach(row => {
-                const name = row.querySelector('.item-name').value.trim();
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                if (name && qty > 0) items.push({ item_name: name, qty, unit_price: price, total_price: Math.round(qty * price * 100) / 100 });
-            });
+            let items = [];
 
-            if (!items.length) {
-                showToast('<?= __("add_item") ?>', 'warning');
-                btn.innerHTML = orig; btn.disabled = false; return;
+            if (currentMode === 'quick') {
+                const gross = Math.round(parseFloat(document.getElementById('quick-gross').value) || 0);
+                if (!gross) {
+                    showToast('Enter a sale amount', 'warning');
+                    btn.innerHTML = orig; btn.disabled = false; return;
+                }
+                // Store as a single synthetic item so the DB record is consistent
+                items = [{ item_name: 'Quick Entry', qty: 1, unit_price: gross, total_price: gross }];
+            } else {
+                document.querySelectorAll('#onlineItemsContainer > div').forEach(row => {
+                    const name = row.querySelector('.item-name').value.trim();
+                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                    const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                    if (name && qty > 0) items.push({ item_name: name, qty, unit_price: price, total_price: Math.round(qty * price * 100) / 100 });
+                });
+                if (!items.length) {
+                    showToast('<?= __("add_item") ?>', 'warning');
+                    btn.innerHTML = orig; btn.disabled = false; return;
+                }
             }
 
             const res = await apiPost('?url=onlineSales/logDailySale', {
@@ -771,12 +818,20 @@ $stockMap = $stockMap ?? [];
                 document.getElementById('sale-discount-type').value = 'flat';
                 document.getElementById('sale-discount').value = data.discount || 0;
                 document.getElementById('sale-edit-banner').classList.remove('hidden');
-                // Clear and repopulate items
-                document.getElementById('onlineItemsContainer').innerHTML = '';
-                document.getElementById('itemsEmptyHint').classList.add('hidden');
-                if (data.items && data.items.length) {
-                    data.items.forEach(it => addOnlineItemRow(it.item_name, it.qty, it.unit_price));
-                } else { addOnlineItemRow(); }
+
+                // Detect if this was a quick entry (single item named 'Quick Entry')
+                const isQuick = data.items && data.items.length === 1 && data.items[0].item_name === 'Quick Entry';
+                if (isQuick) {
+                    setEntryMode('quick');
+                    document.getElementById('quick-gross').value = data.items[0].unit_price;
+                } else {
+                    setEntryMode('detail');
+                    document.getElementById('onlineItemsContainer').innerHTML = '';
+                    document.getElementById('itemsEmptyHint').classList.add('hidden');
+                    if (data.items && data.items.length) {
+                        data.items.forEach(it => addOnlineItemRow(it.item_name, it.qty, it.unit_price));
+                    } else { addOnlineItemRow(); }
+                }
                 calculateOnlineTotals();
                 document.getElementById('panel-sale').scrollIntoView({ behavior: 'smooth', block: 'start' });
             } else {
