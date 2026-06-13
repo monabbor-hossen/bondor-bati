@@ -67,10 +67,18 @@
                     </div>
                     <div class="mb-5">
                         <label class="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5"><?= __('password') ?></label>
-                        <input type="password" name="password" id="login-password" required autocomplete="current-password"
-                               class="w-full bg-surface border border-border rounded-xl px-4 py-3 text-text-primary text-base
-                                      focus:border-accent transition-colors duration-200 placeholder-text-muted/40"
-                               placeholder="••••••••">
+                        <div class="relative">
+                            <input type="password" name="password" id="login-password" required autocomplete="current-password"
+                                   class="w-full bg-surface border border-border rounded-xl px-4 py-3 pr-12 text-text-primary text-base
+                                          focus:border-accent transition-colors duration-200 placeholder-text-muted/40"
+                                   placeholder="••••••••">
+                            <button type="button" id="toggle-password"
+                                    onclick="togglePassword()"
+                                    class="absolute inset-y-0 right-0 flex items-center justify-center w-12 text-text-muted hover:text-accent transition-colors duration-200"
+                                    tabindex="-1" aria-label="Toggle password visibility">
+                                <i id="toggle-password-icon" class="fas fa-eye text-sm"></i>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" id="login-submit"
                             class="w-full bg-accent hover:bg-accent-light text-white font-bold py-3.5 rounded-xl
@@ -105,5 +113,18 @@
             </a>
         </div>
     </div>
+<script>
+    function togglePassword() {
+        const input = document.getElementById('login-password');
+        const icon  = document.getElementById('toggle-password-icon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+</script>
 </body>
 </html>
