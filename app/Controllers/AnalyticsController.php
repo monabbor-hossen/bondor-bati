@@ -6,10 +6,10 @@ use Config\Database;
 use PDO;
 
 /**
- * Analytics Controller — Reports, Top Sellers, Wastage, Custom Ranges
+ * Analytics Controller — Revenue, Costs, Net Profit, Top Sellers
  */
 class AnalyticsController extends Controller {
-public function __construct() {
+    public function __construct() {
         parent::__construct();
         $this->db = (new Database())->getConnection();
     }
@@ -17,45 +17,82 @@ public function __construct() {
     public function index() {
         $this->requireAdmin();
 
-        $range = $_GET['range'] ?? 'today';
-        $from  = $_GET['from'] ?? date('Y-m-d');
-        $to    = $_GET['to'] ?? date('Y-m-d');
+        // Date range — supports both quick-filter range param AND direct start/end inputs
+        $range = $_GET['range'] ?? 'month';
+        $start = $_GET['start'] ?? date('Y-m-01');
+        $end   = $_GET['end']   ?? date('Y-m-t');
 
         switch ($range) {
-            case 'today':    $from = $to = date('Y-m-d'); break;
-            case 'yesterday': $from = $to = date('Y-m-d', strtotime('-1 day')); break;
-            case 'month':    $from = date('Y-m-01'); $to = date('Y-m-d'); break;
-            case 'custom':   break; // use provided from/to
+            case 'today':
+                $start = $end = date('Y-m-d');
+                break;
+            case 'last7':
+                $start = date('Y-m-d', strtotime('-6 days'));
+                $end   = date('Y-m-d');
+                break;
+            case 'month':
+                $start = date('Y-m-01');
+                $end   = date('Y-m-t');
+                break;
+            case 'yesterday':
+                $start = $end = date('Y-m-d', strtotime('-1 day'));
+                break;
+            case 'custom':
+                // honour provided start/end as-is
+                break;
         }
 
+        // Unified revenue + cost + profit metrics from shift_closings × items
+        $stmt = $this->db->prepare("
+            SELECT
+                COALESCE(SUM(sc.sold_qty * i.selling_price), 0)                                      AS total_revenue,
+                COALESCE(SUM(sc.sold_qty * i.cost_price), 0)                                         AS total_raw_cost,
+                COALESCE(SUM(sc.sold_qty * i.additional_cost), 0)                                     AS total_additional_cost,
+                COALESCE(SUM(sc.sold_qty * (i.selling_price - (i.cost_price + i.additional_cost))), 0) AS net_profit
+            FROM shift_closings sc
+            JOIN items i ON sc.item_id = i.id
+            WHERE sc.log_date BETWEEN :start AND :end
+              AND sc.sold_qty > 0
+        ");
+        $stmt->execute([':start' => $start, ':end' => $end]);
+        $metrics = $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+            'total_revenue'          => 0,
+            'total_raw_cost'         => 0,
+            'total_additional_cost'  => 0,
+            'net_profit'             => 0,
+        ];
+
+        // Top 5 selling items
+        $topItemsStmt = $this->db->prepare("
+            SELECT sc.item_id, i.item_name, i.item_name_bn,
+                   SUM(sc.sold_qty) AS total_sold,
+                   SUM(sc.sold_qty * i.selling_price) AS item_revenue
+            FROM shift_closings sc
+            JOIN items i ON sc.item_id = i.id
+            WHERE sc.log_date BETWEEN :start AND :end
+              AND sc.sold_qty > 0
+            GROUP BY sc.item_id, i.item_name, i.item_name_bn
+            ORDER BY total_sold DESC
+            LIMIT 5
+        ");
+        $topItemsStmt->execute([':start' => $start, ':end' => $end]);
+        $topItems = $topItemsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Retained legacy data for lower sections
         $this->view('admin/analytics', [
             'pageTitle'      => __('analytics'),
             'activeNav'      => 'analytics',
             'range'          => $range,
-            'from'           => $from,
-            'to'             => $to,
-            'salesSummary'   => $this->getSalesSummary($from, $to),
-            'expenseSummary' => $this->getExpenseSummary($from, $to),
-            'topSelling'     => $this->getTopSelling($from, $to),
-            'highWastage'    => $this->getHighWastage($from, $to),
-            'shiftBreakdown' => $this->getShiftBreakdown($from, $to),
+            'start'          => $start,
+            'end'            => $end,
+            'metrics'        => $metrics,
+            'topItems'       => $topItems,
+            'expenseSummary' => $this->getExpenseSummary($start, $end),
+            'highWastage'    => $this->getHighWastage($start, $end),
+            'shiftBreakdown' => $this->getShiftBreakdown($start, $end),
             'customerDues'   => $this->getCustomerDues(),
             'supplierDues'   => $this->getSupplierDues(),
         ]);
-    }
-
-    private function getSalesSummary(string $from, string $to): array {
-        $stmt = $this->db->prepare("
-            SELECT
-                COALESCE(SUM(total_sales_amount), 0) AS total_revenue,
-                COALESCE(SUM(sold_qty), 0) AS total_sold,
-                COALESCE(SUM(complimentary_qty), 0) AS total_comp,
-                COALESCE(SUM(due_qty), 0) AS total_due
-            FROM shift_closings
-            WHERE log_date BETWEEN :from AND :to
-        ");
-        $stmt->execute([':from' => $from, ':to' => $to]);
-        return $stmt->fetch() ?: [];
     }
 
     private function getExpenseSummary(string $from, string $to): array {
@@ -66,7 +103,7 @@ public function __construct() {
 
         // Days in range for fixed costs
         $days = max(1, (strtotime($to) - strtotime($from)) / 86400 + 1);
-        $fc = $this->db->query("SELECT COALESCE(SUM(daily_amount), 0) FROM fixed_daily_costs WHERE is_active = 1");
+        $fc   = $this->db->query("SELECT COALESCE(SUM(daily_amount), 0) FROM fixed_daily_costs WHERE is_active = 1");
         $fixedTotal = (float)$fc->fetchColumn() * $days;
 
         // Spread costs
@@ -88,27 +125,13 @@ public function __construct() {
         $wastageCost = (float)$w->fetchColumn();
 
         return [
-            'bazaar'   => $bazaar,
-            'fixed'    => $fixedTotal,
-            'spread'   => $spreadTotal,
-            'salary'   => $salaryTotal,
-            'wastage'  => $wastageCost,
-            'total'    => $bazaar + $fixedTotal + $spreadTotal + $salaryTotal + $wastageCost,
+            'bazaar'  => $bazaar,
+            'fixed'   => $fixedTotal,
+            'spread'  => $spreadTotal,
+            'salary'  => $salaryTotal,
+            'wastage' => $wastageCost,
+            'total'   => $bazaar + $fixedTotal + $spreadTotal + $salaryTotal + $wastageCost,
         ];
-    }
-
-    private function getTopSelling(string $from, string $to): array {
-        $stmt = $this->db->prepare("
-            SELECT i.item_name, i.item_name_bn, SUM(sc.sold_qty) AS total_sold,
-                   SUM(sc.total_sales_amount) AS total_revenue
-            FROM shift_closings sc
-            JOIN items i ON sc.item_id = i.id
-            WHERE sc.log_date BETWEEN :f AND :t
-            GROUP BY i.id, i.item_name, i.item_name_bn
-            ORDER BY total_sold DESC LIMIT 5
-        ");
-        $stmt->execute([':f' => $from, ':t' => $to]);
-        return $stmt->fetchAll();
     }
 
     private function getHighWastage(string $from, string $to): array {
@@ -140,7 +163,7 @@ public function __construct() {
 
     private function getCustomerDues(): array {
         return $this->db->query("
-            SELECT customer_name, phone, due_amount, log_date
+            SELECT id, customer_name, phone, due_amount, log_date
             FROM customer_dues WHERE status = 'pending'
             ORDER BY due_amount DESC LIMIT 10
         ")->fetchAll();

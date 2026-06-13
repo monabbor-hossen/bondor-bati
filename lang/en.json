@@ -26,7 +26,7 @@
     "total_sales": "Total Sales",
     "net_profit": "Net Profit",
     "cash_in_drawer": "Cash in Drawer",
-    "total_revenue": "Total Revenue",
+    "total_revenue": "Gross Revenue",
     "total_expenses": "Total Expenses",
     "save": "Save",
     "submit": "Submit",
@@ -244,5 +244,11 @@
     "closing_qty": "Closing (Leftover)",
     "used_qty": "Total Used",
     "no_bazaar_assigned": "No bazaar list assigned to you today.",
-    "contact_admin": "Please contact the admin."
+    "contact_admin": "Please contact the admin.",
+    "total_raw_cost": "Raw Material Cost",
+    "total_additional_cost": "Additional Costs",
+    "item_net_profit": "Item Net Profit",
+    "top_selling_items": "Top Selling Items",
+    "qty_sold": "Sold",
+    "last_7_days": "Last 7 Days"
 }

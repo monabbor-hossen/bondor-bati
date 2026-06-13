@@ -791,6 +791,32 @@ public function __construct() {
      * Delete Daily Consumable Log (AJAX)
      * Route: ?url=inventory/deleteConsumableLog
      */
+    /**
+     * Settle (mark as paid) a customer due (AJAX)
+     * Route: ?url=inventory/settleDue
+     */
+    public function settleDue() {
+        $this->requireAdmin();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'error' => 'POST required']);
+        }
+
+        $data  = json_decode(file_get_contents('php://input'), true);
+        $dueId = (int)($data['due_id'] ?? 0);
+
+        if ($dueId <= 0) {
+            $this->json(['success' => false, 'error' => 'Invalid due ID']);
+        }
+
+        try {
+            $stmt = $this->db->prepare("UPDATE customer_dues SET status = 'paid' WHERE id = :id");
+            $stmt->execute([':id' => $dueId]);
+            $this->json(['success' => true]);
+        } catch (\Exception $e) {
+            $this->json(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function deleteConsumableLog() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->json(['success' => false, 'error' => 'POST required']);
