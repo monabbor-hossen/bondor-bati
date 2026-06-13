@@ -3,6 +3,7 @@
  * Bazaar Requisition Ledger View
  * Variables: $logDate, $ledger, $bazaarItems, $yesterdayCF
  */
+$isAdmin    = ($_SESSION['role'] ?? '') === 'admin';
 $isExisting = !empty($ledger);
 $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
 ?>
@@ -17,6 +18,14 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
         </span>
     </div>
 </div>
+
+<?php if (!$isAdmin && empty($ledgers)): ?>
+<div class="bg-card border border-border rounded-2xl p-8 text-center animate-slideUp">
+    <i class="fas fa-cart-shopping text-4xl text-text-muted/40 mb-4 block"></i>
+    <p class="text-text-muted font-semibold"><?= __('no_bazaar_assigned') ?? 'No bazaar list assigned to you today.' ?></p>
+    <p class="text-text-muted/60 text-xs mt-1"><?= __('contact_admin') ?? 'Please contact the admin.' ?></p>
+</div>
+<?php return; endif; ?>
 
 <!-- Yesterday's Carry Forward -->
 <?php if ($yesterdayCF > 0): ?>
@@ -40,10 +49,12 @@ $advanceCash = $isExisting ? (float)$ledger['advance_cash'] : 0;
             <?= __('bazaar_list') ?> #<?= $listCount++ ?>
         </a>
     <?php endforeach; ?>
+    <?php if ($isAdmin): ?>
     <button type="button" id="btn-new-ledger" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-emerald-500/30 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 whitespace-nowrap">
         <i class="fas fa-plus mr-1"></i> <?= __('new_list') ?>
     </button>
-    <?php if (($_SESSION['role'] ?? '') === 'admin'): ?>
+    <?php endif; ?>
+    <?php if ($isAdmin): ?>
     <button type="button" id="btn-delete-ledger" class="flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 whitespace-nowrap ml-auto">
         <i class="fas fa-trash-alt"></i>
     </button>

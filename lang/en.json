@@ -242,5 +242,7 @@
     "opening_qty": "Opening (Leftover)",
     "added_today": "Added Today",
     "closing_qty": "Closing (Leftover)",
-    "used_qty": "Total Used"
+    "used_qty": "Total Used",
+    "no_bazaar_assigned": "No bazaar list assigned to you today.",
+    "contact_admin": "Please contact the admin."
 }

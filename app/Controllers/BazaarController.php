@@ -20,6 +20,8 @@ public function __construct() {
      */
     public function index() {
         $date = $_GET['date'] ?? date('Y-m-d');
+        $isAdmin   = ($_SESSION['role'] ?? '') === 'admin';
+        $currentId = (int)($_SESSION['user_id'] ?? 0);
 
         try { $this->db->exec("ALTER TABLE bazaar_ledgers DROP INDEX log_date"); } catch (\Exception $e) {}
 
@@ -29,17 +31,31 @@ public function __construct() {
         // Fetch ALL ledgers for today
         $stmt = $this->db->prepare("SELECT * FROM bazaar_ledgers WHERE log_date = :d ORDER BY id ASC");
         $stmt->execute([':d' => $date]);
-        $ledgers = $stmt->fetchAll();
-        
-        if (empty($ledgers)) {
+        $allLedgers = $stmt->fetchAll();
+
+        if (empty($allLedgers)) {
             $ins = $this->db->prepare("INSERT INTO bazaar_ledgers (log_date, status) VALUES (:d, 'open')");
             $ins->execute([':d' => $date]);
             $stmt->execute([':d' => $date]);
-            $ledgers = $stmt->fetchAll();
+            $allLedgers = $stmt->fetchAll();
         }
 
-        $activeLedgerId = (int)($_GET['ledger_id'] ?? $ledgers[0]['id']);
-        
+        // Staff only see ledgers explicitly assigned to them.
+        // Ledgers assigned to admin (or 0/null) are hidden from staff.
+        if ($isAdmin) {
+            $ledgers = $allLedgers;
+        } else {
+            // Find admin user IDs so we can exclude ledgers assigned to admin
+            $adminIds = $this->db->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll(PDO::FETCH_COLUMN);
+            $ledgers = array_values(array_filter($allLedgers, function($l) use ($currentId, $adminIds) {
+                $aid = (int)$l['assigned_staff_id'];
+                // Must be assigned to current staff member
+                return $aid === $currentId;
+            }));
+        }
+
+        $activeLedgerId = (int)($_GET['ledger_id'] ?? ($ledgers[0]['id'] ?? 0));
+
         $ledger = null;
         foreach ($ledgers as $l) {
             if ($l['id'] == $activeLedgerId) {
@@ -47,7 +63,7 @@ public function __construct() {
                 break;
             }
         }
-        if (!$ledger) {
+        if (!$ledger && !empty($ledgers)) {
             $ledger = $ledgers[0];
             $activeLedgerId = $ledger['id'];
         }
@@ -65,7 +81,7 @@ public function __construct() {
 
         // Calculate past carry forward up to this exact ledger
         $cf = $this->db->prepare("SELECT COALESCE(SUM(advance_cash) - SUM(total_spent) - SUM(returned_cash), 0) FROM bazaar_ledgers WHERE id < :activeId");
-        $cf->execute([':activeId' => $activeLedgerId]);
+        $cf->execute([':activeId' => $activeLedgerId ?: 0]);
         $pastCarryForward = (float)$cf->fetchColumn();
 
         // Fetch raw inventory names for datalist auto-suggest
@@ -124,8 +140,16 @@ public function __construct() {
             $existing = $this->db->prepare("SELECT advance_cash, assigned_staff_id FROM bazaar_ledgers WHERE id = :id");
             $existing->execute([':id' => $ledgerId]);
             $row = $existing->fetch();
+
+            // Staff can only save ledgers that are assigned to them
+            $currentId = (int)($_SESSION['user_id'] ?? 0);
+            $rowAssigned = $row ? (int)$row['assigned_staff_id'] : 0;
+            if (!$row || $rowAssigned !== $currentId) {
+                $this->json(['success' => false, 'error' => 'Unauthorized']);
+            }
+
             $advanceCash = $row ? (float)$row['advance_cash'] : 0;
-            $assignedStaffId = $row ? (int)$row['assigned_staff_id'] : $assignedStaffId;
+            $assignedStaffId = $rowAssigned;
         }
 
         try {
