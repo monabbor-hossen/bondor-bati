@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bondor Bati - Chittagong Heritage Cuisine</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        :root {
+            --surface-bg: #2b0d0d;
+            --container-bg: #3d1212;
+            --primary-red: #af0202;
+            --flame-orange: #FF5E00;
+            --text-white: #F9F5F0;
+        }
+
+        body {
+            background-color: var(--surface-bg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            color: var(--text-white);
+        }
+
+        .font-nunito-black {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 900;
+        }
+
+        .font-nunito-bold {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+        }
+
+        .font-nunito-extrabold {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+        }
+
+        /* ৩ডি টেক্সট ইফেক্ট */
+        .text-3d {
+            color: #ffffff;
+            text-shadow:
+                0 1px 0 #e5e5e5,
+                0 2px 0 #d4d4d4,
+                0 3px 0 #c2c2c2,
+                0 4px 0 #b0b0b0,
+                0 5px 0 #9e9e9e,
+                0 6px 1px rgba(0, 0, 0, .2),
+                0 0 5px rgba(0, 0, 0, .1),
+                0 1px 3px rgba(0, 0, 0, .4),
+                0 3px 5px rgba(0, 0, 0, .3),
+                0 5px 10px rgba(0, 0, 0, .3),
+                0 10px 10px rgba(0, 0, 0, .2);
+        }
+
+        @media (max-width: 768px) {
+            .text-3d {
+                text-shadow:
+                    0 1px 0 #e5e5e5,
+                    0 2px 0 #d4d4d4,
+                    0 3px 0 #c2c2c2,
+                    0 4px 1px rgba(0, 0, 0, .2),
+                    0 0 5px rgba(0, 0, 0, .1),
+                    0 1px 3px rgba(0, 0, 0, .4);
+            }
+        }
+
+        /* নেভিগেশন বারের কাস্টম শ্যাডো */
+        .nav-pill {
+            background: #3d1212;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            box-shadow:
+                0px 15px 35px rgba(0, 0, 0, 0.6),
+                0px 5px 15px rgba(0, 0, 0, 0.4),
+                inset 0px 1.5px 1px rgba(255, 180, 180, 0.05),
+                inset 0px -1px 2px rgba(0, 0, 0, 0.5);
+            border-radius: 9999px;
+        }
+
+        .nav-item {
+            color: #b5b5b5;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            transition: all 0.2s ease-in-out;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        /* এক্টিভ 'Pressed' ইনসেট স্টাইল */
+        .nav-item-active {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            background: #2b0d0d;
+            color: #ff6b6b;
+            padding: 8px 22px;
+            border-radius: 9999px;
+            box-shadow:
+                inset 2px 2px 4px rgba(0, 0, 0, 0.6),
+                inset -1px -1px 3px rgba(255, 107, 107, 0.15),
+                0px 1px 1px rgba(255, 180, 180, 0.05);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+        }
+
+        /* 3D Clay Hero Buttons — Theme Aligned */
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #ff5e5e, #af0202);
+            border-radius: 9999px;
+            box-shadow:
+                0 10px 25px rgba(255, 40, 40, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 100, 100, 0.5);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        .btn-hero-primary:hover {
+            background: linear-gradient(135deg, #ff7070, #c90000);
+            box-shadow:
+                0 15px 35px rgba(255, 40, 40, 0.7),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-hero-primary:active {
+            box-shadow:
+                0 5px 15px rgba(255, 40, 40, 0.4),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px);
+        }
+
+        .btn-hero-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 9999px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            color: #d1d1d1;
+            cursor: pointer;
+        }
+
+        .btn-hero-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            transform: translateY(-2px);
+            color: #ffffff;
+        }
+
+        .btn-hero-secondary:active {
+            background-color: rgba(255, 255, 255, 0.03);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(1px);
+        }
+
+        /* ভাসমান এনিমেশন */
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(3deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        @keyframes float-reverse {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(15px) rotate(-3deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        @keyframes shadow-pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(0.8);
+                opacity: 0.2;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .animate-float-delayed {
+            animation: float-reverse 7s ease-in-out infinite;
+        }
+
+        .animate-shadow {
+            animation: shadow-pulse 6s ease-in-out infinite;
+        }
+
+        /* মেটালিক টিফিন বক্সের জন্য গ্রেডিয়েন্ট */
+        .gold-metal {
+            background: linear-gradient(90deg, #5c4210 0%, #b8912f 20%, #fdf0a6 50%, #b8912f 80%, #5c4210 100%);
+            box-shadow: inset 0px 5px 10px rgba(255, 255, 255, 0.3), inset 0px -5px 15px rgba(0, 0, 0, 0.6);
+        }
+
+        .silver-metal {
+            background: linear-gradient(90deg, #333 0%, #999 20%, #eee 50%, #999 80%, #333 100%);
+            box-shadow: inset 0px 5px 10px rgba(255, 255, 255, 0.4), inset 0px -5px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* ৩ডি টেক্সট ইফেক্ট */
+        .text-3d {
+            color: #ffffff;
+            text-shadow:
+                0 1px 0 #e5e5e5, 0 2px 0 #d4d4d4, 0 3px 0 #c2c2c2,
+                0 4px 0 #b0b0b0, 0 5px 0 #9e9e9e, 0 6px 1px rgba(0, 0, 0, .2),
+                0 0 5px rgba(0, 0, 0, .1), 0 1px 3px rgba(0, 0, 0, .4),
+                0 3px 5px rgba(0, 0, 0, .3), 0 5px 10px rgba(0, 0, 0, .3),
+                0 10px 10px rgba(0, 0, 0, .2);
+        }
+
+        /* Weekly Menu Red 3D Text Effect */
+        .title-3d-red {
+            color: #991616;
+            text-shadow:
+                0 1px 0 #851212,
+                0 2px 0 #730e0e,
+                0 3px 0 #610b0b,
+                0 4px 0 #4f0808,
+                0 5px 0 #3b0505,
+                0 6px 1px rgba(0, 0, 0, 0.5),
+                0 0 5px rgba(0, 0, 0, 0.2),
+                0 3px 8px rgba(0, 0, 0, 0.6),
+                0 10px 15px rgba(0, 0, 0, 0.7);
+            -webkit-text-stroke: 1.5px #e33b3b;
+            letter-spacing: 1px;
+        }
+
+        /* Dashboard Outer Frame (Like Reference Image) */
+        .dashboard-container {
+            background-color: #3d1212;
+            border-radius: 2rem;
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 1px 1px 2px rgba(255, 180, 180, 0.05),
+                inset -1px -1px 2px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 180, 180, 0.03);
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        @media (min-width: 640px) {
+            .dashboard-container {
+                padding: 0.5rem;
+                border-radius: 2.5rem;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .dashboard-container {
+                padding: 1rem;
+                border-radius: 3rem;
+            }
+        }
+
+        /* --- সফট 3D Claymorphism ডিজাইন --- */
+        .clay-card {
+            background: #4a1515;
+            border-radius: 36px;
+            box-shadow:
+                20px 20px 40px rgba(0, 0, 0, 0.7),
+                -10px -10px 20px rgba(255, 180, 180, 0.05),
+                inset 2px 2px 5px rgba(255, 180, 180, 0.04);
+            transition: transform 0.3s ease;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 180, 180, 0.03);
+        }
+
+        .clay-tab {
+            background: #4a1515;
+            border-radius: 20px;
+            color: #eaa;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            padding: 10px 18px;
+            box-shadow:
+                8px 8px 16px rgba(0, 0, 0, 0.6),
+                -5px -5px 12px rgba(255, 180, 180, 0.05),
+                inset 1px 1px 2px rgba(255, 180, 180, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            white-space: nowrap;
+            scroll-snap-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .clay-tab {
+                font-size: 16px;
+                padding: 14px 28px;
+            }
+        }
+
+        .clay-tab:hover {
+            color: #ddd;
+            transform: translateY(-2px);
+        }
+
+        .clay-tab-active {
+            background: #3d1212;
+            color: #ff6b6b;
+            transform: scale(1.1) translateY(-2px);
+            box-shadow:
+                12px 12px 24px rgba(0, 0, 0, 0.7),
+                -8px -8px 16px rgba(255, 180, 180, 0.05),
+                inset 2px 2px 4px rgba(255, 180, 180, 0.08);
+            z-index: 10;
+        }
+
+        @media (min-width: 768px) {
+            .clay-tab-active {
+                transform: scale(1.15) translateY(-2px);
+            }
+        }
+
+        #dayTabsContainer {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+        }
+
+        .clay-btn-red {
+            background: linear-gradient(135deg, #ff5e5e, #af0202);
+            color: white;
+            border-radius: 9999px;
+            padding: 12px 32px;
+            box-shadow:
+                0 10px 25px rgba(255, 40, 40, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 100, 100, 0.5);
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .clay-btn-red:hover {
+            background: linear-gradient(135deg, #ff7070, #c90000);
+            box-shadow:
+                0 15px 35px rgba(255, 40, 40, 0.7),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .clay-btn-red:active {
+            box-shadow:
+                0 5px 15px rgba(255, 40, 40, 0.4),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .clay-btn-yellow {
+            background: linear-gradient(135deg, #FFB347, #FF5E00);
+            color: white;
+            border-radius: 9999px;
+            padding: 12px 32px;
+            box-shadow:
+                0 10px 25px rgba(255, 94, 0, 0.45),
+                inset 0 2px 4px rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 160, 60, 0.5);
+            font-family: 'Nunito', sans-serif;
+            font-weight: 800;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .clay-btn-yellow:hover {
+            background: linear-gradient(135deg, #FFC66D, #FF7020);
+            box-shadow:
+                0 15px 35px rgba(255, 94, 0, 0.65),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .clay-btn-yellow:active {
+            box-shadow:
+                0 5px 15px rgba(255, 94, 0, 0.4),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .plate-container {
+            background: #3d1212;
+            box-shadow:
+                inset 8px 8px 16px rgba(0, 0, 0, 0.6),
+                inset -8px -8px 16px rgba(255, 180, 180, 0.05),
+                0 6px 15px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 180, 180, 0.03);
+            border-radius: 50%;
+        }
+
+        /* এনিমেশন */
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .menu-open {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+            transform: translateY(0) !important;
+        }
+
+        /* ============================================ */
+        /* Scroll Reveal Animations                     */
+        /* ============================================ */
+
+        /* Base state — hidden before reveal */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal-right {
+            opacity: 0;
+            transform: translateX(50px);
+            transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.85);
+            transition: opacity 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* Stagger delay helpers */
+        .delay-100 {
+            transition-delay: 0.1s !important;
+        }
+
+        .delay-200 {
+            transition-delay: 0.2s !important;
+        }
+
+        .delay-300 {
+            transition-delay: 0.3s !important;
+        }
+
+        .delay-400 {
+            transition-delay: 0.4s !important;
+        }
+
+        .delay-500 {
+            transition-delay: 0.5s !important;
+        }
+
+        /* Revealed state — triggered by JS */
+        .is-revealed {
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        /* --- Global Sticky Navbar Style --- */
+        #mainNavbar {
+            background: transparent;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            border-bottom: 1px solid transparent;
+            transition: background-color 0.4s ease, backdrop-filter 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        #mainNavbar.scrolled {
+            background: rgba(43, 13, 13, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        #navbarInner {
+            transition: padding 0.4s cubic-bezier(0.4, 0, 0.2, 1), py 0.4s ease;
+        }
+
+        #mainNavbar.scrolled #navbarInner {
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+
+        @media (min-width: 1024px) {
+            #mainNavbar.scrolled #navbarInner {
+                padding-left: 50px;
+                padding-right: 50px;
+            }
+        }
+
+        #navLogo {
+            transition: transform 0.4s ease;
+        }
+
+        #mainNavbar.scrolled #navLogo {
+            transform: scale(0.9);
+        }
+
+        /* --- Mobile Menu Theme Custom Styling --- */
+        #mobileMenu {
+            background: linear-gradient(180deg, rgba(61, 18, 18, 0.98) 0%, rgba(43, 13, 13, 0.99) 100%) !important;
+        }
+
+        .mobile-menu-active {
+            background: #2b0d0d;
+            color: #ff6b6b !important;
+            box-shadow:
+                inset 2px 2px 4px rgba(0, 0, 0, 0.6),
+                inset -1px -1px 3px rgba(255, 107, 107, 0.15),
+                0px 1px 1px rgba(255, 180, 180, 0.05);
+        }
+
+        .mobile-menu-item {
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #b5b5b5;
+            padding: 12px 36px;
+            border-radius: 9999px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            width: 80%;
+            max-w: 280px;
+            text-decoration: none;
+        }
+
+        .mobile-menu-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* --- Floating Messenger Button Animation --- */
+        @keyframes float-messenger {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float-messenger {
+            animation: float-messenger 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="bg-[#2b0d0d]">
+
+    <!-- Global Fixed Navbar -->
+    <nav id="mainNavbar" class="fixed top-0 left-0 right-0 z-[100] w-full">
+        <div id="navbarInner"
+            class="flex justify-between items-center py-[40px] px-[30px] sm:px-6 md:px-[30px] lg:px-[150px] max-w-[1600px] mx-auto w-full">
+            <div class="relative z-[60]">
+                <img id="navLogo" src="assets/logo.png" alt="Bondor Bati" class="h-12 md:h-16 w-auto object-contain" />
+            </div>
+
+            <!-- Desktop Menu (Clay Style) -->
+            <div class="hidden lg:flex nav-pill items-center gap-3 px-5 py-2.5">
+                <a href="#" class="nav-item-active">Home</a>
+                <a href="#menu" class="nav-item">Menu</a>
+                <a href="#" class="nav-item">Our Story</a>
+                <a href="#contact" class="nav-item">Contact Us</a>
+                <div
+                    class="relative ml-3 cursor-pointer group flex items-center justify-center w-9 h-9 bg-[#1a1a1d] rounded-full shadow-[inset_1px_1px_2px_rgba(0,0,0,0.5),_0px_1px_1px_rgba(255,255,255,0.05)] hover:bg-[#25252a] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-[#b5b5b5] group-hover:text-white transition-colors">
+                        <circle cx="9" cy="21" r="1"></circle>
+                        <circle cx="20" cy="21" r="1"></circle>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg>
+                    <span
+                        class="absolute -top-1 -right-1 bg-[#ff5757] text-white text-[10px] font-nunito-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-[#1d1d20]">0</span>
+                </div>
+            </div>
+
+            <button id="mobileMenuBtn"
+                class="lg:hidden relative z-[60] p-3 bg-[#4a1515] rounded-full border border-white/5 shadow-[6px_6px_12px_rgba(0,0,0,0.5),_inset_2px_2px_4px_rgba(255,255,255,0.1)] text-[#ff6b6b] hover:text-white hover:bg-[#8e1515] hover:shadow-[0_8px_20px_rgba(142,21,21,0.5)] active:scale-95 transition-all duration-300 focus:outline-none">
+                <svg id="menuIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" x2="20" y1="12" y2="12" />
+                    <line x1="4" x2="20" y1="6" y2="6" />
+                    <line x1="4" x2="20" y1="18" y2="18" />
+                </svg>
+                <svg id="closeIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <div
+        class="min-h-screen w-full flex flex-col relative px-4 sm:px-6 md:px-10 lg:px-[100px] pb-8 max-w-[1600px] mx-auto">
+
+        <!-- Dashboard card container to match the reference image style -->
+        <div class="dashboard-container w-full flex flex-col relative mb-16 mt-6">
+
+            <div id="mobileMenu"
+                class="fixed inset-0 bg-[#131313]/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center gap-6 opacity-0 pointer-events-none invisible transform -translate-y-4 transition-all duration-300 ease-in-out lg:hidden">
+                <img src="assets/logo.png" alt="Bondor Bati" class="h-16 w-auto object-contain mb-6 animate-float" />
+                <a href="#" class="mobile-menu-item mobile-menu-active">Home</a>
+                <a href="#menu" class="mobile-menu-item">Menu</a>
+                <a href="#" class="mobile-menu-item">Our Story</a>
+                <a href="#contact" class="mobile-menu-item">Contact Us</a>
+                <a href="#menu" class="clay-btn-red text-center px-8 py-3.5 text-lg font-nunito-bold tracking-wide mt-6 w-4/5 max-w-[280px] text-white" style="text-decoration: none;">Order Now</a>
+            </div>
+
+            <!-- হিরো সেকশন -->
+            <main
+                class="flex flex-col lg:flex-row items-center justify-between relative z-10 gap-16 lg:gap-0 mt-4 md:mt-0 pt-20 pb-10 md:pt-28 md:pb-16 px-10 min-h-[480px]">
+                <div
+                    class="w-full lg:w-2/5 flex flex-col items-center lg:items-start justify-center text-center lg:text-left h-full reveal-left">
+                    <h1
+                        class="font-nunito-black text-6xl sm:text-7xl lg:text-[90px] xl:text-[100px] leading-[1] lg:leading-[0.9] text-3d mb-6 lg:mb-8 z-20 relative">
+                        Bondor<br class="block" />Bati
+                    </h1>
+                    <p
+                        class="text-[#999999] text-base sm:text-lg lg:text-xl mb-8 lg:mb-10 font-medium max-w-md lg:max-w-none px-4 lg:px-0">
+                        Chittagong Heritage Cuisine, Delivered.
+                    </p>
+                    <div
+                        class="flex flex-col sm:flex-row items-center lg:items-start gap-4 sm:gap-5 w-full sm:w-auto px-6 sm:px-0">
+                        <button
+                            class="btn-hero-primary px-8 py-3.5 sm:px-10 sm:py-4 text-lg sm:text-xl w-full sm:w-auto tracking-wide">
+                            Order Now
+                        </button>
+                        <button
+                            class="btn-hero-secondary px-8 py-3.5 sm:px-8 sm:py-3.5 text-base sm:text-lg w-full sm:w-auto tracking-wide">
+                            View Menu
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ডান দিকের ৩ডি ইলাস্ট্রেশন -->
+                <div
+                    class="w-full lg:w-3/5 flex justify-center items-center relative h-[320px] sm:h-[440px] lg:h-[580px] reveal-right">
+
+                    <!-- Bay leaf / hero/5.png — golden-green glow -->
+                    <div
+                        class="absolute top-[10%] left-[5%] lg:left-[15%] text-3xl sm:text-4xl animate-float-delayed rotate-[-20deg]">
+                        <img class="w-[100px]" src="./assets/hero/5.png" alt=""
+                            style="filter: drop-shadow(0 8px 18px rgba(180,150,40,0.7)) drop-shadow(0 2px 6px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Small spice dot / hero/3.png — warm amber glow -->
+                    <div
+                        class="absolute top-[40%] left-[5%] lg:left-[25%] text-3xl sm:text-4xl animate-float-delayed rotate-[-20deg]">
+                        <img class="w-[30px]" src="./assets/hero/3.png" alt=""
+                            style="filter: drop-shadow(0 6px 12px rgba(200,130,30,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Chili / hero/6.png — red glow -->
+                    <div
+                        class="absolute bottom-[15%] left-[0%] lg:left-[5%] text-5xl sm:text-6xl animate-float rotate-[-45deg] z-20">
+                        <img class="w-[100px]" src="./assets/hero/6.png" alt=""
+                            style="filter: drop-shadow(0 10px 22px rgba(220,40,40,0.75)) drop-shadow(0 2px 6px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Small round spice / hero/2.png — olive-green glow -->
+                    <div
+                        class="absolute top-[15%] right-[5%] lg:right-[15%] text-2xl sm:text-3xl animate-float rotate-[30deg]">
+                        <img class="w-[50px]" src="./assets/hero/2.png" alt=""
+                            style="filter: drop-shadow(0 8px 16px rgba(100,160,40,0.7)) drop-shadow(0 2px 5px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Cinnamon sticks / hero/4.png — warm brown-orange glow -->
+                    <div
+                        class="absolute bottom-[10%] right-[0%] lg:right-[15%] text-4xl sm:text-5xl animate-float-delayed rotate-[45deg]">
+                        <img class="w-[100px]" src="./assets/hero/4.png" alt=""
+                            style="filter: drop-shadow(0 10px 22px rgba(180,90,20,0.75)) drop-shadow(0 2px 6px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Small leaf / hero/1.png — green glow -->
+                    <div
+                        class="absolute top-[50%] right-[2%] lg:right-[25%] text-xl sm:text-2xl animate-float rotate-[-15deg]">
+                        <img class="w-[50px]" src="./assets/hero/1.png" alt=""
+                            style="filter: drop-shadow(0 6px 14px rgba(60,160,60,0.7)) drop-shadow(0 2px 5px rgba(0,0,0,0.5));">
+                    </div>
+
+                    <!-- Main Tiffin Box / hero/7.png — golden metallic glow -->
+                    <div
+                        class="relative animate-float flex flex-col items-center rotate-[10deg] scale-75 sm:scale-100 lg:scale-[1.35] xl:scale-[1.5] z-10">
+                        <img class="w-[250px]" src="./assets/hero/7.png" alt=""
+                            style="filter: drop-shadow(0 20px 40px rgba(160,120,30,0.6)) drop-shadow(0 5px 15px rgba(0,0,0,0.7));">
+                    </div>
+
+                    <!-- Ground shadow ellipse -->
+                    <div
+                        class="absolute bottom-0 sm:bottom-[-20px] lg:bottom-[-40px] w-40 sm:w-48 lg:w-56 h-6 sm:h-8 bg-black/60 blur-xl rounded-[50%] animate-shadow">
+                    </div>
+                </div>
+            </main>
+
+
+        </div> <!-- Closing dashboard-container -->
+
+
+        <!-- ========================================== -->
+        <!-- Weekly Menu Section (Tab & 2 Cards Filter System) -->
+        <!-- ========================================== -->
+        <section class="mt-32 mb-10 relative z-10 flex flex-col items-center w-full" id="menu">
+            <h2 class="font-nunito-black text-5xl md:text-[60px] title-3d-red mb-12 text-center scroll-reveal">
+                Weekly Menu
+            </h2>
+
+            <!-- Day Selector Tabs -->
+            <div
+                class="relative w-full max-w-md md:max-w-2xl px-12 mb-10 py-4 scroll-reveal delay-200">
+                <!-- Left Button Overlay with Gradient Fade -->
+                <div class="absolute left-0 top-0 bottom-0 flex items-center justify-start w-20 bg-gradient-to-r from-[#2b0d0d] via-[#2b0d0d]/80 to-transparent pointer-events-none z-20">
+                    <button id="prevDayBtn"
+                        class="clay-tab !p-2 flex-shrink-0 flex items-center justify-center rounded-2xl pointer-events-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 overflow-x-auto hide-scrollbar px-6 py-6"
+                    id="dayTabsContainer">
+                    <button class="day-tab clay-tab clay-tab-active" data-index="0">শনি</button>
+                    <button class="day-tab clay-tab" data-index="1">রবি</button>
+                    <button class="day-tab clay-tab" data-index="2">সোম</button>
+                    <button class="day-tab clay-tab" data-index="3">মঙ্গল</button>
+                    <button class="day-tab clay-tab" data-index="4">বুধ</button>
+                    <button class="day-tab clay-tab" data-index="5">বৃহস্পতি</button>
+                </div>
+
+                <!-- Right Button Overlay with Gradient Fade -->
+                <div class="absolute right-0 top-0 bottom-0 flex items-center justify-end w-20 bg-gradient-to-l from-[#2b0d0d] via-[#2b0d0d]/80 to-transparent pointer-events-none z-20">
+                    <button id="nextDayBtn"
+                        class="clay-tab !p-2 flex-shrink-0 flex items-center justify-center rounded-2xl pointer-events-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 18 6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2 Cards Display Container -->
+            <div class="w-full max-w-6xl mx-auto px-2 md:px-6 relative min-h-[500px]">
+
+                <!-- Saturday (Day 0) -->
+                <div class="day-content grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 fade-in" data-content="0">
+                    <!-- Standard -->
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50 scroll-reveal delay-100">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍗</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">সোনালী মুরগি ভুনা</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            সোনালী মুরগি ভুনা, ভর্তা/ভাজি, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <!-- Premium -->
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50 scroll-reveal delay-300">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍗</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">সোনালী মুরগি ভুনা
+                            (Special)</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            সোনালী মুরগি ভুনা, ভর্তা, ভাজি, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+                <!-- Sunday (Day 1) -->
+                <div class="day-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12" data-content="1">
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🐟</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">রুই মাছের ভুনা</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), রুই
+                            মাছের ভুনা, ভাজি/ভর্তা, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🐟</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">রুই মাছের ভুনা
+                            (Special)</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), রুই
+                            মাছের ভুনা, ভাজি, ভর্তা, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+                <!-- Monday (Day 2) -->
+                <div class="day-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12" data-content="2">
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍗</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">সোনালি মুরগির ভুনা</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            সোনালি মুরগির ভুনা, ভাজি/ভর্তা, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍗</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">সোনালি মুরগির ভুনা
+                            (Special)</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            সোনালি মুরগির ভুনা, ভাজি, ভর্তা, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+                <!-- Tuesday (Day 3) -->
+                <div class="day-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12" data-content="3">
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🐠</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">তেলাপিয়া মাছের ভুনা</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), বড়
+                            তেলাপিয়া মাছের ভুনা, ভর্তা/ভাজি, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🐠</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">পাবদা মাছের ভুনা
+                        </h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), পাবদা
+                            মাছের ভুনা, ভর্তা, ভাজি, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+                <!-- Wednesday (Day 4) -->
+                <div class="day-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12" data-content="4">
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍲</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">রুই মাছের ডিমের ভুনা</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), রুই
+                            মাছের ডিমের ভুনা, ভর্তা/ভাজি, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🍲</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">রুই মাছের ডিমের ভুনা
+                            (Special)</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট), রুই
+                            মাছের ডিমের ভুনা, ভর্তা, ভাজি, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+                <!-- Thursday (Day 5) -->
+                <div class="day-content hidden grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12" data-content="5">
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-[#af0202]/20 hover:border-[#af0202]/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#8e1515] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(142,21,21,0.5)] border border-[#ff6b6b]/50">
+                            Standard - ১৩৫ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative">
+                            <span class="text-6xl animate-float">🥩</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-white mb-4 text-center">মেজবানি গরুর মাংস</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            মেজবানি গরুর মাংস বা সোনালি মুরগির ভুনা, ঘন ডাল, সালাদ।</p>
+                        <button class="clay-btn-red mt-auto">Order
+                            Standard</button>
+                    </div>
+                    <div
+                        class="clay-card p-8 flex flex-col items-center relative w-full border border-yellow-600/20 hover:border-yellow-600/50">
+                        <div
+                            class="absolute -top-4 right-4 bg-[#966f14] text-white text-sm font-nunito-black px-5 py-2 rounded-full shadow-[0_5px_10px_rgba(150,111,20,0.5)] border border-yellow-400/50">
+                            Premium - ১৮০ ৳</div>
+                        <div
+                            class="plate-container w-40 h-40 rounded-full mb-8 flex items-center justify-center relative border-[#ff6b6b]/50">
+                            <span class="text-6xl animate-float">🥩</span>
+                        </div>
+                        <h3 class="font-nunito-extrabold text-2xl text-yellow-500 mb-4 text-center">মেজবানি গরুর মাংস
+                            (Special)</h3>
+                        <p class="text-[#a0a0a5] text-[15px] text-center mb-8 h-12 leading-relaxed">ভাত (মিনিকেট),
+                            মেজবানি গরুর মাংস বা সোনালি মুরগির ভুনা, ডাল ভুনা, সালাদ।</p>
+                        <button class="clay-btn-yellow mt-auto">Order
+                            Premium</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Contact / Footer Section -->
+        <footer id="contact" class="mt-10 mb-12 relative z-10 w-full px-2 lg:px-6 flex flex-col items-center">
+            <div
+                class="w-full max-w-5xl bg-[#4a1515] rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-10 shadow-[0_15px_30px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.05)] relative overflow-hidden border border-white/5 reveal-scale">
+
+                <div
+                    class="absolute -bottom-20 -right-20 w-64 h-64 bg-[#af0202]/10 blur-[80px] rounded-full pointer-events-none">
+                </div>
+
+                <div
+                    class="flex flex-col md:flex-row items-center md:items-start gap-5 text-center md:text-left flex-1 z-10">
+                    <div
+                        class="w-14 h-14 rounded-full bg-[#2b0d0d] flex items-center justify-center text-[#ff6b6b] shadow-[inset_1px_1px_3px_rgba(0,0,0,0.6),_0px_1px_1px_rgba(255,255,255,0.05)] flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-nunito-extrabold text-white text-xl mb-2">Our Location</h4>
+                        <p class="text-[#a0a0a5] text-[15px] leading-relaxed max-w-sm">
+                            Agargaon, In front of Bangladesh Parjanton Corporation head office, Dhaka, 1207.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-6 z-10">
+                    <div
+                        class="flex flex-col items-center sm:items-start text-center sm:text-left border-r-0 sm:border-r border-white/10 pr-0 sm:pr-8">
+                        <span class="text-[#a0a0a5] text-sm font-medium mb-1">Call for Order</span>
+                        <a href="tel:+880160035444"
+                            class="font-nunito-black text-[#ff6b6b] text-2xl tracking-wider hover:text-white transition-colors">
+                            +8801600-35444
+                        </a>
+                    </div>
+
+                    <div
+                        class="flex items-center gap-3 bg-[#2b0d0d] border border-[#ff5757]/20 px-5 py-3 rounded-2xl shadow-[inset_1px_1px_3px_rgba(0,0,0,0.5)] cursor-default hover:bg-[#381010] transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                            stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                            <path d="M15 18H9" />
+                            <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+                            <circle cx="17" cy="18" r="2" />
+                            <circle cx="7" cy="18" r="2" />
+                        </svg>
+                        <div class="flex flex-col text-left">
+                            <span class="font-nunito-black text-white text-lg uppercase leading-none mb-0.5">Free</span>
+                            <span
+                                class="font-nunito-bold text-[#ff6b6b] text-xs uppercase tracking-[0.2em] leading-none">Delivery</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center text-[#666666] text-sm font-medium mb-4">
+                © 2026 Bondor Bati. Chittagong Heritage Cuisine.
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Mobile Menu Toggle
+        const btn = document.getElementById('mobileMenuBtn');
+        const menu = document.getElementById('mobileMenu');
+        const menuIcon = document.getElementById('menuIcon');
+        const closeIcon = document.getElementById('closeIcon');
+        let isMenuOpen = false;
+
+        function toggleMenu() {
+            isMenuOpen = !isMenuOpen;
+            if (isMenuOpen) {
+                menu.classList.add('menu-open');
+                menuIcon.classList.add('hidden');
+                closeIcon.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                menu.classList.remove('menu-open');
+                menuIcon.classList.remove('hidden');
+                closeIcon.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        btn.addEventListener('click', toggleMenu);
+
+        // Close menu when a link inside is clicked
+        const mobileLinks = menu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (!link.classList.contains('clay-btn-red')) {
+                    mobileLinks.forEach(l => l.classList.remove('mobile-menu-active'));
+                    link.classList.add('mobile-menu-active');
+                }
+                isMenuOpen = false;
+                menu.classList.remove('menu-open');
+                menuIcon.classList.remove('hidden');
+                closeIcon.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            });
+        });
+
+        // Day Filtering Logic
+        const dayTabs = document.querySelectorAll('.day-tab');
+        const dayContents = document.querySelectorAll('.day-content');
+        const prevBtn = document.getElementById('prevDayBtn');
+        const nextBtn = document.getElementById('nextDayBtn');
+        let currentDay = 0;
+        const totalDays = 6;
+
+        function showDay(index) {
+            // Update tabs
+            dayTabs.forEach((tab, i) => {
+                if (i === parseInt(index)) {
+                    tab.classList.add('clay-tab-active');
+                    // Smoothly scroll the active tab to the center of the list
+                    tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    tab.classList.remove('clay-tab-active');
+                }
+            });
+
+            // Update content blocks (Cards)
+            dayContents.forEach((content) => {
+                if (content.getAttribute('data-content') === String(index)) {
+                    content.classList.remove('hidden');
+                    content.classList.add('fade-in');
+                } else {
+                    content.classList.add('hidden');
+                    content.classList.remove('fade-in');
+                }
+            });
+
+            currentDay = parseInt(index);
+        }
+
+        // Click on Tab
+        dayTabs.forEach((tab) => {
+            tab.addEventListener('click', (e) => {
+                const index = e.target.getAttribute('data-index');
+                showDay(index);
+            });
+        });
+
+        // Click on Previous
+        prevBtn.addEventListener('click', () => {
+            let newDay = currentDay - 1;
+            if (newDay < 0) newDay = totalDays - 1; // Loop back to end
+            showDay(newDay);
+        });
+
+        // Click on Next
+        nextBtn.addEventListener('click', () => {
+            let newDay = currentDay + 1;
+            if (newDay >= totalDays) newDay = 0; // Loop back to start
+            showDay(newDay);
+        });
+
+        // ============================================
+        // Scroll Reveal — Intersection Observer
+        // ============================================
+        const revealElements = document.querySelectorAll(
+            '.scroll-reveal, .reveal-left, .reveal-right, .reveal-scale'
+        );
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-revealed');
+                    revealObserver.unobserve(entry.target); // animate once only
+                }
+            });
+        }, {
+            threshold: 0.15,       // trigger when 15% of the element is visible
+            rootMargin: '0px 0px -40px 0px' // slightly before the bottom edge
+        });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // ============================================
+        // Sticky Navbar Scroll Effect
+        // ============================================
+        const navbar = document.getElementById('mainNavbar');
+        const heroSection = document.querySelector('.dashboard-container');
+
+        function handleNavbarScroll() {
+            if (heroSection) {
+                const heroBottom = heroSection.offsetTop + heroSection.offsetHeight;
+                if (window.scrollY > (heroBottom - 120)) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            } else {
+                if (window.scrollY > 80) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            }
+        }
+
+        window.addEventListener('scroll', handleNavbarScroll);
+        window.addEventListener('DOMContentLoaded', handleNavbarScroll);
+        handleNavbarScroll();
+    </script>
+
+    <!-- Floating Messenger Button -->
+    <a href="https://m.me/bondorbati" target="_blank" rel="noopener noreferrer" 
+       class="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-[90] flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full text-white bg-gradient-to-tr from-[#006AFF] via-[#0084FF] to-[#A133FF] border border-white/20 shadow-[0_10px_25px_rgba(0,132,255,0.45),inset_0_2px_4px_rgba(255,255,255,0.3)] hover:scale-110 active:scale-95 transition-all duration-300 animate-float-messenger group"
+       aria-label="Message us on Facebook Messenger">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 md:w-8 md:h-8 transition-transform duration-300 group-hover:rotate-6">
+            <path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.914 1.45 5.513 3.738 7.197.194.143.31.365.31.603v2.247c0 .54.547.92 1.05.72l2.457-.978c.15-.06.315-.067.472-.02 1.155.347 2.392.536 3.673.536 5.523 0 10-4.145 10-9.258C22 6.145 17.523 2 12 2Zm1.025 11.905-2.438-2.61a.485.485 0 0 0-.67-.042l-4.75 3.61c-.42.32-.93-.213-.6-.625l5.056-6.28a.485.485 0 0 1 .665-.047l2.44 2.613a.485.485 0 0 0 .67.042l4.752-3.61c.42-.32.93.212.6.624l-5.058 6.28a.485.485 0 0 1-.667.045Z"/>
+        </svg>
+        <span class="absolute right-16 md:right-20 bg-[#3d1212] text-[#ff6b6b] text-xs font-nunito-bold px-3 py-1.5 rounded-xl border border-white/5 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap">
+            Message us!
+        </span>
+    </a>
+</body>
+
+</html>
